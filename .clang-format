@@ -1,6 +1,5 @@
 ---
 BasedOnStyle: LLVM
-Language: C
 IndentWidth: 4
 
 # xv6 (and many kernel codebases) rely on include order
