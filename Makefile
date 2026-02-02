@@ -86,7 +86,7 @@ CFLAGS += -fno-pie -nopie
 endif
 
 # Flags for any .cc file
-CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti -fno-threadsafe-statics \
+CXXFLAGS = $(CFLAGS) -std=c++20 -fno-exceptions -fno-rtti -fno-threadsafe-statics \
            -fno-use-cxa-atexit -nostdlib -ffreestanding
 
 LDFLAGS = -z max-page-size=4096
