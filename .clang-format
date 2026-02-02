@@ -1,0 +1,15 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+
+# xv6 (and many kernel codebases) rely on include order
+# don't let clang-format reorder it.
+SortIncludes: false
+IncludeBlocks: Preserve
+
+# Also avoid clang-format trying to be clever with preprocessor-heavy code.
+IndentPPDirectives: None
+
+# Keep long macro/asm lines intact as much as possible.
+ColumnLimit: 0
+---
