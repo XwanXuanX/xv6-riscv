@@ -2,6 +2,26 @@
 
 struct stat;
 
+/**
+ * Using <extern "C"> is crucial!
+ *
+ * This is due to C++'s compiler "mangle" C++ function names, while C compiler does not.
+ * For example, if I call a system call from a C++ file and compiler with C++ compiler
+ * (such as `printf`), the C++ compiler will assume that `printf` is a C++ function and
+ * will mangle the name to something like `sajhfgbkadjsrghbk_printf()`, which will reside
+ * in the compiled object file.
+ *
+ * Then the linker will try to find the definition of that mangled name, which obviously
+ * doesn't exists, and thus causing the linker error: `undefined reference to `printf(char const*, ...)'`
+ *
+ * The solution to this problem is explicitly tell the C++ compiler to NOT mangle names of C functions,
+ * such as the function calls, using `extern` keyword.
+ * If the file being compiled is using C++ compiler, then extern "C" block will kick in.
+ */
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 // system calls
 int fork(void);
 int exit(int) __attribute__((noreturn));
@@ -47,3 +67,7 @@ void printf(const char *, ...) __attribute__((format(printf, 1, 2)));
 // umalloc.c
 void *malloc(uint);
 void free(void *);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
