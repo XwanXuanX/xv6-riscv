@@ -29,12 +29,15 @@ void mlfq_init(struct mlfq *m);
 void mlfq_enq(struct mlfq *m, int lvl, struct proc *p);
 
 // Deque a process from a specific level queue
+// return nullptr when the current queue is empty
 struct proc *mlfq_deq(struct mlfq *m, int lvl);
 
 // Remove a process from a specific level queue
 // could be used in:
 //  1. demote a process
 //  3. periodical priority boost
-void mlfq_rm(struct mlfq *m, int lvl, struct proc *p);
+// There could be cases where the remove target does not exist in the queue
+//  - return a bool to indicate if the removal is successful
+bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p);
 
 #endif
