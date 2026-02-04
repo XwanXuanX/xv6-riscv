@@ -390,14 +390,19 @@ int kwait(uint64 addr) {
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
-//  - choose a process to run.
+//  - choose a process to run (a RUNNABLE process).
 //  - swtch to start running that process.
-//  - eventually that process transfers control
-//    via swtch back to the scheduler.
+//  - eventually that process transfers control (via yield/sleep/exit) via swtch back to the scheduler.
+// Ensure correctness with
+//  - process locks (p->lock)
+//  - interrupt enable/disable
 void scheduler(void) {
+    // the iterator
     struct proc *p;
+    // current CPU's status, including `c->proc`, the CPU's currently running process
     struct cpu *c = mycpu();
 
+    // in initialization, the CPU is not running anything
     c->proc = 0;
     for (;;) {
         // The most recent process to run may have had interrupts
@@ -405,30 +410,93 @@ void scheduler(void) {
         // processes are waiting. Then turn them back off
         // to avoid a possible race between an interrupt
         // and wfi.
+
+        // This looks weird, but here's the explanation:
+        // intr_on():
+        //      * enables external interrupts at the CPU level
+        //      * the last process may have disabled the interrupt.
+        //        if all processes are blocked and waiting for interrupts (I/O), then they will not be waken up and their state will stay in "blocked".
+        //        Thus the scheduler cannot find a single process which state is "runnable", and scheduler will keep searching, causing deadlock.
+        //
+        // intr_off():
+        //      * immediately disable interrupts again
+        //      * assume that you don't do this, then the following sequence of events can happen:
+        //          1. scan the table, see no RUNNABLE processes
+        //          2. before executing wfi, an interrupt fires
+        //          3. interrupt handler runs and makes some process RUNNABLE
+        //          4. return from the interrupt and continue... and now you execute wfi anyway
+        //          5. now you may sleep even though work is available, and you might not wake again soon
+        //      * ensures the sleep (wfi) decision doesn’t race with interrupts
         intr_on();
         intr_off();
 
+        // flag to record "did we find at least one runnable process and switched to it?"
+        // if we didn't ran anything, put the core to sleep to save CPU
         int found = 0;
+        // simple RR loop
         for (p = proc; p < &proc[NPROC]; p++) {
+            // lock each process before inspecting or modifying it to avoid race condition
+            // without this lock, other CPUs could concurrently modify this process's state
+            // or the process itself could be transitioning states (e.g. blocked -> ready)
             acquire(&p->lock);
+            // can we run it?
             if (p->state == RUNNABLE) {
-                // Switch to chosen process.  It is the process's job
-                // to release its lock and then reacquire it
-                // before jumping back to us.
+                // The below comment is VERY important!
+                //      Switch to chosen process. It is the process's job
+                //      to release its lock and then reacquire it
+                //      before jumping back to us.
+                // we are about to run this process, but the scheduler is holding the lock
+                // after the `swtch()` call, the process starts to run, but its lock is still acquired
+                // so it needs to unlock itself to proceed;
+                // similarly, when the process transfer CPU control to the scheduler, the scheduler still thinks that it holds the process's lock
+                // but in fact it doesn't since the process unlocked itself.
+                // to satisfy scheduler's assumption, the process needs to lock itself before jumping into scheduler
+
+                // mark as RUNNING since we are about to run it
                 p->state = RUNNING;
+                // set the CPU's current running process as p
                 c->proc = p;
+
+                // THIS IS THE CORE!
+                //      the per-CPU scheduler is also a process, and it has context, saved in `c->context`
+                //      since we are about to switch to a user process, we need to pause the scheduler for a while by saving its context
+                //      and load the about-to-be-run process's context
+                // IMPORTANT NOTE:
+                //      when `swtch()` returns, it means the process later called `swtch()` in the opposite direction
+                //      (likely via yield(), sleep(), or exit()), and gives the CPU control to the scheduler.
+                //      so this is the timeline:
+                //          1. scheduler finds a runnable process
+                //          2. save its context, loads the process's context
                 swtch(&c->context, &p->context);
+                //          3. the process starts to run
+                //          4. the process calls `swtch()` to save its context and load the scheduler's context
+                //          5. finally we are out of `swtch()`, and we just ran something
 
                 // Process is done running for now.
                 // It should have changed its p->state before coming back.
+                // scheduler is running now, no process is currently running
                 c->proc = 0;
+                // we did run something in this scan loop
                 found = 1;
             }
+            // whether it's runnable or not, we have to release the previously acquired lock
+            // note that there are two different execution paths:
+            //      1. sche acq -> sche release
+            //      2. sche acq -> process release -> process acq -> sche release
+            // but anyways the scheduler needs to relase here
             release(&p->lock);
         }
+
         if (found == 0) {
             // nothing to run; stop running on this core until an interrupt.
+            // found == 0 means we've scanned all processes and non of them are runnable
+            // wfi = wait for interruption
             asm volatile("wfi");
+            // when an interrupt arrives:
+            //      1. the CPU awakes
+            //      2. the kernel interrupt handler runs (e.g. I/O interrupt)
+            //      3. which may make some process runnable (blocked -> ready)
+            //      4. then control returns to scheduler and it scans again
         }
     }
 }
