@@ -1,6 +1,9 @@
 #include "types.h"
-#include "proc.h"
+#include "riscv.h"
+#include "param.h"
+#include "spinlock.h"
 #include "defs.h"
+#include "proc.h"
 #include "mlfq.h"
 
 // Initialize all level queues to be empty at first
