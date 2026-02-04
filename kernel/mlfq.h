@@ -1,0 +1,40 @@
+#ifndef __MLFQ__
+#define __MLFQ__
+
+// promise that we'll have this somewhere
+struct proc;
+
+// constants definition (for MLFQ tuning)
+#define NLEVELS 5 // number of levels of queue that we have
+
+struct rqueue {
+    struct proc *head;
+    struct proc *tail;
+};
+
+struct mlfq {
+    struct rqueue q[NLEVELS];
+};
+
+// APIs
+
+// Initialize all level queues to be empty at first
+void mlfq_init(struct mlfq *m);
+
+// Enqueue a process to a specific level queue
+// could be used in:
+//  1. place newly created process at the top level queue
+//  2. demote a process to a lower level queue
+//  3. periodical priority boost for all processes
+void mlfq_enq(struct mlfq *m, int lvl, struct proc *p);
+
+// Deque a process from a specific level queue
+struct proc *mlfq_deq(struct mlfq *m, int lvl);
+
+// Remove a process from a specific level queue
+// could be used in:
+//  1. demote a process
+//  3. periodical priority boost
+void mlfq_rm(struct mlfq *m, int lvl, struct proc *p);
+
+#endif

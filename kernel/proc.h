@@ -90,6 +90,11 @@ enum procstate { UNUSED,
 struct proc {
     struct spinlock lock;
 
+    // MLFQ run queue constructs
+    struct proc *rqnext; // next process in the run queue
+    int qlevel;          // current queue level
+    int qticks;          // ticks used at current level
+
     // p->lock must be held when using these:
     enum procstate state; // Process state
     void *chan;           // If non-zero, sleeping on chan
