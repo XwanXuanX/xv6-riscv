@@ -415,6 +415,7 @@ int kwait(uint64 addr) {
     }
 }
 
+#ifdef RR
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -424,7 +425,7 @@ int kwait(uint64 addr) {
 // Ensure correctness with
 //  - process locks (p->lock)
 //  - interrupt enable/disable
-void scheduler(void) {
+__attribute__((noreturn)) static void RoundRobin(void) {
     // the iterator
     struct proc *p;
     // current CPU's status, including `c->proc`, the CPU's currently running process
@@ -527,6 +528,25 @@ void scheduler(void) {
             //      4. then control returns to scheduler and it scans again
         }
     }
+}
+#endif
+
+#ifdef MLFQ
+__attribute__((noreturn)) static void MultiLevelFeedbackQ(void) {
+}
+#endif
+
+// scheduler wrapper (RR or MLFQ scheduling policy)
+void scheduler(void) {
+    // Round robin
+#ifdef RR
+    RoundRobin();
+#endif
+
+    // Multi-level feedback queue
+#ifdef MLFQ
+    MultiLevelFeedbackQ();
+#endif
 }
 
 // Switch to scheduler.  Must hold only p->lock
