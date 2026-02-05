@@ -706,6 +706,27 @@ int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {
     }
 }
 
+// Print the status of MLFQ for debugging
+// Triggered by ^P in sh
+static void mlfq_dump_nolock(void) {
+    printf("MLFQ:\n");
+    for (int lvl = 0; lvl < NLEVELS; lvl++) {
+        printf("  L%d:", lvl);
+        int cnt = 0;
+        struct proc *p = mlq.q[lvl].head;
+
+        // Print at most 30 entries per level to avoid flooding.
+        while (p && cnt < 30) {
+            printf(" %d", p->pid);
+            p = p->rqnext;
+            cnt++;
+        }
+        if (p)
+            printf(" ...");
+        printf("\n");
+    }
+}
+
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
@@ -720,7 +741,7 @@ void procdump(void) {
     struct proc *p;
     char *state;
 
-    printf("\n");
+    printf("PID\tSTATE\tNAME\n");
     for (p = proc; p < &proc[NPROC]; p++) {
         if (p->state == UNUSED)
             continue;
@@ -728,7 +749,10 @@ void procdump(void) {
             state = states[p->state];
         else
             state = "???";
-        printf("%d %s %s", p->pid, state, p->name);
+        printf("%d\t%s\t%s", p->pid, state, p->name);
         printf("\n");
     }
+
+    // Print MLFQ queue status
+    mlfq_dump_nolock();
 }
