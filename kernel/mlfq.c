@@ -6,21 +6,32 @@
 #include "proc.h"
 #include "mlfq.h"
 
+// little helper
+static void assert(const bool cond, const char *msg) {
+    if (!cond) {
+        panic(msg);
+    }
+}
+
 // Initialize all level queues to be empty at first
 void mlfq_init(struct mlfq *m) {
     if (!m) {
         panic("invalid_null_pointer");
     }
+
+    // For initialization, we don't lock
+    initlock(&m->lock, "MLFQ_lock");
     for (int i = 0; i < NLEVELS; ++i) {
         m->q[i].head = m->q[i].tail = 0;
     }
 }
 
-// Enqueue a process to a specific level queue
-void mlfq_enq(struct mlfq *m, int lvl, struct proc *p) {
+void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p) {
     if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
+    assert(holding(&m->lock), "mlfq_enq_locked m_lock");
+    assert(holding(&p->lock), "mlfq_enq_locked p->lock");
 
     p->rqnext = 0;
     if (m->q[lvl].tail) {
@@ -31,11 +42,22 @@ void mlfq_enq(struct mlfq *m, int lvl, struct proc *p) {
     }
 }
 
-// Deque a process from a specific level queue
-struct proc *mlfq_deq(struct mlfq *m, int lvl) {
+// Enqueue a process to a specific level queue
+void mlfq_enq(struct mlfq *m, int lvl, struct proc *p) {
+    if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
+        panic("invalid_arguments_mlfq_enq");
+    }
+    acquire(&m->lock);
+    mlfq_enq_locked(m, lvl, p);
+    // we are done with queue, release the lock
+    release(&m->lock);
+}
+
+struct proc *mlfq_deq_locked(struct mlfq *m, int lvl) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
+    assert(holding(&m->lock), "mlfq_deq_locked m->lock");
 
     struct proc *p = m->q[lvl].head;
     if (!p) {
@@ -43,20 +65,42 @@ struct proc *mlfq_deq(struct mlfq *m, int lvl) {
         return 0;
     }
 
+    // modify the queue with lock hold is fine
     m->q[lvl].head = p->rqnext;
     if (m->q[lvl].head == 0) {
         m->q[lvl].tail = 0;
     }
 
+    // IMPORTANT:
+    //  Notice here that we modified the process member variable
+    //  WITHOUT holding the process lock, is this even valid???
+    // answer is: Yes. Because `p->rqnext` is NOT a process state,
+    // it's actually the MLFQ's state, which is protected by the m->lock!
+    // Thus since we are holding m->lock, this is valid.
     p->rqnext = 0;
     return p;
 }
 
+// Deque a process from a specific level queue
+struct proc *mlfq_deq(struct mlfq *m, int lvl) {
+    if (!m || lvl < 0 || NLEVELS <= lvl) {
+        panic("invalid_arguments_mlfq_deq");
+    }
+
+    acquire(&m->lock);
+    struct proc *p = mlfq_deq_locked(m, lvl);
+    release(&m->lock);
+
+    return p;
+}
+
 // Remove a process from a specific level queue
-bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p) {
+bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
+    assert(holding(&m->lock), "mlfq_rm_locked m->lock");
+    assert(holding(&p->lock), "mlfq_rm_locked p->lock");
 
     if (!p) {
         // nothing to be done
@@ -97,4 +141,19 @@ bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p) {
 
     // 404 not found!
     return false;
+}
+
+bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
+    if (!m || lvl < 0 || NLEVELS <= lvl) {
+        panic("invalid_arguments_mlfq_rm");
+    }
+    if (!p) {
+        return false;
+    }
+
+    acquire(&m->lock);
+    bool ok = mlfq_rm_locked(m, lvl, p);
+    release(&m->lock);
+
+    return ok;
 }

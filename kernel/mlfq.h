@@ -3,6 +3,7 @@
 
 // promise that we'll have this somewhere
 struct proc;
+struct spinlock;
 
 // constants definition (for MLFQ tuning)
 #define NLEVELS 5 // number of levels of queue that we have
@@ -14,9 +15,12 @@ struct rqueue {
 
 struct mlfq {
     struct rqueue q[NLEVELS];
+    struct spinlock lock;
 };
 
-// APIs
+//
+// Safe APIs
+//
 
 // Initialize all level queues to be empty at first
 void mlfq_init(struct mlfq *m);
@@ -39,5 +43,13 @@ struct proc *mlfq_deq(struct mlfq *m, int lvl);
 // There could be cases where the remove target does not exist in the queue
 //  - return a bool to indicate if the removal is successful
 bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p);
+
+//
+// Unsafe APIs (assume locked, used in bulk operation)
+//
+
+void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p);
+struct proc *mlfq_deq_locked(struct mlfq *m, int lvl);
+bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p);
 
 #endif
