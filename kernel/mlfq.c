@@ -7,7 +7,7 @@
 #include "mlfq.h"
 
 // little helper
-static void assert(const bool cond, const char *msg) {
+static void assert(const bool cond, char *msg) {
     if (!cond) {
         panic(msg);
     }
@@ -143,7 +143,7 @@ bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
     return false;
 }
 
-bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
+bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
