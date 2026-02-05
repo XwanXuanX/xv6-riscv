@@ -17,7 +17,19 @@ void initlock(struct spinlock *lk, char *name) {
 // Acquire the lock.
 // Loops (spins) until the lock is acquired.
 void acquire(struct spinlock *lk) {
-    push_off(); // disable interrupts to avoid deadlock.
+    // "disable interrupts to avoid deadlock."
+    // Interpretation:
+    //  Assume the opposite, then the following can happen:
+    //      * CPU acq lock
+    //      * interrupts are enabled
+    //      * timer/device interrupts fires
+    //      * interrupt handler runs on the same CPU
+    //      * handler tries to acq lock -> spins forever, since lock is already acq by the same CPU
+    //      * but the CPU cannot return to the code to release it, because it's stuck in the handler
+    //      * the deadlock!
+    push_off();
+
+    // the current CPU cannot acquire the same lock twice
     if (holding(lk))
         panic("acquire");
 
@@ -76,6 +88,16 @@ int holding(struct spinlock *lk) {
 // push_off/pop_off are like intr_off()/intr_on() except that they are matched:
 // it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
 // are initially off, then push_off, pop_off leaves them off.
+
+// Why do we need "reference counting"?
+// Because lock acquisition can be nested.
+// You can only reenable interrupts when ALL lock acquisition is released, for example:
+// acquire(&A);   // push_off() -> interrupts off
+// acquire(&B);   // push_off() again
+// ...            // do something
+// release(&B);   // pop_off()
+//                // if we turn on interrupts here, then we are facing the same issue of having a deadlock as above!
+// release(&A);   // pop_off()
 
 void push_off(void) {
     int old = intr_get();
