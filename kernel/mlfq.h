@@ -1,9 +1,10 @@
 #ifndef __MLFQ__
 #define __MLFQ__
 
+#include "spinlock.h"
+
 // promise that we'll have this somewhere
 struct proc;
-struct spinlock;
 
 // constants definition (for MLFQ tuning)
 #define NLEVELS 5 // number of levels of queue that we have

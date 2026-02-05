@@ -91,9 +91,10 @@ struct proc {
     struct spinlock lock;
 
     // MLFQ run queue constructs
+    // IMPORTANT: this field is not part of "process state",
+    // it's actually part of queue state since it describes the structure of the queue
+    // mlq.lock must be held when using these:
     struct proc *rqnext; // next process in the run queue
-    int qlevel;          // current queue level
-    int qticks;          // ticks used at current level
 
     // p->lock must be held when using these:
     enum procstate state; // Process state
@@ -101,6 +102,8 @@ struct proc {
     int killed;           // If non-zero, have been killed
     int xstate;           // Exit status to be returned to parent's wait
     int pid;              // Process ID
+    int qlevel;           // current queue level
+    int qticks;           // ticks used at current level
 
     // wait_lock must be held when using this:
     struct proc *parent; // Parent process

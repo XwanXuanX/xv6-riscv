@@ -5,10 +5,16 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "mlfq.h"
 
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
+
+// The multi-level queue in MLFQ (contains lock)
+// Shared across ALL CPUs (allocated in data/BSS segment)
+// one single instance for the whole kernel
+struct mlfq mlq;
 
 struct proc *initproc;
 
@@ -100,6 +106,11 @@ static struct proc *
 allocproc(void) {
     struct proc *p;
 
+    // prob all the locations, for each location
+    //  1. pretend it is available
+    //  2. acquire the lock
+    //  3. if ok: proceed to setup with lock held
+    //  4. if no: release the lock immediately
     for (p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
         if (p->state == UNUSED) {
@@ -111,6 +122,9 @@ allocproc(void) {
     return 0;
 
 found:
+    //
+    // The lock is held while setup
+    //
     p->pid = allocpid();
     p->state = USED;
 
@@ -129,12 +143,26 @@ found:
         return 0;
     }
 
+    // At this point, the processes is certain to be created
+    // and thus we can put the new process in the top level queue
+    p->qlevel = p->qticks = 0;
+    acquire(&mlq.lock);
+    {
+        p->rqnext = 0;
+        mlfq_enq_locked(&mlq, 0, p);
+    }
+    release(&mlq.lock);
+
     // Set up new context to start executing at forkret,
     // which returns to user space.
     memset(&p->context, 0, sizeof(p->context));
     p->context.ra = (uint64)forkret;
     p->context.sp = p->kstack + PGSIZE;
 
+    //
+    // Remember! The process lock is still being held!
+    // Someone needs to release it later!
+    //
     return p;
 }
 
