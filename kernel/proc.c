@@ -329,6 +329,7 @@ void reparent(struct proc *p) {
 // An exited process remains in the zombie state
 // until its parent calls wait().
 void kexit(int status) {
+    // get the currently running process
     struct proc *p = myproc();
 
     if (p == initproc)
@@ -343,27 +344,33 @@ void kexit(int status) {
         }
     }
 
+    // FS operations (we don't care about this for now...)
     begin_op();
     iput(p->cwd);
     end_op();
     p->cwd = 0;
 
+    // acq wait_lock to manipulate the parent and child relations
     acquire(&wait_lock);
 
-    // Give any children to init.
+    // Give any children to init (for reap later).
     reparent(p);
 
     // Parent might be sleeping in wait().
     wakeup(p->parent);
 
+    // acq process lock to modify process status
     acquire(&p->lock);
 
     p->xstate = status;
     p->state = ZOMBIE;
 
+    // parent child relation stable, safe to unlock
     release(&wait_lock);
 
     // Jump into the scheduler, never to return.
+    // Note that process lock is still held, this is to satisfy the assumption in the scheduler
+    // See comments in scheduler() for more details
     sched();
     panic("zombie exit");
 }
