@@ -7,6 +7,13 @@
 #include "defs.h"
 #include "mlfq.h"
 
+// little helper
+static void assert(const bool cond, char *msg) {
+    if (!cond) {
+        panic(msg);
+    }
+}
+
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
@@ -143,15 +150,10 @@ found:
         return 0;
     }
 
-    // At this point, the processes is certain to be created
-    // and thus we can put the new process in the top level queue
+    // Initialize MLFQ related fields
+    // DO NOT enqueue JUST YET!
     p->qlevel = p->qticks = 0;
-    acquire(&mlq.lock);
-    {
-        p->rqnext = 0;
-        mlfq_enq_locked(&mlq, 0, p);
-    }
-    release(&mlq.lock);
+    p->rqnext = 0;
 
     // Set up new context to start executing at forkret,
     // which returns to user space.
@@ -233,11 +235,19 @@ void userinit(void) {
     struct proc *p;
 
     p = allocproc();
+    // Process lock is still held
     initproc = p;
 
     p->cwd = namei("/");
 
     p->state = RUNNABLE;
+
+    // Enqueue!
+    acquire(&mlq.lock);
+    {
+        mlfq_enq_locked(&mlq, 0, p);
+    }
+    release(&mlq.lock);
 
     release(&p->lock);
 }
@@ -306,7 +316,16 @@ int kfork(void) {
     release(&wait_lock);
 
     acquire(&np->lock);
-    np->state = RUNNABLE;
+    {
+        // set the new process state as runnable
+        np->state = RUNNABLE;
+        // Enqueue!
+        acquire(&mlq.lock);
+        {
+            mlfq_enq_locked(&mlq, 0, np);
+        }
+        release(&mlq.lock);
+    }
     release(&np->lock);
 
     return pid;
@@ -422,7 +441,6 @@ int kwait(uint64 addr) {
     }
 }
 
-#ifdef RR
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -432,7 +450,7 @@ int kwait(uint64 addr) {
 // Ensure correctness with
 //  - process locks (p->lock)
 //  - interrupt enable/disable
-__attribute__((noreturn)) static void RoundRobin(void) {
+__attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) {
     // the iterator
     struct proc *p;
     // current CPU's status, including `c->proc`, the CPU's currently running process
@@ -536,23 +554,81 @@ __attribute__((noreturn)) static void RoundRobin(void) {
         }
     }
 }
-#endif
 
-#ifdef MLFQ
-__attribute__((noreturn)) static void MultiLevelFeedbackQ(void) {
+__attribute__((unused)) static int first_non_empty(void) {
+    for (int i = 0; i < NLEVELS; ++i) {
+        const struct rqueue *rq = &mlq.q[i];
+        // We should do some validation to ensure queue integrity
+        if ((rq->head && !rq->tail) || (!rq->head && rq->tail)) {
+            panic("inconsistent head and tail");
+        }
+        if (rq->head && rq->tail) {
+            return i;
+        }
+    }
+    return -1;
 }
-#endif
+
+__attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedback_q(void) {
+    struct cpu *c = mycpu();
+
+    c->proc = 0;
+    for (;;) {
+        intr_on();
+        intr_off();
+
+        // lock the entire MLFQ structure to prevent possible races
+        acquire(&mlq.lock);
+
+        // find a non-empty ready queue
+        int first_non_null = first_non_empty();
+        // there is nothing ready, use wfi to wait for interrupt
+        if (first_non_null == -1) {
+            release(&mlq.lock);
+            asm volatile("wfi");
+            continue;
+        }
+
+        // get the first non-empty queue
+        struct rqueue *const rq = &mlq.q[first_non_null];
+        // the queue must contain at least one thing (this is the possible race that we are preventing)
+        assert(rq->head && rq->tail, "empty ready queue (possible races)");
+        // the queue is the "ready queue", meaning every process in it is in READY/RUNNABLE state
+        struct proc *const p = mlfq_deq_locked(&mlq, first_non_null);
+        // the process is dequeued, and queue is modified, no longer needs protection
+        release(&mlq.lock);
+
+        // before any read or any modification to process, protect with lock
+        acquire(&p->lock);
+
+        // make sure that the process is runnable
+        assert(p->state == RUNNABLE, "non-runnable process in ready queue");
+
+        // now we've asserted that p is a valid candidate, and we are about to run it
+        p->state = RUNNING;
+        c->proc = p;
+
+        // context switch!
+        swtch(&c->context, &p->context);
+
+        // process p is done running
+        c->proc = 0;
+
+        // release the locks for both process and mlfq (in the reverse order)
+        release(&p->lock);
+    }
+}
 
 // scheduler wrapper (RR or MLFQ scheduling policy)
 void scheduler(void) {
     // Round robin
 #ifdef RR
-    RoundRobin();
+    round_robin();
 #endif
 
     // Multi-level feedback queue
 #ifdef MLFQ
-    MultiLevelFeedbackQ();
+    multi_level_feedback_q();
 #endif
 }
 
@@ -564,6 +640,7 @@ void scheduler(void) {
 // break in the few places where a lock is held but
 // there's no process.
 void sched(void) {
+    // I'm the process calling this
     int intena;
     struct proc *p = myproc();
 
@@ -577,16 +654,31 @@ void sched(void) {
         panic("sched interruptible");
 
     intena = mycpu()->intena;
+    // I will switch to scheduler for now...
     swtch(&p->context, &mycpu()->context);
+    // Scheduler doing its stuff... Scheduler done
+    // I'm the process again!
     mycpu()->intena = intena;
 }
 
 // Give up the CPU for one scheduling round.
 void yield(void) {
-    struct proc *p = myproc();
+    struct proc *p = myproc(); // This is me!
     acquire(&p->lock);
+    // I'm gonna quit running and change to runnable/ready
     p->state = RUNNABLE;
-    sched();
+    // but even though I give up CPU volentarily, I can still be scheduled
+    // Enqueue!
+    acquire(&mlq.lock);
+    {
+        mlfq_enq_locked(&mlq, 0, p);
+    }
+    release(&mlq.lock);
+
+    // I'm the process, and I want to switch to scheduler
+    sched(); // scheduler doing its stuff...
+    // I'm the process and I'm back!
+    // scheduler locked my lock, I release it myself
     release(&p->lock);
 }
 
@@ -642,9 +734,18 @@ void sleep(void *chan, struct spinlock *lk) {
 
     // Go to sleep.
     p->chan = chan;
+    // Since I volentarily called `sleep()`, I must be running currently
+    assert(p->state == RUNNING, "I'm not running!");
     p->state = SLEEPING;
+    // Q: Do you need to explicitly handle remove from ready queue?
+    // A: No, because if I'm running, I must be popped off the ready queue and not in the queue any more!
 
+    // I'm the process that wants to sleep
+    // and I'll give the CPU to the scheduler
     sched();
+
+    // OK, I'm running again.
+    // This means some other processes wakes me up and put me in the ready queue
 
     // Tidy up.
     p->chan = 0;
@@ -663,7 +764,15 @@ void wakeup(void *chan) {
         if (p != myproc()) {
             acquire(&p->lock);
             if (p->state == SLEEPING && p->chan == chan) {
+                // I was sleeping but now I've been waken up
+                // and I'm ready to run!
                 p->state = RUNNABLE;
+                // Enqueue!
+                acquire(&mlq.lock);
+                {
+                    mlfq_enq_locked(&mlq, 0, p);
+                }
+                release(&mlq.lock);
             }
             release(&p->lock);
         }
@@ -683,6 +792,12 @@ int kkill(int pid) {
             if (p->state == SLEEPING) {
                 // Wake process from sleep().
                 p->state = RUNNABLE;
+                // Enqueue!
+                acquire(&mlq.lock);
+                {
+                    mlfq_enq_locked(&mlq, 0, p);
+                }
+                release(&mlq.lock);
             }
             release(&p->lock);
             return 0;

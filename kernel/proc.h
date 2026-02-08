@@ -79,12 +79,61 @@ struct trapframe {
     /* 280 */ uint64 t6;
 };
 
-enum procstate { UNUSED,
-                 USED,
-                 SLEEPING,
-                 RUNNABLE,
-                 RUNNING,
-                 ZOMBIE };
+enum procstate {
+    /**
+     * Should we care about state transition to UNUSED?
+     * NO.
+     * UNUSED is used in `freeproc()`, where it is mostly used to clean up any failed process allocation
+     * before that process is marked as ready. So we don't need to remove any active process from the queue.
+     *
+     * The only actual place where it is used is in `kwait()`, where the parent process wait for all of its children
+     * to finish and reap them. But when `freeproc()` is called, the child process already becomes `ZOMBIE` state.
+     * So we should only handle state transition to `ZOMBIE` state and we'll be fine.
+     */
+    UNUSED,
+
+    /**
+     * Should we care about state transition to USED?
+     * NO.
+     * It's just a temporary placeholder to hold a process slot.
+     */
+    USED,
+
+    /**
+     * Should we care about state transition to SLEEPING?
+     * YES and NO.
+     * When a process calls `sleep()`, it's put to sleep and is NOT READY anymore.
+     * But when the process calls `sleep()`, it must be running currently; and currently
+     * running process is popped off the ready queue, and must NOT be in the ready queue!
+     *
+     * So we should care, but we don't need to handle it explicity.
+     */
+    SLEEPING,
+
+    /**
+     * Should we care about state transition to RUNNABLE?
+     * DEFINITELY!
+     * Enqueue every process when it becomes runnable!
+     */
+    RUNNABLE,
+
+    /**
+     * Should we care about state transition to RUNNING?
+     * YES.
+     * A process's state can only change to RUNNING in `scheduler()` and when picked.
+     * A RUNNING process should not stay in ready queue.
+     * Thus we remove it explicitly by popping it off the queue
+     */
+    RUNNING,
+
+    /**
+     * Should we care about state transition to ZOMBIE?
+     * YES and NO.
+     * Same reason as `SLEEPING`, when a process calls `kexit()`, it must be running;
+     * and a running process is not in the queue. It's sufficient to simply not enqueue it back.
+     */
+    ZOMBIE
+};
 
 // Per-process state
 struct proc {
