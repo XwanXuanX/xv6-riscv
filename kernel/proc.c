@@ -154,6 +154,7 @@ found:
     // DO NOT enqueue JUST YET!
     p->qlevel = p->qticks = 0;
     p->rqnext = 0;
+    p->in_ready_q = 0;
 
     // Set up new context to start executing at forkret,
     // which returns to user space.
@@ -246,6 +247,7 @@ void userinit(void) {
     acquire(&mlq.lock);
     {
         mlfq_enq_locked(&mlq, 0, p);
+        p->in_ready_q = 1;
     }
     release(&mlq.lock);
 
@@ -323,6 +325,7 @@ int kfork(void) {
         acquire(&mlq.lock);
         {
             mlfq_enq_locked(&mlq, 0, np);
+            np->in_ready_q = 1;
         }
         release(&mlq.lock);
     }
@@ -601,10 +604,12 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         // before any read or any modification to process, protect with lock
         acquire(&p->lock);
 
-        // make sure that the process is runnable
+        // make sure that the process is runnable and WAS in queue
         assert(p->state == RUNNABLE, "non-runnable process in ready queue");
+        assert(p->in_ready_q, "runnable process not in queue");
 
         // now we've asserted that p is a valid candidate, and we are about to run it
+        p->in_ready_q = 0;
         p->state = RUNNING;
         c->proc = p;
 
@@ -672,6 +677,7 @@ void yield(void) {
     acquire(&mlq.lock);
     {
         mlfq_enq_locked(&mlq, 0, p);
+        p->in_ready_q = 1;
     }
     release(&mlq.lock);
 
@@ -736,6 +742,7 @@ void sleep(void *chan, struct spinlock *lk) {
     p->chan = chan;
     // Since I volentarily called `sleep()`, I must be running currently
     assert(p->state == RUNNING, "I'm not running!");
+    assert(!p->in_ready_q, "RUNNING process still in ready queue");
     p->state = SLEEPING;
     // Q: Do you need to explicitly handle remove from ready queue?
     // A: No, because if I'm running, I must be popped off the ready queue and not in the queue any more!
@@ -771,6 +778,7 @@ void wakeup(void *chan) {
                 acquire(&mlq.lock);
                 {
                     mlfq_enq_locked(&mlq, 0, p);
+                    p->in_ready_q = 1;
                 }
                 release(&mlq.lock);
             }
@@ -796,6 +804,7 @@ int kkill(int pid) {
                 acquire(&mlq.lock);
                 {
                     mlfq_enq_locked(&mlq, 0, p);
+                    p->in_ready_q = 1;
                 }
                 release(&mlq.lock);
             }
