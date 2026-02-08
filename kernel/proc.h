@@ -140,9 +140,11 @@ struct proc {
     struct spinlock lock;
 
     // MLFQ run queue constructs
-    // IMPORTANT: this field is not part of "process state",
-    // it's actually part of queue state since it describes the structure of the queue
-    // mlq.lock must be held when using these:
+    // IMPORTANT: this field is conceptually not part of "process state";
+    // it is part of the run-queue state, since it describes the structure of
+    // the queue. It is stored in struct proc only for convenience.
+    // In the MLFQ helpers that manipulate the run queue, both mlq.lock and
+    // p->lock must be held while reading or writing this field.
     struct proc *rqnext; // next process in the run queue
 
     // p->lock must be held when using these:
