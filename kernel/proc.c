@@ -625,15 +625,17 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
 }
 
 // scheduler wrapper (RR or MLFQ scheduling policy)
-void scheduler(void) {
+__attribute__((noreturn)) void scheduler(void) {
+#if defined(RR) && defined(MLFQ)
+#error "Exactly one of RR or MLFQ must be defined"
+#elif defined(RR)
     // Round robin
-#ifdef RR
     round_robin();
-#endif
-
+#elif defined(MLFQ)
     // Multi-level feedback queue
-#ifdef MLFQ
     multi_level_feedback_q();
+#else
+#error "One of RR or MLFQ must be defined"
 #endif
 }
 
