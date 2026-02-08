@@ -1,13 +1,11 @@
 #ifndef KERNEL_MLFQ_H
 #define KERNEL_MLFQ_H
 
+#include "param.h"
 #include "spinlock.h"
 
 // promise that we'll have this somewhere
 struct proc;
-
-// constants definition (for MLFQ tuning)
-#define NLEVELS 5 // number of levels of queue that we have
 
 struct rqueue {
     struct proc *head;
