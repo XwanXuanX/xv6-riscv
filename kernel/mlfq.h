@@ -1,5 +1,5 @@
-#ifndef __MLFQ__
-#define __MLFQ__
+#ifndef KERNEL_MLFQ_H
+#define KERNEL_MLFQ_H
 
 #include "spinlock.h"
 
