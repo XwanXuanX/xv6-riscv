@@ -106,7 +106,7 @@ enum procstate {
      * But when the process calls `sleep()`, it must be running currently; and currently
      * running process is popped off the ready queue, and must NOT be in the ready queue!
      *
-     * So we should care, but we don't need to handle it explicity.
+     * So we should care, but we don't need to handle it explicitly.
      */
     SLEEPING,
 
