@@ -31,7 +31,8 @@ struct spinlock pid_lock;
 extern void forkret(void);
 static void freeproc(struct proc *p);
 
-extern char trampoline[]; // trampoline.S
+extern int quantum[NLEVELS]; // trap.c
+extern char trampoline[];    // trampoline.S
 
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
@@ -157,6 +158,12 @@ found:
     p->in_ready_q = 0;
     p->epoch = 0;
 
+    // Per-level quantum
+    // the slice_left and need_yield field will be set when a process becomes
+    // RUNNABLE, so initialize with 0 for now
+    p->slice_left = 0;
+    p->need_yield = 0;
+
     // Set up new context to start executing at forkret,
     // which returns to user space.
     memset(&p->context, 0, sizeof(p->context));
@@ -193,6 +200,8 @@ freeproc(struct proc *p) {
     p->rqnext = 0;
     p->in_ready_q = 0;
     p->epoch = 0;
+    p->slice_left = 0;
+    p->need_yield = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -248,6 +257,9 @@ void userinit(void) {
 
     p->state = RUNNABLE;
     p->qlevel = p->qticks = 0;
+    // each scheduling round a process starts with a fresh quanta
+    p->slice_left = quantum[p->qlevel];
+    p->need_yield = 0;
 
     // Enqueue!
     acquire(&mlq.lock);
@@ -330,6 +342,9 @@ int kfork(void) {
         // set the new process state as runnable
         np->state = RUNNABLE;
         np->qlevel = np->qticks = 0;
+        // each scheduling round a process starts with a fresh quanta
+        np->slice_left = quantum[np->qlevel];
+        np->need_yield = 0;
         // Enqueue!
         acquire(&mlq.lock);
         {
@@ -647,6 +662,11 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         p->state = RUNNING;
         c->proc = p;
 
+        // before actually running it, give it a new time slice
+        // and reset the yield flag
+        p->slice_left = quantum[p->qlevel];
+        p->need_yield = 0;
+
         // context switch!
         swtch(&c->context, &p->context);
 
@@ -709,6 +729,11 @@ void yield(void) {
     acquire(&p->lock);
     // I'm gonna quit running and change to runnable/ready
     p->state = RUNNABLE;
+    // I changed from RUNNING to RUNNABLE because my quanta used up, so need a reset
+    // also I need to clear my need_yield flag (likely cleared already, but doesn't hurt)
+    // also yield is called AFTER timer interrupt, so p->qlevel is already updated
+    p->slice_left = quantum[p->qlevel];
+    p->need_yield = 0;
     // but even though I give up CPU volentarily, I can still be scheduled
     // Enqueue!
     acquire(&mlq.lock);
@@ -817,6 +842,9 @@ void wakeup(void *chan) {
                 // and I'm ready to run!
                 p->state = RUNNABLE;
                 p->qlevel = p->qticks = 0;
+                // each scheduling round a process starts with a fresh quanta
+                p->slice_left = quantum[p->qlevel];
+                p->need_yield = 0;
                 // Enqueue!
                 acquire(&mlq.lock);
                 {
@@ -847,6 +875,9 @@ int kkill(int pid) {
                 // Wake process from sleep().
                 p->state = RUNNABLE;
                 p->qlevel = p->qticks = 0;
+                // each scheduling round a process starts with a fresh quanta
+                p->slice_left = quantum[p->qlevel];
+                p->need_yield = 0;
                 // Enqueue!
                 acquire(&mlq.lock);
                 {

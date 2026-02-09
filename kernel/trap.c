@@ -30,6 +30,12 @@ int allotment[NLEVELS] = {
     114514 // cannot decrease anymore, placeholder
 };
 
+/**
+ * MLFQ per-level quantum
+ * notice they are half of allotment for that level
+ */
+int quantum[NLEVELS] = {2, 4, 8, 16, 32};
+
 void trapinit(void) {
     initlock(&tickslock, "time");
 }
@@ -92,7 +98,22 @@ usertrap(void) {
 
     // give up the CPU if this is a timer interrupt.
     if (which_dev == 2) {
-        yield();
+        if (!p)
+            panic("p nullptr");
+        int do_yield = 0;
+
+        acquire(&p->lock);
+        if (p->state != RUNNING)
+            panic("myproc() is not running");
+        if (p->need_yield) {
+            do_yield = 1;
+            p->need_yield = 0;
+        }
+        release(&p->lock);
+
+        if (do_yield) {
+            yield();
+        }
     }
 
     prepare_return();
@@ -160,7 +181,23 @@ void kerneltrap() {
 
     // give up the CPU if this is a timer interrupt.
     if (which_dev == 2 && myproc() != 0) {
-        yield();
+        struct proc *const p = myproc();
+        if (!p)
+            panic("p nullptr");
+        int do_yield = 0;
+
+        acquire(&p->lock);
+        if (p->state != RUNNING)
+            panic("myproc() is not running");
+        if (p->need_yield) {
+            do_yield = 1;
+            p->need_yield = 0;
+        }
+        release(&p->lock);
+
+        if (do_yield) {
+            yield();
+        }
     }
 
     // the yield() may have caused some traps to occur,
@@ -205,6 +242,13 @@ void clockintr() {
 
             // inc ticks spent
             p->qticks++;
+
+            // dec time slice remaining
+            p->slice_left--;
+
+            if (p->slice_left <= 0) {
+                p->need_yield = 1;
+            }
 
             if (p->qticks >= allotment[p->qlevel]) {
                 // move down one priority if still can

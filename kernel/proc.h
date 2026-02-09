@@ -157,6 +157,8 @@ struct proc {
     int qlevel;           // current queue level
     int qticks;           // ticks used at current level
     int epoch;            // "version number" of the process
+    int slice_left;       // the remaining ticks left before preemption
+    int need_yield;       // signal to `kerneltrap()` and `usertrap()` to yield when the time slice is used up
 
     // wait_lock must be held when using this:
     struct proc *parent; // Parent process
