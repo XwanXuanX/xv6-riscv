@@ -2630,6 +2630,14 @@ void lazy_sbrk(char *s) {
     exit(0);
 }
 
+void sleepnticks(__attribute__((unused)) char *s) {
+    // This user test tests the newly added sys_sleep system call
+    // the syscall will put the calling process to sleep for n ticks
+    sleep(1000);
+    // now wake up
+    exit(0);
+}
+
 struct test {
     void (*f)(char *);
     char *s;
@@ -2698,6 +2706,7 @@ struct test {
     {lazy_unmap, "lazy_unmap"},
     {lazy_copy, "lazy_copy"},
     {lazy_sbrk, "lazy_sbrk"},
+    {sleepnticks, "sleepnticks"},
     {0, 0},
 };
 
