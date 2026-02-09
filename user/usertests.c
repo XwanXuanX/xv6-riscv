@@ -2633,7 +2633,7 @@ void lazy_sbrk(char *s) {
 void sleepnticks(__attribute__((unused)) char *s) {
     // This user test tests the newly added sys_sleep system call
     // the syscall will put the calling process to sleep for n ticks
-    sleep(1000);
+    sleep(10);
     // now wake up
     exit(0);
 }
