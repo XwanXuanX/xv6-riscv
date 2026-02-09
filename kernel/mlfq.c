@@ -102,13 +102,13 @@ bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
         panic("invalid_arguments_mlfq_rm");
     }
     assert(holding(&m->lock), "mlfq_rm_locked m->lock");
-    assert(holding(&p->lock), "mlfq_rm_locked p->lock");
 
     if (!p) {
         // nothing to be done
         return false;
     }
 
+    assert(holding(&p->lock), "mlfq_rm_locked p->lock");
     struct rqueue *rq = &m->q[lvl];
     struct proc *cur = rq->head;
     struct proc *prev = 0;
