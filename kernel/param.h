@@ -15,14 +15,3 @@
 // #define RR                          // round robin scheduling policy
 #define MLFQ      // multi-level feedback queue scheduling policy
 #define NLEVELS 5 // number of levels of queue that we have
-
-/**
- * MLFQ per-level allotment
- */
-int allotment[NLEVELS] = {
-    4,
-    8,
-    16,
-    32,
-    114514 // cannot decrease anymore, placeholder
-};

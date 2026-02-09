@@ -188,6 +188,9 @@ freeproc(struct proc *p) {
     p->killed = 0;
     p->xstate = 0;
     p->state = UNUSED;
+    p->qlevel = p->qticks = 0;
+    p->rqnext = 0;
+    p->in_ready_q = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -242,12 +245,15 @@ void userinit(void) {
     p->cwd = namei("/");
 
     p->state = RUNNABLE;
+    p->qlevel = p->qticks = 0;
 
     // Enqueue!
     acquire(&mlq.lock);
     {
+        // New job enters, put at the top
         mlfq_enq_locked(&mlq, 0, p);
-        p->in_ready_q = 1;
+        assert(!p->in_ready_q, "double enq");
+        p->in_ready_q++;
     }
     release(&mlq.lock);
 
@@ -321,11 +327,14 @@ int kfork(void) {
     {
         // set the new process state as runnable
         np->state = RUNNABLE;
+        np->qlevel = np->qticks = 0;
         // Enqueue!
         acquire(&mlq.lock);
         {
+            // New job enters, put at the top
             mlfq_enq_locked(&mlq, 0, np);
-            np->in_ready_q = 1;
+            assert(!np->in_ready_q, "double enq");
+            np->in_ready_q++;
         }
         release(&mlq.lock);
     }
@@ -609,7 +618,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         assert(p->in_ready_q, "runnable process not in queue");
 
         // now we've asserted that p is a valid candidate, and we are about to run it
-        p->in_ready_q = 0;
+        p->in_ready_q--;
         p->state = RUNNING;
         c->proc = p;
 
@@ -669,6 +678,7 @@ void sched(void) {
 }
 
 // Give up the CPU for one scheduling round.
+// This function will always be run after every timer interrupt
 void yield(void) {
     struct proc *p = myproc(); // This is me!
     acquire(&p->lock);
@@ -678,8 +688,13 @@ void yield(void) {
     // Enqueue!
     acquire(&mlq.lock);
     {
-        mlfq_enq_locked(&mlq, 0, p);
-        p->in_ready_q = 1;
+        // `yield()` can only be called by timer interrupt preemption
+        // this means the process is running for too long, and its priority is demoted (already)
+        // Thus enqueue it at the demoted level
+        const int lvl = p->qlevel;
+        mlfq_enq_locked(&mlq, lvl, p);
+        assert(!p->in_ready_q, "double enq");
+        p->in_ready_q++;
     }
     release(&mlq.lock);
 
@@ -776,11 +791,15 @@ void wakeup(void *chan) {
                 // I was sleeping but now I've been waken up
                 // and I'm ready to run!
                 p->state = RUNNABLE;
+                p->qlevel = p->qticks = 0;
                 // Enqueue!
                 acquire(&mlq.lock);
                 {
+                    // Typically, a wake-up process needs immediate treatment
+                    // for better response time, thus put it at the top
                     mlfq_enq_locked(&mlq, 0, p);
-                    p->in_ready_q = 1;
+                    assert(!p->in_ready_q, "double enq");
+                    p->in_ready_q++;
                 }
                 release(&mlq.lock);
             }
@@ -802,11 +821,15 @@ int kkill(int pid) {
             if (p->state == SLEEPING) {
                 // Wake process from sleep().
                 p->state = RUNNABLE;
+                p->qlevel = p->qticks = 0;
                 // Enqueue!
                 acquire(&mlq.lock);
                 {
+                    // Wake the process ASAP so it can die quickly
+                    // Thus put it at the top
                     mlfq_enq_locked(&mlq, 0, p);
-                    p->in_ready_q = 1;
+                    assert(!p->in_ready_q, "double enq");
+                    p->in_ready_q++;
                 }
                 release(&mlq.lock);
             }

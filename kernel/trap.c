@@ -16,6 +16,17 @@ void kernelvec();
 
 extern int devintr();
 
+/**
+ * MLFQ per-level allotment
+ */
+int allotment[NLEVELS] = {
+    4,
+    8,
+    16,
+    32,
+    114514 // cannot decrease anymore, placeholder
+};
+
 void trapinit(void) {
     initlock(&tickslock, "time");
 }
@@ -72,12 +83,14 @@ usertrap(void) {
         setkilled(p);
     }
 
-    if (killed(p))
+    if (killed(p)) {
         kexit(-1);
+    }
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2)
+    if (which_dev == 2) {
         yield();
+    }
 
     prepare_return();
 
@@ -143,8 +156,9 @@ void kerneltrap() {
     }
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2 && myproc() != 0)
+    if (which_dev == 2 && myproc() != 0) {
         yield();
+    }
 
     // the yield() may have caused some traps to occur,
     // so restore trap registers for use by kernelvec.S's sepc instruction.
@@ -153,11 +167,39 @@ void kerneltrap() {
 }
 
 void clockintr() {
+    // only let CPU0 increment ticks to avoid races
     if (cpuid() == 0) {
         acquire(&tickslock);
         ticks++;
+        // wakeup any processes waiting for the tick to advance
         wakeup(&ticks);
         release(&tickslock);
+    }
+
+    // per-CPU/process accounting
+    struct proc *const p = myproc();
+    // make sure it's a user process (kernel process is nullptr)
+    if (p) {
+        acquire(&p->lock);
+        {
+            // the user process must be running
+            if (p->state != RUNNING)
+                panic("process not running");
+            // process must NOT be in ready queue
+            if (p->in_ready_q)
+                panic("running process in ready queue");
+
+            // inc ticks spent
+            p->qticks++;
+
+            if (p->qticks >= allotment[p->qlevel]) {
+                // move down one priority if still can
+                if (p->qlevel < NLEVELS - 1)
+                    p->qlevel++;
+                p->qticks = 0;
+            }
+        }
+        release(&p->lock);
     }
 
     // ask for the next timer interrupt. this also clears
