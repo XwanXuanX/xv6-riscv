@@ -5,11 +5,14 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "mlfq.h"
 
 struct spinlock tickslock;
 uint ticks;
 
 extern char trampoline[], uservec[];
+
+extern struct mlfq mlq;
 
 // in kernelvec.S, calls kerneltrap().
 void kernelvec();
@@ -170,9 +173,20 @@ void clockintr() {
     // only let CPU0 increment ticks to avoid races
     if (cpuid() == 0) {
         acquire(&tickslock);
-        ticks++;
-        // wakeup any processes waiting for the tick to advance
-        wakeup(&ticks);
+        {
+            ticks++;
+            // for every S period, boost the version number of the MLFQ
+            // in the scheduler, when we detect that the version of a process
+            // and the MLFQ does not match, we will re-enqueue it at the top level.
+            // This is essentially the same as periodic boosting.
+            if (ticks % S == 0) {
+                acquire(&mlq.lock);
+                mlq.boost_epoch++;
+                release(&mlq.lock);
+            }
+            // wakeup any processes waiting for the tick to advance
+            wakeup(&ticks);
+        }
         release(&tickslock);
     }
 

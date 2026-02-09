@@ -15,3 +15,4 @@
 // #define RR                          // round robin scheduling policy
 #define MLFQ      // multi-level feedback queue scheduling policy
 #define NLEVELS 5 // number of levels of queue that we have
+#define S 256     // the period for periodic priority boost

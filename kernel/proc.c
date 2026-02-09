@@ -155,6 +155,7 @@ found:
     p->qlevel = p->qticks = 0;
     p->rqnext = 0;
     p->in_ready_q = 0;
+    p->epoch = 0;
 
     // Set up new context to start executing at forkret,
     // which returns to user space.
@@ -191,6 +192,7 @@ freeproc(struct proc *p) {
     p->qlevel = p->qticks = 0;
     p->rqnext = 0;
     p->in_ready_q = 0;
+    p->epoch = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -607,6 +609,8 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         assert(rq->head && rq->tail, "empty ready queue (possible races)");
         // the queue is the "ready queue", meaning every process in it is in READY/RUNNABLE state
         struct proc *const p = mlfq_deq_locked(&mlq, first_non_null);
+        // snapshot current MLFQ version
+        const int cur_epoch = mlq.boost_epoch;
         // the process is dequeued, and queue is modified, no longer needs protection
         release(&mlq.lock);
 
@@ -617,8 +621,29 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         assert(p->state == RUNNABLE, "non-runnable process in ready queue");
         assert(p->in_ready_q, "runnable process not in queue");
 
-        // now we've asserted that p is a valid candidate, and we are about to run it
+        // the process is no longer in ready queue
         p->in_ready_q--;
+
+        // Epoch-boost fixup (Rule 5): if stale, bounce it to the top queue.
+        // IMPORTANT: do NOT run it from a low queue after a boost.
+        if (p->epoch != cur_epoch) {
+            p->epoch = cur_epoch;
+            p->qlevel = p->qticks = 0;
+            // Re-enqueue at top priority.
+            acquire(&mlq.lock);
+            {
+                mlfq_enq_locked(&mlq, 0, p);
+                assert(!p->in_ready_q, "double enq");
+                p->in_ready_q++;
+            }
+            release(&mlq.lock);
+            release(&p->lock);
+            // We've fixed up the priority
+            // next time we are guaranteed to pick this or some other processes from L0 Q
+            continue;
+        }
+
+        // now we've asserted that p is a valid candidate, and we are about to run it
         p->state = RUNNING;
         c->proc = p;
 

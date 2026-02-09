@@ -156,6 +156,7 @@ struct proc {
     int in_ready_q;       // marks if this process is in ready queue or not (for validation)
     int qlevel;           // current queue level
     int qticks;           // ticks used at current level
+    int epoch;            // "version number" of the process
 
     // wait_lock must be held when using this:
     struct proc *parent; // Parent process

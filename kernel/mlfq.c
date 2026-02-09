@@ -24,6 +24,8 @@ void mlfq_init(struct mlfq *m) {
     for (int i = 0; i < NLEVELS; ++i) {
         m->q[i].head = m->q[i].tail = 0;
     }
+    // start from version 0
+    m->boost_epoch = 0;
 }
 
 void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p) {

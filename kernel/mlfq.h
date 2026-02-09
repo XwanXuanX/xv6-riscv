@@ -15,6 +15,9 @@ struct rqueue {
 struct mlfq {
     struct rqueue q[NLEVELS];
     struct spinlock lock;
+    // The "version number" of the MLFQ
+    // used for periodic priority boosting
+    int boost_epoch;
 };
 
 //
