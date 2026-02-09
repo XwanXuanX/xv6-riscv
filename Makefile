@@ -152,6 +152,7 @@ UPROGS=\
 	$U/_forphan\
 	$U/_dorphan\
 	$U/_hellocpp\
+	$U/_mlfq_test\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
