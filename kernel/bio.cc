@@ -22,8 +22,10 @@
 #include "fs.h"
 #include "buf.h"
 
+namespace xv6 {
+
 struct {
-    struct spinlock lock;
+    spinlock lock;
     struct buf buf[NBUF];
 
     // Linked list of all buffers, through prev/next.
@@ -35,7 +37,7 @@ struct {
 void binit(void) {
     struct buf *b;
 
-    initlock(&bcache.lock, "bcache");
+    bcache.lock.init_lock("bcache");
 
     // Create linked list of buffers
     bcache.head.prev = &bcache.head;
@@ -56,13 +58,13 @@ static struct buf *
 bget(uint dev, uint blockno) {
     struct buf *b;
 
-    acquire(&bcache.lock);
+    bcache.lock.lock();
 
     // Is the block already cached?
     for (b = bcache.head.next; b != &bcache.head; b = b->next) {
         if (b->dev == dev && b->blockno == blockno) {
             b->refcnt++;
-            release(&bcache.lock);
+            bcache.lock.unlock();
             acquiresleep(&b->lock);
             return b;
         }
@@ -76,7 +78,7 @@ bget(uint dev, uint blockno) {
             b->blockno = blockno;
             b->valid = 0;
             b->refcnt = 1;
-            release(&bcache.lock);
+            bcache.lock.unlock();
             acquiresleep(&b->lock);
             return b;
         }
@@ -112,7 +114,7 @@ void brelse(struct buf *b) {
 
     releasesleep(&b->lock);
 
-    acquire(&bcache.lock);
+    bcache.lock.lock();
     b->refcnt--;
     if (b->refcnt == 0) {
         // no one is waiting for it.
@@ -124,17 +126,19 @@ void brelse(struct buf *b) {
         bcache.head.next = b;
     }
 
-    release(&bcache.lock);
+    bcache.lock.unlock();
 }
 
 void bpin(struct buf *b) {
-    acquire(&bcache.lock);
+    bcache.lock.lock();
     b->refcnt++;
-    release(&bcache.lock);
+    bcache.lock.unlock();
 }
 
 void bunpin(struct buf *b) {
-    acquire(&bcache.lock);
+    bcache.lock.lock();
     b->refcnt--;
-    release(&bcache.lock);
+    bcache.lock.unlock();
 }
+
+} // namespace xv6
