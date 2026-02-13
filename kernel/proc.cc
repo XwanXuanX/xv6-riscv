@@ -7,6 +7,8 @@
 #include "defs.h"
 #include "mlfq.h"
 
+namespace xv6 {
+
 // little helper
 static void assert(const bool cond, char *msg) {
     if (!cond) {
@@ -26,7 +28,7 @@ struct mlfq mlq;
 struct proc *initproc;
 
 int nextpid = 1;
-struct spinlock pid_lock;
+spinlock pid_lock;
 
 extern void forkret(void);
 static void freeproc(struct proc *p);
@@ -38,7 +40,7 @@ extern char trampoline[];    // trampoline.S
 // parents are not lost. helps obey the
 // memory model when using p->parent.
 // must be acquired before any p->lock.
-struct spinlock wait_lock;
+spinlock wait_lock;
 
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
@@ -47,7 +49,7 @@ void proc_mapstacks(pagetable_t kpgtbl) {
     struct proc *p;
 
     for (p = proc; p < &proc[NPROC]; p++) {
-        char *pa = kalloc();
+        char *pa = reinterpret_cast<char*>(kalloc());
         if (pa == 0)
             panic("kalloc");
         uint64 va = KSTACK((int)(p - proc));
@@ -59,10 +61,10 @@ void proc_mapstacks(pagetable_t kpgtbl) {
 void procinit(void) {
     struct proc *p;
 
-    initlock(&pid_lock, "nextpid");
-    initlock(&wait_lock, "wait_lock");
+    pid_lock.init_lock("nextpid");
+    wait_lock.init_lock("wait_lock");
     for (p = proc; p < &proc[NPROC]; p++) {
-        initlock(&p->lock, "proc");
+        p->lock.init_lock("proc");
         p->state = UNUSED;
         p->kstack = KSTACK((int)(p - proc));
     }
@@ -98,10 +100,10 @@ myproc(void) {
 int allocpid() {
     int pid;
 
-    acquire(&pid_lock);
+    pid_lock.lock();
     pid = nextpid;
     nextpid = nextpid + 1;
-    release(&pid_lock);
+    pid_lock.unlock();
 
     return pid;
 }
@@ -120,11 +122,11 @@ allocproc(void) {
     //  3. if ok: proceed to setup with lock held
     //  4. if no: release the lock immediately
     for (p = proc; p < &proc[NPROC]; p++) {
-        acquire(&p->lock);
+        p->lock.lock();
         if (p->state == UNUSED) {
             goto found;
         } else {
-            release(&p->lock);
+            p->lock.unlock();
         }
     }
     return 0;
@@ -139,7 +141,7 @@ found:
     // Allocate a trapframe page.
     if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
         freeproc(p);
-        release(&p->lock);
+        p->lock.unlock();
         return 0;
     }
 
@@ -147,7 +149,7 @@ found:
     p->pagetable = proc_pagetable(p);
     if (p->pagetable == 0) {
         freeproc(p);
-        release(&p->lock);
+        p->lock.unlock();
         return 0;
     }
 
@@ -262,16 +264,16 @@ void userinit(void) {
     p->need_yield = 0;
 
     // Enqueue!
-    acquire(&mlq.lock);
+    mlq.lock.lock();
     {
         // New job enters, put at the top
         mlfq_enq_locked(&mlq, 0, p);
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
-    release(&mlq.lock);
+    mlq.lock.unlock();
 
-    release(&p->lock);
+    p->lock.unlock();
 }
 
 // Grow or shrink user memory by n bytes.
@@ -310,7 +312,7 @@ int kfork(void) {
     // Copy user memory from parent to child.
     if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
         freeproc(np);
-        release(&np->lock);
+        np->lock.unlock();
         return -1;
     }
     np->sz = p->sz;
@@ -331,13 +333,13 @@ int kfork(void) {
 
     pid = np->pid;
 
-    release(&np->lock);
+    np->lock.unlock();
 
-    acquire(&wait_lock);
+    wait_lock.lock();
     np->parent = p;
-    release(&wait_lock);
+    wait_lock.unlock();
 
-    acquire(&np->lock);
+    np->lock.lock();
     {
         // set the new process state as runnable
         np->state = RUNNABLE;
@@ -346,16 +348,16 @@ int kfork(void) {
         np->slice_left = quantum[np->qlevel];
         np->need_yield = 0;
         // Enqueue!
-        acquire(&mlq.lock);
+        mlq.lock.lock();
         {
             // New job enters, put at the top
             mlfq_enq_locked(&mlq, 0, np);
             assert(!np->in_ready_q, "double enq");
             np->in_ready_q++;
         }
-        release(&mlq.lock);
+        mlq.lock.unlock();
     }
-    release(&np->lock);
+    np->lock.unlock();
 
     return pid;
 }
@@ -399,7 +401,7 @@ void kexit(int status) {
     p->cwd = 0;
 
     // acq wait_lock to manipulate the parent and child relations
-    acquire(&wait_lock);
+    wait_lock.lock();
 
     // Give any children to init (for reap later).
     reparent(p);
@@ -408,13 +410,13 @@ void kexit(int status) {
     wakeup(p->parent);
 
     // acq process lock to modify process status
-    acquire(&p->lock);
+    p->lock.lock();
 
     p->xstate = status;
     p->state = ZOMBIE;
 
     // parent child relation stable, safe to unlock
-    release(&wait_lock);
+    wait_lock.unlock();
 
     // Jump into the scheduler, never to return.
     // Note that process lock is still held, this is to satisfy the assumption in the scheduler
@@ -430,7 +432,7 @@ int kwait(uint64 addr) {
     int havekids, pid;
     struct proc *p = myproc();
 
-    acquire(&wait_lock);
+    wait_lock.lock();
 
     for (;;) {
         // Scan through table looking for exited children.
@@ -438,7 +440,7 @@ int kwait(uint64 addr) {
         for (pp = proc; pp < &proc[NPROC]; pp++) {
             if (pp->parent == p) {
                 // make sure the child isn't still in exit() or swtch().
-                acquire(&pp->lock);
+                pp->lock.lock();
 
                 havekids = 1;
                 if (pp->state == ZOMBIE) {
@@ -446,22 +448,22 @@ int kwait(uint64 addr) {
                     pid = pp->pid;
                     if (addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
                                              sizeof(pp->xstate)) < 0) {
-                        release(&pp->lock);
-                        release(&wait_lock);
+                        pp->lock.unlock();
+                        wait_lock.unlock();
                         return -1;
                     }
                     freeproc(pp);
-                    release(&pp->lock);
-                    release(&wait_lock);
+                    pp->lock.unlock();
+                    wait_lock.unlock();
                     return pid;
                 }
-                release(&pp->lock);
+                pp->lock.unlock();
             }
         }
 
         // No point waiting if we don't have any children.
         if (!havekids || killed(p)) {
-            release(&wait_lock);
+            wait_lock.unlock();
             return -1;
         }
 
@@ -521,7 +523,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
             // lock each process before inspecting or modifying it to avoid race condition
             // without this lock, other CPUs could concurrently modify this process's state
             // or the process itself could be transitioning states (e.g. blocked -> ready)
-            acquire(&p->lock);
+            p->lock.lock();
             // can we run it?
             if (p->state == RUNNABLE) {
                 // The below comment is VERY important!
@@ -567,7 +569,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
             //      1. sche acq -> sche release
             //      2. sche acq -> process release -> process acq -> sche release
             // but anyways the scheduler needs to relase here
-            release(&p->lock);
+            p->lock.unlock();
         }
 
         if (found == 0) {
@@ -607,13 +609,13 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         intr_off();
 
         // lock the entire MLFQ structure to prevent possible races
-        acquire(&mlq.lock);
+        mlq.lock.lock();
 
         // find a non-empty ready queue
         int first_non_null = first_non_empty();
         // there is nothing ready, use wfi to wait for interrupt
         if (first_non_null == -1) {
-            release(&mlq.lock);
+            mlq.lock.unlock();
             asm volatile("wfi");
             continue;
         }
@@ -627,10 +629,10 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         // snapshot current MLFQ version
         const int cur_epoch = mlq.boost_epoch;
         // the process is dequeued, and queue is modified, no longer needs protection
-        release(&mlq.lock);
+        mlq.lock.unlock();
 
         // before any read or any modification to process, protect with lock
-        acquire(&p->lock);
+        p->lock.lock();
 
         // make sure that the process is runnable and WAS in queue
         assert(p->state == RUNNABLE, "non-runnable process in ready queue");
@@ -645,14 +647,14 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
             p->epoch = cur_epoch;
             p->qlevel = p->qticks = 0;
             // Re-enqueue at top priority.
-            acquire(&mlq.lock);
+            mlq.lock.lock();
             {
                 mlfq_enq_locked(&mlq, 0, p);
                 assert(!p->in_ready_q, "double enq");
                 p->in_ready_q++;
             }
-            release(&mlq.lock);
-            release(&p->lock);
+            mlq.lock.unlock();
+            p->lock.unlock();
             // We've fixed up the priority
             // next time we are guaranteed to pick this or some other processes from L0 Q
             continue;
@@ -674,7 +676,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         c->proc = 0;
 
         // release the locks for both process and mlfq (in the reverse order)
-        release(&p->lock);
+        p->lock.unlock();
     }
 }
 
@@ -705,7 +707,7 @@ void sched(void) {
     int intena;
     struct proc *p = myproc();
 
-    if (!holding(&p->lock))
+    if (!p->lock.holding())
         panic("sched p->lock");
     if (mycpu()->noff != 1)
         panic("sched locks");
@@ -726,7 +728,7 @@ void sched(void) {
 // This function will always be run after every timer interrupt
 void yield(void) {
     struct proc *p = myproc(); // This is me!
-    acquire(&p->lock);
+    p->lock.lock();
     // I'm gonna quit running and change to runnable/ready
     p->state = RUNNABLE;
     // I changed from RUNNING to RUNNABLE because my quanta used up, so need a reset
@@ -736,7 +738,7 @@ void yield(void) {
     p->need_yield = 0;
     // but even though I give up CPU volentarily, I can still be scheduled
     // Enqueue!
-    acquire(&mlq.lock);
+    mlq.lock.lock();
     {
         // `yield()` can only be called by timer interrupt preemption
         // this means the process is running for too long, and its priority is demoted (already)
@@ -746,13 +748,13 @@ void yield(void) {
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
-    release(&mlq.lock);
+    mlq.lock.unlock();
 
     // I'm the process, and I want to switch to scheduler
     sched(); // scheduler doing its stuff...
     // I'm the process and I'm back!
     // scheduler locked my lock, I release it myself
-    release(&p->lock);
+    p->lock.unlock();
 }
 
 // A fork child's very first scheduling by scheduler()
@@ -763,7 +765,7 @@ void forkret(void) {
     struct proc *p = myproc();
 
     // Still holding p->lock from scheduler.
-    release(&p->lock);
+    p->lock.unlock();
 
     if (first) {
         // File system initialization must be run in the context of a
@@ -792,7 +794,7 @@ void forkret(void) {
 
 // Sleep on channel chan, releasing condition lock lk.
 // Re-acquires lk when awakened.
-void sleep(void *chan, struct spinlock *lk) {
+void sleep(void *chan, spinlock *lk) {
     struct proc *p = myproc();
 
     // Must acquire p->lock in order to
@@ -802,8 +804,8 @@ void sleep(void *chan, struct spinlock *lk) {
     // (wakeup locks p->lock),
     // so it's okay to release lk.
 
-    acquire(&p->lock); // DOC: sleeplock1
-    release(lk);
+    p->lock.lock(); // DOC: sleeplock1
+    lk->unlock();
 
     // Go to sleep.
     p->chan = chan;
@@ -825,8 +827,8 @@ void sleep(void *chan, struct spinlock *lk) {
     p->chan = 0;
 
     // Reacquire original lock.
-    release(&p->lock);
-    acquire(lk);
+    p->lock.unlock();
+    lk->lock();
 }
 
 // Wake up all processes sleeping on channel chan.
@@ -836,7 +838,7 @@ void wakeup(void *chan) {
 
     for (p = proc; p < &proc[NPROC]; p++) {
         if (p != myproc()) {
-            acquire(&p->lock);
+            p->lock.lock();
             if (p->state == SLEEPING && p->chan == chan) {
                 // I was sleeping but now I've been waken up
                 // and I'm ready to run!
@@ -846,7 +848,7 @@ void wakeup(void *chan) {
                 p->slice_left = quantum[p->qlevel];
                 p->need_yield = 0;
                 // Enqueue!
-                acquire(&mlq.lock);
+                mlq.lock.lock();
                 {
                     // Typically, a wake-up process needs immediate treatment
                     // for better response time, thus put it at the top
@@ -854,9 +856,9 @@ void wakeup(void *chan) {
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
-                release(&mlq.lock);
+                mlq.lock.unlock();
             }
-            release(&p->lock);
+            p->lock.unlock();
         }
     }
 }
@@ -868,7 +870,7 @@ int kkill(int pid) {
     struct proc *p;
 
     for (p = proc; p < &proc[NPROC]; p++) {
-        acquire(&p->lock);
+        p->lock.lock();
         if (p->pid == pid) {
             p->killed = 1;
             if (p->state == SLEEPING) {
@@ -879,7 +881,7 @@ int kkill(int pid) {
                 p->slice_left = quantum[p->qlevel];
                 p->need_yield = 0;
                 // Enqueue!
-                acquire(&mlq.lock);
+                mlq.lock.lock();
                 {
                     // Wake the process ASAP so it can die quickly
                     // Thus put it at the top
@@ -887,28 +889,28 @@ int kkill(int pid) {
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
-                release(&mlq.lock);
+                mlq.lock.unlock();
             }
-            release(&p->lock);
+            p->lock.unlock();
             return 0;
         }
-        release(&p->lock);
+        p->lock.unlock();
     }
     return -1;
 }
 
 void setkilled(struct proc *p) {
-    acquire(&p->lock);
+    p->lock.lock();
     p->killed = 1;
-    release(&p->lock);
+    p->lock.unlock();
 }
 
 int killed(struct proc *p) {
     int k;
 
-    acquire(&p->lock);
+    p->lock.lock();
     k = p->killed;
-    release(&p->lock);
+    p->lock.unlock();
     return k;
 }
 
@@ -918,7 +920,7 @@ int killed(struct proc *p) {
 int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
     struct proc *p = myproc();
     if (user_dst) {
-        return copyout(p->pagetable, dst, src, len);
+        return copyout(p->pagetable, dst, reinterpret_cast<char*>(src), len);
     } else {
         memmove((char *)dst, src, len);
         return 0;
@@ -931,7 +933,7 @@ int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
 int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {
     struct proc *p = myproc();
     if (user_src) {
-        return copyin(p->pagetable, dst, src, len);
+        return copyin(p->pagetable, reinterpret_cast<char*>(dst), src, len);
     } else {
         memmove(dst, (char *)src, len);
         return 0;
@@ -963,15 +965,15 @@ static void mlfq_dump_nolock(void) {
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
 void procdump(void) {
-    static char *states[] = {
-        [UNUSED] "unused",
-        [USED] "used",
-        [SLEEPING] "sleep ",
-        [RUNNABLE] "runble",
-        [RUNNING] "run   ",
-        [ZOMBIE] "zombie"};
+    static const char *states[] = {
+        [UNUSED] = "unused",
+        [USED] = "used",
+        [SLEEPING] = "sleep ",
+        [RUNNABLE] = "runble",
+        [RUNNING] = "run   ",
+        [ZOMBIE] = "zombie"};
     struct proc *p;
-    char *state;
+    const char *state;
 
     printf("PID\tSTATE\tNAME\n");
     for (p = proc; p < &proc[NPROC]; p++) {
@@ -987,4 +989,6 @@ void procdump(void) {
 
     // Print MLFQ queue status
     mlfq_dump_nolock();
+}
+
 }

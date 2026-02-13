@@ -4,6 +4,8 @@
 #include "param.h"
 #include "spinlock.hh"
 
+namespace xv6 {
+
 // promise that we'll have this somewhere
 struct proc;
 
@@ -53,5 +55,7 @@ bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p);
 void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p);
 struct proc *mlfq_deq_locked(struct mlfq *m, int lvl);
 bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p);
+
+}
 
 #endif

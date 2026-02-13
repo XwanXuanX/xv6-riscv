@@ -6,6 +6,8 @@
 #include "proc.h"
 #include "mlfq.h"
 
+namespace xv6 {
+
 // little helper
 static void assert(const bool cond, char *msg) {
     if (!cond) {
@@ -20,7 +22,7 @@ void mlfq_init(struct mlfq *m) {
     }
 
     // For initialization, we don't lock
-    initlock(&m->lock, "MLFQ_lock");
+    m->lock.init_lock("MLFQ_lock");
     for (int i = 0; i < NLEVELS; ++i) {
         m->q[i].head = m->q[i].tail = 0;
     }
@@ -32,8 +34,8 @@ void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p) {
     if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
-    assert(holding(&m->lock), "mlfq_enq_locked m_lock");
-    assert(holding(&p->lock), "mlfq_enq_locked p->lock");
+    assert(m->lock.holding(), "mlfq_enq_locked m_lock");
+    assert(p->lock.holding(), "mlfq_enq_locked p->lock");
 
     p->rqnext = 0;
     if (m->q[lvl].tail) {
@@ -49,17 +51,17 @@ void mlfq_enq(struct mlfq *m, int lvl, struct proc *p) {
     if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
-    acquire(&m->lock);
+    m->lock.lock();
     mlfq_enq_locked(m, lvl, p);
     // we are done with queue, release the lock
-    release(&m->lock);
+    m->lock.unlock();
 }
 
 struct proc *mlfq_deq_locked(struct mlfq *m, int lvl) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
-    assert(holding(&m->lock), "mlfq_deq_locked m->lock");
+    assert(m->lock.holding(), "mlfq_deq_locked m->lock");
 
     struct proc *p = m->q[lvl].head;
     if (!p) {
@@ -89,9 +91,9 @@ struct proc *mlfq_deq(struct mlfq *m, int lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
 
-    acquire(&m->lock);
+    m->lock.lock();
     struct proc *p = mlfq_deq_locked(m, lvl);
-    release(&m->lock);
+    m->lock.unlock();
 
     return p;
 }
@@ -101,14 +103,14 @@ bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
-    assert(holding(&m->lock), "mlfq_rm_locked m->lock");
+    assert(m->lock.holding(), "mlfq_rm_locked m->lock");
 
     if (!p) {
         // nothing to be done
         return false;
     }
 
-    assert(holding(&p->lock), "mlfq_rm_locked p->lock");
+    assert(p->lock.holding(), "mlfq_rm_locked p->lock");
     struct rqueue *rq = &m->q[lvl];
     struct proc *cur = rq->head;
     struct proc *prev = 0;
@@ -153,9 +155,11 @@ bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p) {
         return false;
     }
 
-    acquire(&m->lock);
+    m->lock.lock();
     bool ok = mlfq_rm_locked(m, lvl, p);
-    release(&m->lock);
+    m->lock.unlock();
 
     return ok;
+}
+
 }

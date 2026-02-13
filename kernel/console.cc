@@ -25,6 +25,8 @@
 #define BACKSPACE 0x100  // erase the last output character
 #define C(x) ((x) - '@') // Control-x
 
+namespace xv6 {
+
 //
 // send one character to the uart, but don't use
 // interrupts or sleep(). safe to be called from
@@ -43,7 +45,7 @@ void consputc(int c) {
 }
 
 struct {
-    struct spinlock lock;
+    spinlock lock;
 
     // input circular buffer
 #define INPUT_BUF_SIZE 128
@@ -86,13 +88,13 @@ int consoleread(int user_dst, uint64 dst, int n) {
     char cbuf;
 
     target = n;
-    acquire(&cons.lock);
+    cons.lock.lock();
     while (n > 0) {
         // wait until interrupt handler has put some
         // input into cons.buffer.
         while (cons.r == cons.w) {
             if (killed(myproc())) {
-                release(&cons.lock);
+                cons.lock.unlock();
                 return -1;
             }
             sleep(&cons.r, &cons.lock);
@@ -123,7 +125,7 @@ int consoleread(int user_dst, uint64 dst, int n) {
             break;
         }
     }
-    release(&cons.lock);
+    cons.lock.unlock();
 
     return target - n;
 }
@@ -135,7 +137,7 @@ int consoleread(int user_dst, uint64 dst, int n) {
 // wake up consoleread() if a whole line has arrived.
 //
 void consoleintr(int c) {
-    acquire(&cons.lock);
+    cons.lock.lock();
 
     switch (c) {
     case C('P'): // Print process list.
@@ -175,11 +177,11 @@ void consoleintr(int c) {
         break;
     }
 
-    release(&cons.lock);
+    cons.lock.unlock();
 }
 
 void consoleinit(void) {
-    initlock(&cons.lock, "cons");
+    cons.lock.init_lock("cons");
 
     uartinit();
 
@@ -187,4 +189,6 @@ void consoleinit(void) {
     // to consoleread and consolewrite.
     devsw[CONSOLE].read = consoleread;
     devsw[CONSOLE].write = consolewrite;
+}
+
 }

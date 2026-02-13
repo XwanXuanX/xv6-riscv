@@ -1,3 +1,5 @@
+namespace xv6 {
+
 struct buf;
 struct context;
 struct file;
@@ -207,3 +209,5 @@ void virtio_disk_intr(void);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+
+}
