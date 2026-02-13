@@ -8,15 +8,17 @@
 #include "proc.h"
 #include "defs.h"
 
-void initlock(struct spinlock *lk, char *name) {
-    lk->name = name;
-    lk->locked = 0;
-    lk->cpu = 0;
+namespace xv6 {
+
+void spinlock::init_lock(const char *name) {
+    this->name = name;
+    locked = 0;
+    cpu = 0;
 }
 
 // Acquire the lock.
 // Loops (spins) until the lock is acquired.
-void acquire(struct spinlock *lk) {
+void spinlock::lock() {
     // "disable interrupts to avoid deadlock."
     // Interpretation:
     //  Assume the opposite, then the following can happen:
@@ -27,17 +29,18 @@ void acquire(struct spinlock *lk) {
     //      * handler tries to acq lock -> spins forever, since lock is already acq by the same CPU
     //      * but the CPU cannot return to the code to release it, because it's stuck in the handler
     //      * the deadlock!
-    push_off();
+    impl::push_off();
 
     // the current CPU cannot acquire the same lock twice
-    if (holding(lk))
+    if (holding()) {
         panic("acquire");
+    }
 
     // On RISC-V, sync_lock_test_and_set turns into an atomic swap:
     //   a5 = 1
     //   s1 = &lk->locked
     //   amoswap.w.aq a5, a5, (s1)
-    while (__sync_lock_test_and_set(&lk->locked, 1) != 0)
+    while (__sync_lock_test_and_set(&locked, 1) != 0)
         ;
 
     // Tell the C compiler and the processor to not move loads or stores
@@ -47,15 +50,16 @@ void acquire(struct spinlock *lk) {
     __sync_synchronize();
 
     // Record info about lock acquisition for holding() and debugging.
-    lk->cpu = mycpu();
+    cpu = mycpu();
 }
 
 // Release the lock.
-void release(struct spinlock *lk) {
-    if (!holding(lk))
+void spinlock::unlock() {
+    if (!holding()) {
         panic("release");
+    }
 
-    lk->cpu = 0;
+    cpu = 0;
 
     // Tell the C compiler and the CPU to not move loads or stores
     // past this point, to ensure that all the stores in the critical
@@ -72,18 +76,20 @@ void release(struct spinlock *lk) {
     // On RISC-V, sync_lock_release turns into an atomic swap:
     //   s1 = &lk->locked
     //   amoswap.w zero, zero, (s1)
-    __sync_lock_release(&lk->locked);
+    __sync_lock_release(&locked);
 
-    pop_off();
+    impl::pop_off();
 }
 
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
-int holding(struct spinlock *lk) {
+bool spinlock::holding() {
     int r;
-    r = (lk->locked && lk->cpu == mycpu());
+    r = (locked && cpu == mycpu());
     return r;
 }
+
+namespace impl {
 
 // push_off/pop_off are like intr_off()/intr_on() except that they are matched:
 // it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
@@ -99,25 +105,33 @@ int holding(struct spinlock *lk) {
 //                // if we turn on interrupts here, then we are facing the same issue of having a deadlock as above!
 // release(&A);   // pop_off()
 
-void push_off(void) {
+void push_off() {
     int old = intr_get();
 
     // disable interrupts to prevent an involuntary context
     // switch while using mycpu().
     intr_off();
 
-    if (mycpu()->noff == 0)
+    if (mycpu()->noff == 0) {
         mycpu()->intena = old;
+    }
     mycpu()->noff += 1;
 }
 
-void pop_off(void) {
+void pop_off() {
     struct cpu *c = mycpu();
-    if (intr_get())
+    if (intr_get()) {
         panic("pop_off - interruptible");
-    if (c->noff < 1)
+    }
+    if (c->noff < 1) {
         panic("pop_off");
+    }
     c->noff -= 1;
-    if (c->noff == 0 && c->intena)
+    if (c->noff == 0 && c->intena) {
         intr_on();
+    }
 }
+
+} // namespace impl
+
+} // namespace xv6
