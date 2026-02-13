@@ -100,6 +100,12 @@ $K/kernel: $(OBJS) $K/kernel.ld
 $K/%.o: $K/%.S
 	$(CC) -march=rv64gc -g -c -o $@ $<
 
+$K/%.o: $K/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$K/%.o: $K/%.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
 tags: $(OBJS)
 	etags kernel/*.S kernel/*.c
 
