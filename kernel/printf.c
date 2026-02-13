@@ -130,7 +130,7 @@ int printf(char *fmt, ...) {
     return 0;
 }
 
-void panic(char *s) {
+void panic(const char *s) {
     panicking = 1;
     printf("panic: ");
     printf("%s\n", s);

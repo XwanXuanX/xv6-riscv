@@ -9,6 +9,29 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+// number of elements in fixed-size array
+#define NELEM(x) (sizeof(x) / sizeof((x)[0]))
+
+/**
+ * Using <extern "C"> is crucial!
+ *
+ * This is due to C++'s compiler "mangle" C++ function names, while C compiler does not.
+ * For example, if I call a system call from a C++ file and compiler with C++ compiler
+ * (such as `printf`), the C++ compiler will assume that `printf` is a C++ function and
+ * will mangle the name to something like `sajhfgbkadjsrghbk_printf()`, which will reside
+ * in the compiled object file.
+ *
+ * Then the linker will try to find the definition of that mangled name, which obviously
+ * doesn't exists, and thus causing the linker error: `undefined reference to `printf(char const*, ...)'`
+ *
+ * The solution to this problem is explicitly tell the C++ compiler to NOT mangle names of C functions,
+ * such as the function calls, using `extern` keyword.
+ * If the file being compiled is using C++ compiler, then extern "C" block will kick in.
+ */
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 // bio.c
 void binit(void);
 struct buf *bread(uint, uint);
@@ -74,7 +97,7 @@ int pipewrite(struct pipe *, uint64, int);
 
 // printf.c
 int printf(char *, ...) __attribute__((format(printf, 1, 2)));
-void panic(char *) __attribute__((noreturn));
+void panic(const char *) __attribute__((noreturn));
 void printfinit(void);
 
 // proc.c
@@ -181,5 +204,6 @@ void virtio_disk_init(void);
 void virtio_disk_rw(struct buf *, int);
 void virtio_disk_intr(void);
 
-// number of elements in fixed-size array
-#define NELEM(x) (sizeof(x) / sizeof((x)[0]))
+#ifdef __cplusplus
+}
+#endif // __cplusplus
