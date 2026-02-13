@@ -4,6 +4,8 @@
 #include "riscv.h"
 #include "defs.hh"
 
+namespace xv6{
+
 //
 // the riscv Platform Level Interrupt Controller (PLIC).
 //
@@ -36,4 +38,6 @@ int plic_claim(void) {
 void plic_complete(int irq) {
     int hart = cpuid();
     *(uint32 *)PLIC_SCLAIM(hart) = irq;
+}
+
 }

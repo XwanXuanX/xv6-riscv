@@ -1,9 +1,11 @@
 #include "types.h"
 
+namespace xv6 {
+
 void *
 memset(void *dst, int c, uint n) {
     char *cdst = (char *)dst;
-    int i;
+    uint i;
     for (i = 0; i < n; i++) {
         cdst[i] = c;
     }
@@ -13,8 +15,8 @@ memset(void *dst, int c, uint n) {
 int memcmp(const void *v1, const void *v2, uint n) {
     const uchar *s1, *s2;
 
-    s1 = v1;
-    s2 = v2;
+    s1 = (const uchar *)v1;
+    s2 = (const uchar *)v2;
     while (n-- > 0) {
         if (*s1 != *s2)
             return *s1 - *s2;
@@ -32,8 +34,8 @@ memmove(void *dst, const void *src, uint n) {
     if (n == 0)
         return dst;
 
-    s = src;
-    d = dst;
+    s = (const char *)src;
+    d = (char *)dst;
     if (s < d && s + n > d) {
         s += n;
         d += n;
@@ -92,4 +94,21 @@ int strlen(const char *s) {
     for (n = 0; s[n]; n++)
         ;
     return n;
+}
+
+}
+
+// Global aliases for compiler-generated calls
+extern "C" {
+    void *memset(void *dst, int c, uint n) {
+        return xv6::memset(dst, c, n);
+    }
+    
+    void *memmove(void *dst, const void *src, uint n) {
+        return xv6::memmove(dst, src, n);
+    }
+    
+    int memcmp(const void *v1, const void *v2, uint n) {
+        return xv6::memcmp(v1, v2, n);
+    }
 }

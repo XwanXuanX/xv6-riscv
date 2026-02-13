@@ -134,4 +134,13 @@ bool spinlock::holding() {
     return r;
 }
 
+// Export push_off and pop_off to the xv6 namespace
+void push_off() {
+    impl::push_off();
+}
+
+void pop_off() {
+    impl::pop_off();
+}
+
 } // namespace xv6

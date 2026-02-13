@@ -117,7 +117,7 @@ sys_fstat(void) {
 // Create the path new as a link to the same inode as old.
 uint64
 sys_link(void) {
-    char name[DIRSIZ], nw[MAXPATH], old[MAXPATH];
+    char name[DIRSIZ] = {0}, nw[MAXPATH] = {0}, old[MAXPATH] = {0};
     struct inode *dp, *ip;
 
     if (argstr(0, old, MAXPATH) < 0 || argstr(1, nw, MAXPATH) < 0)
@@ -182,7 +182,7 @@ uint64
 sys_unlink(void) {
     struct inode *ip, *dp;
     struct dirent de;
-    char name[DIRSIZ], path[MAXPATH];
+    char name[DIRSIZ] = {0}, path[MAXPATH] = {0};
     uint off;
 
     if (argstr(0, path, MAXPATH) < 0)
@@ -237,7 +237,7 @@ bad:
 static struct inode *
 create(char *path, short type, short major, short minor) {
     struct inode *ip, *dp;
-    char name[DIRSIZ];
+    char name[DIRSIZ] = {0};
 
     if ((dp = nameiparent(path, name)) == 0)
         return 0;

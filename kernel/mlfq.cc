@@ -9,7 +9,7 @@
 namespace xv6 {
 
 // little helper
-static void assert(const bool cond, char *msg) {
+static void assert(const bool cond, const char *msg) {
     if (!cond) {
         panic(msg);
     }

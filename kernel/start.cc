@@ -4,14 +4,15 @@
 #include "riscv.h"
 #include "defs.hh"
 
-void main();
-void timerinit();
-
 // entry.S needs one stack per CPU.
 __attribute__((aligned(16))) char stack0[4096 * NCPU];
 
+extern "C" {
+    void timerinit();
+}
+
 // entry.S jumps here in machine mode on stack0.
-void start() {
+extern "C" void start() {
     // set M Previous Privilege mode to Supervisor, for mret.
     unsigned long x = r_mstatus();
     x &= ~MSTATUS_MPP_MASK;
@@ -20,7 +21,7 @@ void start() {
 
     // set M Exception Program Counter to main, for mret.
     // requires gcc -mcmodel=medany
-    w_mepc((uint64)main);
+    w_mepc((uint64)xv6::main);
 
     // disable paging for now.
     w_satp(0);

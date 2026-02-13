@@ -69,16 +69,16 @@ sys_pause(void) {
     argint(0, &n);
     if (n < 0)
         n = 0;
-    acquire(&tickslock);
+    tickslock.lock();
     ticks0 = ticks;
     while (ticks - ticks0 < static_cast<uint>(n)) {
         if (killed(myproc())) {
-            release(&tickslock);
+            tickslock.unlock();
             return -1;
         }
         sleep(&ticks, &tickslock);
     }
-    release(&tickslock);
+    tickslock.unlock();
     return 0;
 }
 
@@ -96,9 +96,9 @@ uint64
 sys_uptime(void) {
     uint xticks;
 
-    acquire(&tickslock);
+    tickslock.lock();
     xticks = ticks;
-    release(&tickslock);
+    tickslock.unlock();
     return xticks;
 }
 

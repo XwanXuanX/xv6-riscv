@@ -14,25 +14,39 @@ struct superblock;
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))
 
-/**
- * Using <extern "C"> is crucial!
- *
- * This is due to C++'s compiler "mangle" C++ function names, while C compiler does not.
- * For example, if I call a system call from a C++ file and compiler with C++ compiler
- * (such as `printf`), the C++ compiler will assume that `printf` is a C++ function and
- * will mangle the name to something like `sajhfgbkadjsrghbk_printf()`, which will reside
- * in the compiled object file.
- *
- * Then the linker will try to find the definition of that mangled name, which obviously
- * doesn't exists, and thus causing the linker error: `undefined reference to `printf(char const*, ...)'`
- *
- * The solution to this problem is explicitly tell the C++ compiler to NOT mangle names of C functions,
- * such as the function calls, using `extern` keyword.
- * If the file being compiled is using C++ compiler, then extern "C" block will kick in.
- */
-#ifdef __cplusplus
+// External symbols from linker script and assembly
 extern "C" {
-#endif // __cplusplus
+    extern char end[];      // first address after kernel
+    extern char etext[];    // first address after kernel code
+    extern char trampoline[];
+    extern char userret[];
+    extern char uservec[];
+    void kernelvec();
+    void swtch(struct context *, struct context *);
+    void start();
+    void main();
+    void kerneltrap();
+}
+
+// /**
+//  * Using <extern "C"> is crucial!
+//  *
+//  * This is due to C++'s compiler "mangle" C++ function names, while C compiler does not.
+//  * For example, if I call a system call from a C++ file and compiler with C++ compiler
+//  * (such as `printf`), the C++ compiler will assume that `printf` is a C++ function and
+//  * will mangle the name to something like `sajhfgbkadjsrghbk_printf()`, which will reside
+//  * in the compiled object file.
+//  *
+//  * Then the linker will try to find the definition of that mangled name, which obviously
+//  * doesn't exists, and thus causing the linker error: `undefined reference to `printf(char const*, ...)'`
+//  *
+//  * The solution to this problem is explicitly tell the C++ compiler to NOT mangle names of C functions,
+//  * such as the function calls, using `extern` keyword.
+//  * If the file being compiled is using C++ compiler, then extern "C" block will kick in.
+//  */
+// #ifdef __cplusplus
+// extern "C" {
+// #endif // __cplusplus
 
 // bio.c
 void binit(void);
@@ -73,7 +87,7 @@ void iunlockput(struct inode *);
 void iupdate(struct inode *);
 int namecmp(const char *, const char *);
 struct inode *namei(const char *);
-struct inode *nameiparent(const char *, const char *);
+struct inode *nameiparent(char *, char *);
 uint readi(struct inode *, int, uint64, uint, uint);
 void stati(struct inode *, struct stat *);
 int writei(struct inode *, int, uint64, uint, uint);
@@ -127,8 +141,7 @@ int either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void procdump(void);
 
-// swtch.S
-void swtch(struct context *, struct context *);
+// swtch.S - already declared above in extern "C"
 
 // spinlock.c
 void acquire(struct spinlock *);
@@ -206,8 +219,8 @@ void virtio_disk_init(void);
 void virtio_disk_rw(struct buf *, int);
 void virtio_disk_intr(void);
 
-#ifdef __cplusplus
-}
-#endif // __cplusplus
+// #ifdef __cplusplus
+// }
+// #endif // __cplusplus
 
 }

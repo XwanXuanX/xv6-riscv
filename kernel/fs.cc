@@ -179,7 +179,7 @@ struct {
 void iinit() {
     int i = 0;
 
-    initlock(&itable.lock, "itable");
+    itable.lock.init_lock("itable");
     for (i = 0; i < NINODE; i++) {
         initsleeplock(&itable.inode[i].lock, "inode");
     }
@@ -240,14 +240,14 @@ static struct inode *
 iget(uint dev, uint inum) {
     struct inode *ip, *empty;
 
-    acquire(&itable.lock);
+    itable.lock.lock();
 
     // Is the inode already in the table?
     empty = 0;
     for (ip = &itable.inode[0]; ip < &itable.inode[NINODE]; ip++) {
         if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
             ip->ref++;
-            release(&itable.lock);
+            itable.lock.unlock();
             return ip;
         }
         if (empty == 0 && ip->ref == 0) // Remember empty slot.
@@ -263,7 +263,7 @@ iget(uint dev, uint inum) {
     ip->inum = inum;
     ip->ref = 1;
     ip->valid = 0;
-    release(&itable.lock);
+    itable.lock.unlock();
 
     return ip;
 }
@@ -272,9 +272,9 @@ iget(uint dev, uint inum) {
 // Returns ip to enable ip = idup(ip1) idiom.
 struct inode *
 idup(struct inode *ip) {
-    acquire(&itable.lock);
+    itable.lock.lock();
     ip->ref++;
-    release(&itable.lock);
+    itable.lock.unlock();
     return ip;
 }
 
@@ -321,7 +321,7 @@ void iunlock(struct inode *ip) {
 // All calls to iput() must be inside a transaction in
 // case it has to free the inode.
 void iput(struct inode *ip) {
-    acquire(&itable.lock);
+    itable.lock.lock();
 
     if (ip->ref == 1 && ip->valid && ip->nlink == 0) {
         // inode has no links and no other references: truncate and free.
@@ -330,7 +330,7 @@ void iput(struct inode *ip) {
         // so this acquiresleep() won't block (or deadlock).
         acquiresleep(&ip->lock);
 
-        release(&itable.lock);
+        itable.lock.unlock();
 
         itrunc(ip);
         ip->type = 0;
@@ -339,11 +339,11 @@ void iput(struct inode *ip) {
 
         releasesleep(&ip->lock);
 
-        acquire(&itable.lock);
+        itable.lock.lock();
     }
 
     ip->ref--;
-    release(&itable.lock);
+    itable.lock.unlock();
 }
 
 // Common idiom: unlock, then put.
