@@ -64,7 +64,7 @@ bzero(int dev, int bno) {
 // returns 0 if out of disk space.
 static uint
 balloc(uint dev) {
-    int b, bi, m;
+    uint b, bi, m;
     struct buf *bp;
 
     bp = 0;
@@ -193,7 +193,7 @@ static struct inode *iget(uint dev, uint inum);
 // or NULL if there is no free inode.
 struct inode *
 ialloc(uint dev, short type) {
-    int inum;
+    uint inum;
     struct buf *bp;
     struct dinode *dip;
 
@@ -353,7 +353,7 @@ void iunlockput(struct inode *ip) {
 }
 
 void ireclaim(int dev) {
-    for (int inum = 1; inum < sb.ninodes; inum++) {
+    for (uint inum = 1; inum < sb.ninodes; inum++) {
         struct inode *ip = 0;
         struct buf *bp = bread(dev, IBLOCK(inum, sb));
         struct dinode *dip = (struct dinode *)bp->data + inum % IPB;
@@ -425,7 +425,7 @@ bmap(struct inode *ip, uint bn) {
 // Truncate inode (discard contents).
 // Caller must hold ip->lock.
 void itrunc(struct inode *ip) {
-    int i, j;
+    uint i, j;
     struct buf *bp;
     uint *a;
 
@@ -466,7 +466,7 @@ void stati(struct inode *ip, struct stat *st) {
 // Caller must hold ip->lock.
 // If user_dst==1, then dst is a user virtual address;
 // otherwise, dst is a kernel address.
-int readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n) {
+uint readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n) {
     uint tot, m;
     struct buf *bp;
 
@@ -568,7 +568,7 @@ dirlookup(struct inode *dp, char *name, uint *poff) {
 // Write a new directory entry (name, inum) into the directory dp.
 // Returns 0 on success, -1 on failure (e.g. out of disk blocks).
 int dirlink(struct inode *dp, char *name, uint inum) {
-    int off;
+    uint off;
     struct dirent de;
     struct inode *ip;
 

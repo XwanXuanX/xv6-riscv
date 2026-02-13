@@ -317,7 +317,7 @@ void uvmclear(pagetable_t pagetable, uint64 va) {
 // Copy from kernel to user.
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
-int copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len) {
+int copyout(pagetable_t pagetable, uint64 dstva, const char *src, uint64 len) {
     uint64 n, va0, pa0;
     pte_t *pte;
 
