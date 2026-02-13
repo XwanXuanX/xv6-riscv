@@ -61,8 +61,8 @@ int filewrite(struct file *, uint64, int n);
 
 // fs.c
 void fsinit(int);
-int dirlink(struct inode *, char *, uint);
-struct inode *dirlookup(struct inode *, char *, uint *);
+int dirlink(struct inode *, const char *, uint);
+struct inode *dirlookup(struct inode *, const char *, uint *);
 struct inode *ialloc(uint, short);
 struct inode *idup(struct inode *);
 void iinit();

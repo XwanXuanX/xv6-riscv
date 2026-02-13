@@ -541,7 +541,7 @@ int namecmp(const char *s, const char *t) {
 // Look for a directory entry in a directory.
 // If found, set *poff to byte offset of entry.
 struct inode *
-dirlookup(struct inode *dp, char *name, uint *poff) {
+dirlookup(struct inode *dp, const char *name, uint *poff) {
     uint off, inum;
     struct dirent de;
 
@@ -567,7 +567,7 @@ dirlookup(struct inode *dp, char *name, uint *poff) {
 
 // Write a new directory entry (name, inum) into the directory dp.
 // Returns 0 on success, -1 on failure (e.g. out of disk blocks).
-int dirlink(struct inode *dp, char *name, uint inum) {
+int dirlink(struct inode *dp, const char *name, uint inum) {
     uint off;
     struct dirent de;
     struct inode *ip;
