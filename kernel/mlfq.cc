@@ -2,7 +2,7 @@
 #include "riscv.h"
 #include "param.h"
 #include "spinlock.hh"
-#include "defs.h"
+#include "defs.hh"
 #include "proc.h"
 #include "mlfq.h"
 

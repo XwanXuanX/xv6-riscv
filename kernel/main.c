@@ -2,7 +2,7 @@
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
-#include "defs.h"
+#include "defs.hh"
 #include "mlfq.h"
 
 volatile static int started = 0;

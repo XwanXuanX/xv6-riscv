@@ -5,7 +5,7 @@
 #include "spinlock.hh"
 #include "proc.h"
 #include "syscall.h"
-#include "defs.h"
+#include "defs.hh"
 
 // Fetch the uint64 at addr from the current process.
 int fetchaddr(uint64 addr, uint64 *ip) {
