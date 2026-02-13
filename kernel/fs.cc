@@ -21,6 +21,8 @@
 #include "buf.h"
 #include "file.h"
 
+namespace xv6 {
+
 #define min(a, b) ((a) < (b) ? (a) : (b))
 // there should be one superblock per disk device, but we run with
 // only one device
@@ -677,4 +679,6 @@ namei(char *path) {
 struct inode *
 nameiparent(char *path, char *name) {
     return namex(path, 1, name);
+}
+
 }
