@@ -9,6 +9,8 @@
 #include "proc.h"
 #include "sleeplock.h"
 
+namespace xv6 {
+
 void initsleeplock(struct sleeplock *lk, char *name) {
     initlock(&lk->lk, "sleep lock");
     lk->name = name;
@@ -41,4 +43,6 @@ int holdingsleep(struct sleeplock *lk) {
     r = lk->locked && (lk->pid == myproc()->pid);
     release(&lk->lk);
     return r;
+}
+
 }

@@ -13,14 +13,16 @@
 #include "stat.h"
 #include "proc.h"
 
+namespace xv6 {
+
 struct devsw devsw[NDEV];
 struct {
-    struct spinlock lock;
+    spinlock lock;
     struct file file[NFILE];
 } ftable;
 
 void fileinit(void) {
-    initlock(&ftable.lock, "ftable");
+    ftable.lock.init_lock("ftable");
 }
 
 // Allocate a file structure.
@@ -28,26 +30,26 @@ struct file *
 filealloc(void) {
     struct file *f;
 
-    acquire(&ftable.lock);
+    ftable.lock.lock();
     for (f = ftable.file; f < ftable.file + NFILE; f++) {
         if (f->ref == 0) {
             f->ref = 1;
-            release(&ftable.lock);
+            ftable.lock.unlock();
             return f;
         }
     }
-    release(&ftable.lock);
+    ftable.lock.unlock();
     return 0;
 }
 
 // Increment ref count for file f.
 struct file *
 filedup(struct file *f) {
-    acquire(&ftable.lock);
+    ftable.lock.lock();
     if (f->ref < 1)
         panic("filedup");
     f->ref++;
-    release(&ftable.lock);
+    ftable.lock.unlock();
     return f;
 }
 
@@ -55,17 +57,17 @@ filedup(struct file *f) {
 void fileclose(struct file *f) {
     struct file ff;
 
-    acquire(&ftable.lock);
+    ftable.lock.lock();
     if (f->ref < 1)
         panic("fileclose");
     if (--f->ref > 0) {
-        release(&ftable.lock);
+        ftable.lock.unlock();
         return;
     }
     ff = *f;
     f->ref = 0;
     f->type = FD_NONE;
-    release(&ftable.lock);
+    ftable.lock.unlock();
 
     if (ff.type == FD_PIPE) {
         pipeclose(ff.pipe, ff.writable);
@@ -164,4 +166,6 @@ int filewrite(struct file *f, uint64 addr, int n) {
     }
 
     return ret;
+}
+
 }

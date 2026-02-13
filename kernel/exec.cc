@@ -7,6 +7,8 @@
 #include "defs.h"
 #include "elf.h"
 
+namespace xv6 {
+
 static int loadseg(pde_t *, uint64, struct inode *, uint, uint);
 
 // map ELF permissions to PTE permission bits.
@@ -26,6 +28,7 @@ int kexec(char *path, char **argv) {
     char *s, *last;
     int i, off;
     uint64 argc, sz = 0, sp, ustack[MAXARG], stackbase;
+    uint64 sz1, oldsz;
     struct elfhdr elf;
     struct inode *ip;
     struct proghdr ph;
@@ -64,7 +67,6 @@ int kexec(char *path, char **argv) {
             goto bad;
         if (ph.vaddr % PGSIZE != 0)
             goto bad;
-        uint64 sz1;
         if ((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz, flags2perm(ph.flags))) == 0)
             goto bad;
         sz = sz1;
@@ -76,13 +78,12 @@ int kexec(char *path, char **argv) {
     ip = 0;
 
     p = myproc();
-    uint64 oldsz = p->sz;
+    oldsz = p->sz;
 
     // Allocate some pages at the next page boundary.
     // Make the first inaccessible as a stack guard.
     // Use the rest as the user stack.
     sz = PGROUNDUP(sz);
-    uint64 sz1;
     if ((sz1 = uvmalloc(pagetable, sz, sz + (USERSTACK + 1) * PGSIZE, PTE_W)) == 0)
         goto bad;
     sz = sz1;
@@ -166,4 +167,6 @@ loadseg(pagetable_t pagetable, uint64 va, struct inode *ip, uint offset, uint sz
     }
 
     return 0;
+}
+
 }

@@ -2,6 +2,8 @@
 #define T_FILE 2   // File
 #define T_DEVICE 3 // Device
 
+namespace xv6 {
+
 struct stat {
     int dev;     // File system's disk device
     uint ino;    // Inode number
@@ -9,3 +11,5 @@ struct stat {
     short nlink; // Number of links to file
     uint64 size; // Size of file in bytes
 };
+
+}
