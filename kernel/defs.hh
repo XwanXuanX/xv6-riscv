@@ -133,7 +133,7 @@ void swtch(struct context *, struct context *);
 // spinlock.c
 void acquire(struct spinlock *);
 int holding(struct spinlock *);
-void initlock(struct spinlock *, char *);
+void initlock(struct spinlock *, const char *);
 void release(struct spinlock *);
 void push_off(void);
 void pop_off(void);
@@ -142,7 +142,7 @@ void pop_off(void);
 void acquiresleep(struct sleeplock *);
 void releasesleep(struct sleeplock *);
 int holdingsleep(struct sleeplock *);
-void initsleeplock(struct sleeplock *, char *);
+void initsleeplock(struct sleeplock *, const char *);
 
 // string.c
 int memcmp(const void *, const void *, uint);
