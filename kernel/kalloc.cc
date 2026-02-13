@@ -9,6 +9,8 @@
 #include "riscv.h"
 #include "defs.h"
 
+namespace xv6 {
+
 void freerange(void *pa_start, void *pa_end);
 
 extern char end[]; // first address after kernel.
@@ -19,12 +21,12 @@ struct run {
 };
 
 struct {
-    struct spinlock lock;
+    spinlock lock;
     struct run *freelist;
 } kmem;
 
 void kinit() {
-    initlock(&kmem.lock, "kmem");
+    kmem.lock.init_lock("kmem");
     freerange(end, (void *)PHYSTOP);
 }
 
@@ -50,10 +52,10 @@ void kfree(void *pa) {
 
     r = (struct run *)pa;
 
-    acquire(&kmem.lock);
+    kmem.lock.lock();
     r->next = kmem.freelist;
     kmem.freelist = r;
-    release(&kmem.lock);
+    kmem.lock.unlock();
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -63,13 +65,15 @@ void *
 kalloc(void) {
     struct run *r;
 
-    acquire(&kmem.lock);
+    kmem.lock.lock();
     r = kmem.freelist;
     if (r)
         kmem.freelist = r->next;
-    release(&kmem.lock);
+    kmem.lock.unlock();
 
     if (r)
         memset((char *)r, 5, PGSIZE); // fill with junk
     return (void *)r;
+}
+
 }

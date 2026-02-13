@@ -15,12 +15,14 @@
 #include "defs.h"
 #include "proc.h"
 
+namespace xv6 {
+
 volatile int panicking = 0; // printing a panic message
 volatile int panicked = 0;  // spinning forever at end of a panic
 
 // lock to avoid interleaving concurrent printf's.
 static struct {
-    struct spinlock lock;
+    spinlock lock;
 } pr;
 
 static char digits[] = "0123456789abcdef";
@@ -64,7 +66,7 @@ int printf(char *fmt, ...) {
     char *s;
 
     if (panicking == 0)
-        acquire(&pr.lock);
+        pr.lock.lock();
 
     va_start(ap, fmt);
     for (i = 0; (cx = fmt[i] & 0xff) != 0; i++) {
@@ -125,7 +127,7 @@ int printf(char *fmt, ...) {
     va_end(ap);
 
     if (panicking == 0)
-        release(&pr.lock);
+        pr.lock.unlock();
 
     return 0;
 }
@@ -140,5 +142,7 @@ void panic(const char *s) {
 }
 
 void printfinit(void) {
-    initlock(&pr.lock, "pr");
+    pr.lock.init_lock("pr");
+}
+
 }

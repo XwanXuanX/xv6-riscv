@@ -16,6 +16,8 @@
 #include "buf.h"
 #include "virtio.h"
 
+namespace xv6 {
+
 // the address of virtio mmio register r.
 #define R(r) ((volatile uint32 *)(VIRTIO0 + (r)))
 
@@ -54,14 +56,14 @@ static struct disk {
     // one-for-one with descriptors, for convenience.
     struct virtio_blk_req ops[NUM];
 
-    struct spinlock vdisk_lock;
+    spinlock vdisk_lock;
 
 } disk;
 
 void virtio_disk_init(void) {
     uint32 status = 0;
 
-    initlock(&disk.vdisk_lock, "virtio_disk");
+    disk.vdisk_lock.init_lock("virtio_disk");
 
     if (*R(VIRTIO_MMIO_MAGIC_VALUE) != 0x74726976 ||
         *R(VIRTIO_MMIO_VERSION) != 2 ||
@@ -116,9 +118,9 @@ void virtio_disk_init(void) {
         panic("virtio disk max queue too short");
 
     // allocate and zero queue memory.
-    disk.desc = kalloc();
-    disk.avail = kalloc();
-    disk.used = kalloc();
+    disk.desc = reinterpret_cast<virtq_desc *>(kalloc());
+    disk.avail = reinterpret_cast<virtq_avail *>(kalloc());
+    disk.used = reinterpret_cast<virtq_used *>(kalloc());
     if (!disk.desc || !disk.avail || !disk.used)
         panic("virtio disk kalloc");
     memset(disk.desc, 0, PGSIZE);
@@ -209,7 +211,7 @@ alloc3_desc(int *idx) {
 void virtio_disk_rw(struct buf *b, int write) {
     uint64 sector = b->blockno * (BSIZE / 512);
 
-    acquire(&disk.vdisk_lock);
+    disk.vdisk_lock.lock();
 
     // the spec's Section 5.2 says that legacy block operations use
     // three descriptors: one for type/reserved/sector, one for the
@@ -280,11 +282,11 @@ void virtio_disk_rw(struct buf *b, int write) {
     disk.info[idx[0]].b = 0;
     free_chain(idx[0]);
 
-    release(&disk.vdisk_lock);
+    disk.vdisk_lock.unlock();
 }
 
 void virtio_disk_intr() {
-    acquire(&disk.vdisk_lock);
+    disk.vdisk_lock.lock();
 
     // the device won't raise another interrupt until we tell it
     // we've seen this interrupt, which the following line does.
@@ -313,5 +315,7 @@ void virtio_disk_intr() {
         disk.used_idx += 1;
     }
 
-    release(&disk.vdisk_lock);
+    disk.vdisk_lock.unlock();
+}
+
 }

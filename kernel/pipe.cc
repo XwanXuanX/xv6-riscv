@@ -8,10 +8,12 @@
 #include "sleeplock.h"
 #include "file.h"
 
+namespace xv6 {
+
 #define PIPESIZE 512
 
 struct pipe {
-    struct spinlock lock;
+    spinlock lock;
     char data[PIPESIZE];
     uint nread;    // number of bytes read
     uint nwrite;   // number of bytes written
@@ -32,7 +34,7 @@ int pipealloc(struct file **f0, struct file **f1) {
     pi->writeopen = 1;
     pi->nwrite = 0;
     pi->nread = 0;
-    initlock(&pi->lock, "pipe");
+    pi->lock.init_lock("pipe");
     (*f0)->type = FD_PIPE;
     (*f0)->readable = 1;
     (*f0)->writable = 0;
@@ -54,7 +56,7 @@ bad:
 }
 
 void pipeclose(struct pipe *pi, int writable) {
-    acquire(&pi->lock);
+    pi->lock.lock();
     if (writable) {
         pi->writeopen = 0;
         wakeup(&pi->nread);
@@ -63,20 +65,20 @@ void pipeclose(struct pipe *pi, int writable) {
         wakeup(&pi->nwrite);
     }
     if (pi->readopen == 0 && pi->writeopen == 0) {
-        release(&pi->lock);
+        pi->lock.unlock();
         kfree((char *)pi);
     } else
-        release(&pi->lock);
+        pi->lock.unlock();
 }
 
 int pipewrite(struct pipe *pi, uint64 addr, int n) {
     int i = 0;
     struct proc *pr = myproc();
 
-    acquire(&pi->lock);
+    pi->lock.lock();
     while (i < n) {
         if (pi->readopen == 0 || killed(pr)) {
-            release(&pi->lock);
+            pi->lock.unlock();
             return -1;
         }
         if (pi->nwrite == pi->nread + PIPESIZE) { // DOC: pipewrite-full
@@ -91,7 +93,7 @@ int pipewrite(struct pipe *pi, uint64 addr, int n) {
         }
     }
     wakeup(&pi->nread);
-    release(&pi->lock);
+    pi->lock.unlock();
 
     return i;
 }
@@ -101,10 +103,10 @@ int piperead(struct pipe *pi, uint64 addr, int n) {
     struct proc *pr = myproc();
     char ch;
 
-    acquire(&pi->lock);
+    pi->lock.lock();
     while (pi->nread == pi->nwrite && pi->writeopen) { // DOC: pipe-empty
         if (killed(pr)) {
-            release(&pi->lock);
+            pi->lock.unlock();
             return -1;
         }
         sleep(&pi->nread, &pi->lock); // DOC: piperead-sleep
@@ -121,6 +123,8 @@ int piperead(struct pipe *pi, uint64 addr, int n) {
         pi->nread++;
     }
     wakeup(&pi->nwrite); // DOC: piperead-wakeup
-    release(&pi->lock);
+    pi->lock.unlock();
     return i;
+}
+
 }

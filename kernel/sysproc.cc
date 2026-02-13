@@ -7,6 +7,8 @@
 #include "proc.h"
 #include "vm.h"
 
+namespace xv6 {
+
 uint64
 sys_exit(void) {
     int n;
@@ -98,4 +100,6 @@ sys_uptime(void) {
     xticks = ticks;
     release(&tickslock);
     return xticks;
+}
+
 }

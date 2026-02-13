@@ -16,6 +16,8 @@
 #include "file.h"
 #include "fcntl.h"
 
+namespace xv6 {
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -115,10 +117,10 @@ sys_fstat(void) {
 // Create the path new as a link to the same inode as old.
 uint64
 sys_link(void) {
-    char name[DIRSIZ], new[MAXPATH], old[MAXPATH];
+    char name[DIRSIZ], nw[MAXPATH], old[MAXPATH];
     struct inode *dp, *ip;
 
-    if (argstr(0, old, MAXPATH) < 0 || argstr(1, new, MAXPATH) < 0)
+    if (argstr(0, old, MAXPATH) < 0 || argstr(1, nw, MAXPATH) < 0)
         return -1;
 
     begin_op();
@@ -138,7 +140,7 @@ sys_link(void) {
     iupdate(ip);
     iunlock(ip);
 
-    if ((dp = nameiparent(new, name)) == 0)
+    if ((dp = nameiparent(nw, name)) == 0)
         goto bad;
     ilock(dp);
     if (dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
@@ -419,7 +421,7 @@ sys_chdir(void) {
 uint64
 sys_exec(void) {
     char path[MAXPATH], *argv[MAXARG];
-    int i;
+    int i, ret;
     uint64 uargv, uarg;
 
     argaddr(1, &uargv);
@@ -438,14 +440,14 @@ sys_exec(void) {
             argv[i] = 0;
             break;
         }
-        argv[i] = kalloc();
+        argv[i] = reinterpret_cast<char*>(kalloc());
         if (argv[i] == 0)
             goto bad;
         if (fetchstr(uarg, argv[i], PGSIZE) < 0)
             goto bad;
     }
 
-    int ret = kexec(path, argv);
+    ret = kexec(path, argv);
 
     for (i = 0; i < NELEM(argv) && argv[i] != 0; i++)
         kfree(argv[i]);
@@ -485,4 +487,6 @@ sys_pipe(void) {
         return -1;
     }
     return 0;
+}
+
 }

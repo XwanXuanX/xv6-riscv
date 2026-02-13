@@ -7,7 +7,9 @@
 #include "defs.h"
 #include "mlfq.h"
 
-struct spinlock tickslock;
+namespace xv6 {
+
+spinlock tickslock;
 uint ticks;
 
 extern char trampoline[], uservec[];
@@ -37,7 +39,7 @@ int allotment[NLEVELS] = {
 int quantum[NLEVELS] = {2, 4, 8, 16, 32};
 
 void trapinit(void) {
-    initlock(&tickslock, "time");
+    tickslock.init_lock("time");
 }
 
 // set up to take exceptions and traps while in the kernel.
@@ -102,14 +104,14 @@ usertrap(void) {
             panic("p nullptr");
         int do_yield = 0;
 
-        acquire(&p->lock);
+        p->lock.lock();
         if (p->state != RUNNING)
             panic("myproc() is not running");
         if (p->need_yield) {
             do_yield = 1;
             p->need_yield = 0;
         }
-        release(&p->lock);
+        p->lock.unlock();
 
         if (do_yield) {
             yield();
@@ -186,14 +188,14 @@ void kerneltrap() {
             panic("p nullptr");
         int do_yield = 0;
 
-        acquire(&p->lock);
+        p->lock.lock();
         if (p->state != RUNNING)
             panic("myproc() is not running");
         if (p->need_yield) {
             do_yield = 1;
             p->need_yield = 0;
         }
-        release(&p->lock);
+        p->lock.unlock();
 
         if (do_yield) {
             yield();
@@ -209,7 +211,7 @@ void kerneltrap() {
 void clockintr() {
     // only let CPU0 increment ticks to avoid races
     if (cpuid() == 0) {
-        acquire(&tickslock);
+        tickslock.lock();
         {
             ticks++;
             // for every S period, boost the version number of the MLFQ
@@ -217,21 +219,21 @@ void clockintr() {
             // and the MLFQ does not match, we will re-enqueue it at the top level.
             // This is essentially the same as periodic boosting.
             if (ticks % S == 0) {
-                acquire(&mlq.lock);
+                mlq.lock.lock();
                 mlq.boost_epoch++;
-                release(&mlq.lock);
+                mlq.lock.unlock();
             }
             // wakeup any processes waiting for the tick to advance
             wakeup(&ticks);
         }
-        release(&tickslock);
+        tickslock.unlock();
     }
 
     // per-CPU/process accounting
     struct proc *const p = myproc();
     // make sure it's a user process (kernel process is nullptr)
     if (p) {
-        acquire(&p->lock);
+        p->lock.lock();
         {
             // the user process must be running
             if (p->state != RUNNING)
@@ -257,7 +259,7 @@ void clockintr() {
                 p->qticks = 0;
             }
         }
-        release(&p->lock);
+        p->lock.unlock();
     }
 
     // ask for the next timer interrupt. this also clears
@@ -302,4 +304,6 @@ int devintr() {
     } else {
         return 0;
     }
+}
+
 }

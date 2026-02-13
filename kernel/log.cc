@@ -7,6 +7,8 @@
 #include "fs.h"
 #include "buf.h"
 
+namespace xv6 {
+
 // Simple logging that allows concurrent FS system calls.
 //
 // A log transaction contains the updates of multiple FS system
@@ -38,7 +40,7 @@ struct logheader {
 };
 
 struct log {
-    struct spinlock lock;
+    spinlock lock;
     int start;
     int outstanding; // how many FS sys calls are executing.
     int committing;  // in commit(), please wait.
@@ -54,7 +56,7 @@ void initlog(int dev, struct superblock *sb) {
     if (sizeof(struct logheader) >= BSIZE)
         panic("initlog: too big logheader");
 
-    initlock(&log.lock, "log");
+    log.lock.init_lock("log");
     log.start = sb->logstart;
     log.dev = dev;
     recover_from_log();
@@ -119,7 +121,7 @@ recover_from_log(void) {
 
 // called at the start of each FS system call.
 void begin_op(void) {
-    acquire(&log.lock);
+    log.lock.lock();
     while (1) {
         if (log.committing) {
             sleep(&log, &log.lock);
@@ -128,7 +130,7 @@ void begin_op(void) {
             sleep(&log, &log.lock);
         } else {
             log.outstanding += 1;
-            release(&log.lock);
+            log.lock.unlock();
             break;
         }
     }
@@ -139,7 +141,7 @@ void begin_op(void) {
 void end_op(void) {
     int do_commit = 0;
 
-    acquire(&log.lock);
+    log.lock.lock();
     log.outstanding -= 1;
     if (log.committing)
         panic("log.committing");
@@ -152,16 +154,16 @@ void end_op(void) {
         // the amount of reserved space.
         wakeup(&log);
     }
-    release(&log.lock);
+    log.lock.unlock();
 
     if (do_commit) {
         // call commit w/o holding locks, since not allowed
         // to sleep with locks.
         commit();
-        acquire(&log.lock);
+        log.lock.lock();
         log.committing = 0;
         wakeup(&log);
-        release(&log.lock);
+        log.lock.unlock();
     }
 }
 
@@ -203,7 +205,7 @@ commit() {
 void log_write(struct buf *b) {
     int i;
 
-    acquire(&log.lock);
+    log.lock.lock();
     if (log.lh.n >= LOGBLOCKS)
         panic("too big a transaction");
     if (log.outstanding < 1)
@@ -218,5 +220,7 @@ void log_write(struct buf *b) {
         bpin(b);
         log.lh.n++;
     }
-    release(&log.lock);
+    log.lock.unlock();
+}
+
 }
