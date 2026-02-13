@@ -38,7 +38,7 @@ printint(int fd, long long xx, int base, int sgn) {
 
 static void
 printptr(int fd, uint64 x) {
-    int i;
+    uint i;
     putc(fd, '0');
     putc(fd, 'x');
     for (i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
@@ -47,7 +47,7 @@ printptr(int fd, uint64 x) {
 
 // Print to the given fd. Only understands %d, %x, %p, %c, %s.
 void vprintf(int fd, const char *fmt, va_list ap) {
-    char *s;
+    const char *s;
     int c0, c1, c2, i, state;
 
     state = 0;

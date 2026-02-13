@@ -106,6 +106,12 @@ $K/%.o: $K/%.c
 $K/%.o: $K/%.cc
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+$U/%.o: $U/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$U/%.o: $U/%.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
 tags: $(OBJS)
 	etags kernel/*.S kernel/*.c
 
