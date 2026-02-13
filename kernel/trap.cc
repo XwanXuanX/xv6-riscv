@@ -86,7 +86,7 @@ usertrap(void) {
     } else if ((which_dev = devintr()) != 0) {
         // ok
     } else if ((r_scause() == 15 || r_scause() == 13) &&
-               vmfault(p->pagetable, r_stval(), (r_scause() == 13) ? 1 : 0) != 0) {
+               vmfault(p->pagetable, r_stval(), (r_scause() == 13) ? 1 : 0) == 0) {
         // page fault on lazily-allocated page
     } else {
         printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
@@ -162,35 +162,38 @@ void prepare_return(void) {
     w_sepc(p->trapframe->epc);
 }
 
+} // namespace xv6
+
 // interrupts and exceptions from kernel code go here via kernelvec,
 // on whatever the current kernel stack is.
-void kerneltrap() {
+// NOTE: This function must have C linkage because it's called from assembly (kernelvec.S)
+extern "C" void kerneltrap() {
     int which_dev = 0;
-    uint64 sepc = r_sepc();
-    uint64 sstatus = r_sstatus();
-    uint64 scause = r_scause();
+    uint64 sepc = xv6::r_sepc();
+    uint64 sstatus = xv6::r_sstatus();
+    uint64 scause = xv6::r_scause();
 
     if ((sstatus & SSTATUS_SPP) == 0)
-        panic("kerneltrap: not from supervisor mode");
-    if (intr_get() != 0)
-        panic("kerneltrap: interrupts enabled");
+        xv6::panic("kerneltrap: not from supervisor mode");
+    if (xv6::intr_get() != 0)
+        xv6::panic("kerneltrap: interrupts enabled");
 
-    if ((which_dev = devintr()) == 0) {
+    if ((which_dev = xv6::devintr()) == 0) {
         // interrupt or trap from an unknown source
-        printf("scause=0x%lx sepc=0x%lx stval=0x%lx\n", scause, r_sepc(), r_stval());
-        panic("kerneltrap");
+        xv6::printf("scause=0x%lx sepc=0x%lx stval=0x%lx\n", scause, xv6::r_sepc(), xv6::r_stval());
+        xv6::panic("kerneltrap");
     }
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2 && myproc() != 0) {
-        struct proc *const p = myproc();
+    if (which_dev == 2 && xv6::myproc() != 0) {
+        struct xv6::proc * p = xv6::myproc();
         if (!p)
-            panic("p nullptr");
+            xv6::panic("p nullptr");
         int do_yield = 0;
 
         p->lock.lock();
-        if (p->state != RUNNING)
-            panic("myproc() is not running");
+        if (p->state != xv6::RUNNING)
+            xv6::panic("myproc() is not running");
         if (p->need_yield) {
             do_yield = 1;
             p->need_yield = 0;
@@ -198,15 +201,17 @@ void kerneltrap() {
         p->lock.unlock();
 
         if (do_yield) {
-            yield();
+            xv6::yield();
         }
     }
 
     // the yield() may have caused some traps to occur,
     // so restore trap registers for use by kernelvec.S's sepc instruction.
-    w_sepc(sepc);
-    w_sstatus(sstatus);
+    xv6::w_sepc(sepc);
+    xv6::w_sstatus(sstatus);
 }
+
+namespace xv6 {
 
 void clockintr() {
     // only let CPU0 increment ticks to avoid races

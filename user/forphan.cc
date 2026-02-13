@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     int fd = 0;
     char *s = argv[0];
     struct stat st;
-    char *ff = "file0";
+    const char *ff = "file0";
 
     if ((fd = open(ff, O_CREATE | O_WRONLY)) < 0) {
         printf("%s: open failed\n", s);
