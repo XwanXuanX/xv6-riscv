@@ -1,3 +1,5 @@
+#pragma once
+
 namespace xv6 {
 
 // Mutual exclusion lock.

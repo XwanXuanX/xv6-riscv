@@ -608,9 +608,9 @@ int dirlink(struct inode *dp, char *name, uint inum) {
 //   skipelem("a", name) = "", setting name = "a"
 //   skipelem("", name) = skipelem("////", name) = 0
 //
-static char *
-skipelem(char *path, char *name) {
-    char *s;
+static const char *
+skipelem(const char *path, char *name) {
+    const char *s;
     int len;
 
     while (*path == '/')
@@ -637,7 +637,7 @@ skipelem(char *path, char *name) {
 // path element into name, which must have room for DIRSIZ bytes.
 // Must be called inside a transaction since it calls iput().
 static struct inode *
-namex(char *path, int nameiparent, char *name) {
+namex(const char *path, int nameiparent, char *name) {
     struct inode *ip, *next;
 
     if (*path == '/')
@@ -671,7 +671,7 @@ namex(char *path, int nameiparent, char *name) {
 }
 
 struct inode *
-namei(char *path) {
+namei(const char *path) {
     char name[DIRSIZ];
     return namex(path, 0, name);
 }

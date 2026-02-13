@@ -10,7 +10,7 @@
 namespace xv6 {
 
 // little helper
-static void assert(const bool cond, char *msg) {
+static void assert(const bool cond, const char *msg) {
     if (!cond) {
         panic(msg);
     }
@@ -779,8 +779,8 @@ void forkret(void) {
 
         // We can invoke kexec() now that file system is initialized.
         // Put the return value (argc) of kexec into a0.
-        p->trapframe->a0 = kexec("/init", (char *[]){"/init", 0});
-        if (p->trapframe->a0 == -1) {
+        p->trapframe->a0 = kexec("/init", (const char *[]){"/init", 0});
+        if (p->trapframe->a0 == static_cast<uint64>(-1)) {
             panic("exec");
         }
     }

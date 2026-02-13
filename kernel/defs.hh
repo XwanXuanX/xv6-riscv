@@ -48,7 +48,7 @@ void consoleintr(int);
 void consputc(int);
 
 // exec.c
-int kexec(char *, char **);
+int kexec(const char *, const char **);
 
 // file.c
 struct file *filealloc(void);
@@ -72,8 +72,8 @@ void iunlock(struct inode *);
 void iunlockput(struct inode *);
 void iupdate(struct inode *);
 int namecmp(const char *, const char *);
-struct inode *namei(char *);
-struct inode *nameiparent(char *, char *);
+struct inode *namei(const char *);
+struct inode *nameiparent(const char *, const char *);
 int readi(struct inode *, int, uint64, uint, uint);
 void stati(struct inode *, struct stat *);
 int writei(struct inode *, int, uint64, uint, uint);
