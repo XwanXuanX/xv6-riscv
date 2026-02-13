@@ -83,7 +83,7 @@ int consolewrite(int user_src, uint64 src, int n) {
 // or kernel address.
 //
 int consoleread(int user_dst, uint64 dst, int n) {
-    uint target;
+    int target;
     int c;
     char cbuf;
 

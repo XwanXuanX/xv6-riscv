@@ -5,6 +5,8 @@
 #include "defs.hh"
 #include "mlfq.h"
 
+namespace xv6 {
+
 volatile static int started = 0;
 
 extern struct mlfq mlq;
@@ -44,4 +46,6 @@ void main() {
     }
 
     scheduler();
+}
+
 }

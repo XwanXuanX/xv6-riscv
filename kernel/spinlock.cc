@@ -10,6 +10,51 @@
 
 namespace xv6 {
 
+namespace impl {
+
+// push_off/pop_off are like intr_off()/intr_on() except that they are matched:
+// it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
+// are initially off, then push_off, pop_off leaves them off.
+
+// Why do we need "reference counting"?
+// Because lock acquisition can be nested.
+// You can only reenable interrupts when ALL lock acquisition is released, for example:
+// acquire(&A);   // push_off() -> interrupts off
+// acquire(&B);   // push_off() again
+// ...            // do something
+// release(&B);   // pop_off()
+//                // if we turn on interrupts here, then we are facing the same issue of having a deadlock as above!
+// release(&A);   // pop_off()
+
+void push_off() {
+    int old = intr_get();
+
+    // disable interrupts to prevent an involuntary context
+    // switch while using mycpu().
+    intr_off();
+
+    if (mycpu()->noff == 0) {
+        mycpu()->intena = old;
+    }
+    mycpu()->noff += 1;
+}
+
+void pop_off() {
+    struct cpu *c = mycpu();
+    if (intr_get()) {
+        panic("pop_off - interruptible");
+    }
+    if (c->noff < 1) {
+        panic("pop_off");
+    }
+    c->noff -= 1;
+    if (c->noff == 0 && c->intena) {
+        intr_on();
+    }
+}
+
+} // namespace impl
+
 void spinlock::init_lock(const char *name) {
     this->name = name;
     locked = 0;
@@ -88,50 +133,5 @@ bool spinlock::holding() {
     r = (locked && cpu == mycpu());
     return r;
 }
-
-namespace impl {
-
-// push_off/pop_off are like intr_off()/intr_on() except that they are matched:
-// it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
-// are initially off, then push_off, pop_off leaves them off.
-
-// Why do we need "reference counting"?
-// Because lock acquisition can be nested.
-// You can only reenable interrupts when ALL lock acquisition is released, for example:
-// acquire(&A);   // push_off() -> interrupts off
-// acquire(&B);   // push_off() again
-// ...            // do something
-// release(&B);   // pop_off()
-//                // if we turn on interrupts here, then we are facing the same issue of having a deadlock as above!
-// release(&A);   // pop_off()
-
-void push_off() {
-    int old = intr_get();
-
-    // disable interrupts to prevent an involuntary context
-    // switch while using mycpu().
-    intr_off();
-
-    if (mycpu()->noff == 0) {
-        mycpu()->intena = old;
-    }
-    mycpu()->noff += 1;
-}
-
-void pop_off() {
-    struct cpu *c = mycpu();
-    if (intr_get()) {
-        panic("pop_off - interruptible");
-    }
-    if (c->noff < 1) {
-        panic("pop_off");
-    }
-    c->noff -= 1;
-    if (c->noff == 0 && c->intena) {
-        intr_on();
-    }
-}
-
-} // namespace impl
 
 } // namespace xv6
