@@ -13,7 +13,7 @@
 
 #include "types.h"
 #include "param.h"
-#include "spinlock.h"
+#include "spinlock.hh"
 #include "sleeplock.h"
 #include "fs.h"
 #include "file.h"

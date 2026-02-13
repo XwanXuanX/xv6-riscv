@@ -2,7 +2,7 @@
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
-#include "spinlock.h"
+#include "spinlock.hh"
 #include "proc.h"
 #include "fs.h"
 #include "sleeplock.h"

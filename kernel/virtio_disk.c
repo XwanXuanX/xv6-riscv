@@ -10,7 +10,7 @@
 #include "defs.h"
 #include "param.h"
 #include "memlayout.h"
-#include "spinlock.h"
+#include "spinlock.hh"
 #include "sleeplock.h"
 #include "fs.h"
 #include "buf.h"

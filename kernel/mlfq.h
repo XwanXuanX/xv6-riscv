@@ -2,7 +2,7 @@
 #define KERNEL_MLFQ_H
 
 #include "param.h"
-#include "spinlock.h"
+#include "spinlock.hh"
 
 // promise that we'll have this somewhere
 struct proc;

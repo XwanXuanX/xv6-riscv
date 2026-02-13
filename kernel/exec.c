@@ -2,7 +2,7 @@
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
-#include "spinlock.h"
+#include "spinlock.hh"
 #include "proc.h"
 #include "defs.h"
 #include "elf.h"
