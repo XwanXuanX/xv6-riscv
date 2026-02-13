@@ -4,10 +4,10 @@
 #include "kernel/fs.h"
 #include "kernel/fcntl.h"
 
-char *
-fmtname(char *path) {
+const char *
+fmtname(const char *path) {
     static char buf[DIRSIZ + 1];
-    char *p;
+    const char *p;
 
     // Find first character after last slash.
     for (p = path + strlen(path); p >= path && *p != '/'; p--)
@@ -23,10 +23,10 @@ fmtname(char *path) {
     return buf;
 }
 
-void ls(char *path) {
+void ls(const char *path) {
     char buf[512], *p;
     int fd;
-    struct dirent de;
+    struct xv6::dirent de;
     struct stat st;
 
     if ((fd = open(path, O_RDONLY)) < 0) {

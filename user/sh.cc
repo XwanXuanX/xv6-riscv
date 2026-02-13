@@ -50,7 +50,7 @@ struct backcmd {
 };
 
 int fork1(void); // Fork but panics on failure.
-void panic(char *);
+void panic(const char *);
 struct cmd *parsecmd(char *);
 void runcmd(struct cmd *) __attribute__((noreturn));
 
@@ -74,7 +74,7 @@ void runcmd(struct cmd *cmd) {
         ecmd = (struct execcmd *)cmd;
         if (ecmd->argv[0] == 0)
             exit(1);
-        exec(ecmd->argv[0], ecmd->argv);
+        exec(ecmd->argv[0], (const char **)ecmd->argv);
         fprintf(2, "exec %s failed\n", ecmd->argv[0]);
         break;
 
@@ -171,7 +171,7 @@ int main(void) {
     exit(0);
 }
 
-void panic(char *s) {
+void panic(const char *s) {
     fprintf(2, "%s\n", s);
     exit(1);
 }
@@ -192,7 +192,7 @@ struct cmd *
 execcmd(void) {
     struct execcmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = (struct execcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = EXEC;
     return (struct cmd *)cmd;
@@ -202,7 +202,7 @@ struct cmd *
 redircmd(struct cmd *subcmd, char *file, char *efile, int mode, int fd) {
     struct redircmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = (struct redircmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = REDIR;
     cmd->cmd = subcmd;
@@ -217,7 +217,7 @@ struct cmd *
 pipecmd(struct cmd *left, struct cmd *right) {
     struct pipecmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = (struct pipecmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = PIPE;
     cmd->left = left;
@@ -229,7 +229,7 @@ struct cmd *
 listcmd(struct cmd *left, struct cmd *right) {
     struct listcmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = (struct listcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = LIST;
     cmd->left = left;
@@ -241,7 +241,7 @@ struct cmd *
 backcmd(struct cmd *subcmd) {
     struct backcmd *cmd;
 
-    cmd = malloc(sizeof(*cmd));
+    cmd = (struct backcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = BACK;
     cmd->cmd = subcmd;
@@ -296,7 +296,7 @@ int gettoken(char **ps, char *es, char **q, char **eq) {
     return ret;
 }
 
-int peek(char **ps, char *es, char *toks) {
+int peek(char **ps, char *es, const char *toks) {
     char *s;
 
     s = *ps;

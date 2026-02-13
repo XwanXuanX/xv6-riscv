@@ -38,7 +38,7 @@ int write(int, const void *, int);
 int read(int, void *, int);
 int close(int);
 int kill(int);
-int exec(const char *, char **);
+int exec(const char *, const char **);
 int open(const char *, int);
 int mknod(const char *, short, short);
 int unlink(const char *);

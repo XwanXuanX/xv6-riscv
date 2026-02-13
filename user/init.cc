@@ -9,7 +9,7 @@
 #include "user/user.hh"
 #include "kernel/fcntl.h"
 
-char *argv[] = {"sh", 0};
+const char *argv[] = {"sh", 0};
 
 int main(void) {
     int pid, wpid;
