@@ -1,5 +1,5 @@
 #include "kernel/types.h"
-#include "user/user.h"
+#include "user/user.hh"
 
 int main(void) {
     // Create 9 children + parent = 10 CPU-bound processes total.

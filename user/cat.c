@@ -1,6 +1,6 @@
 #include "kernel/types.h"
 #include "kernel/fcntl.h"
-#include "user/user.h"
+#include "user/user.hh"
 
 char buf[512];
 

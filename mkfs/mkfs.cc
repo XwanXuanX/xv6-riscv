@@ -11,6 +11,8 @@
 #include "kernel/stat.h"
 #include "kernel/param.h"
 
+using namespace xv6;
+
 #ifndef static_assert
 #define static_assert(a, b) \
     do {                    \

@@ -3,7 +3,9 @@
 #include "kernel/fcntl.h"
 #include "kernel/riscv.h"
 #include "kernel/vm.h"
-#include "user/user.h"
+#include "user/user.hh"
+
+using namespace xv6;
 
 //
 // wrapper so that it's OK if main() does not call exit().
@@ -74,7 +76,7 @@ gets(char *buf, int max) {
     return buf;
 }
 
-int stat(const char *n, struct stat *st) {
+int stat(const char *n, xv6::stat *st) {
     int fd;
     int r;
 
