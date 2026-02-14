@@ -45,12 +45,12 @@ spinlock wait_lock;
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
-void proc_mapstacks(pagetable_t kpgtbl) {
+void proc_mapstacks(const pagetable_t kpgtbl) {
     struct proc *p;
 
     for (p = proc; p < &proc[NPROC]; p++) {
         char *pa = reinterpret_cast<char *>(kalloc());
-        if (pa == 0)
+        if (pa == nullptr)
             panic("kalloc");
         uint64 va = KSTACK((int)(p - proc));
         kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
@@ -129,7 +129,7 @@ allocproc(void) {
             p->lock.unlock();
         }
     }
-    return 0;
+    return nullptr;
 
 found:
     //
@@ -139,10 +139,10 @@ found:
     p->state = USED;
 
     // Allocate a trapframe page.
-    if ((p->trapframe = (struct trapframe *)kalloc()) == 0) {
+    if ((p->trapframe = (struct trapframe *)kalloc()) == nullptr) {
         freeproc(p);
         p->lock.unlock();
-        return 0;
+        return nullptr;
     }
 
     // An empty user page table.
@@ -192,7 +192,7 @@ freeproc(struct proc *p) {
     p->pagetable = 0;
     p->sz = 0;
     p->pid = 0;
-    p->parent = 0;
+    p->parent = nullptr;
     p->name[0] = 0;
     p->chan = 0;
     p->killed = 0;
@@ -241,7 +241,7 @@ proc_pagetable(struct proc *p) {
 
 // Free a process's page table, and free the
 // physical memory it refers to.
-void proc_freepagetable(pagetable_t pagetable, uint64 sz) {
+void proc_freepagetable(const pagetable_t pagetable, const uint64 sz) {
     uvmunmap(pagetable, TRAMPOLINE, 1, 0);
     uvmunmap(pagetable, TRAPFRAME, 1, 0);
     uvmfree(pagetable, sz);
@@ -278,7 +278,7 @@ void userinit(void) {
 
 // Grow or shrink user memory by n bytes.
 // Return 0 on success, -1 on failure.
-int growproc(int n) {
+int growproc(const int n) {
     uint64 sz;
     struct proc *p = myproc();
 
@@ -364,10 +364,8 @@ int kfork(void) {
 
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
-void reparent(struct proc *p) {
-    struct proc *pp;
-
-    for (pp = proc; pp < &proc[NPROC]; pp++) {
+void reparent(const struct proc * const p) {
+    for (struct proc* pp = proc; pp < &proc[NPROC]; pp++) {
         if (pp->parent == p) {
             pp->parent = initproc;
             wakeup(initproc);
@@ -378,7 +376,7 @@ void reparent(struct proc *p) {
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait().
-void kexit(int status) {
+void kexit(const int status) {
     // get the currently running process
     struct proc *p = myproc();
 
@@ -427,7 +425,7 @@ void kexit(int status) {
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
-int kwait(uint64 addr) {
+int kwait(const uint64 addr) {
     struct proc *pp;
     int havekids, pid;
     struct proc *p = myproc();
@@ -500,8 +498,8 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
         // intr_on():
         //      * enables external interrupts at the CPU level
         //      * the last process may have disabled the interrupt.
-        //        if all processes are blocked and waiting for interrupts (I/O), then they will not be waken up and their state will stay in "blocked".
-        //        Thus the scheduler cannot find a single process which state is "runnable", and scheduler will keep searching, causing deadlock.
+        //        if all processes are blocked and waiting for interrupts (I/O), then they will not be wakened up and their state will stay in "blocked".
+        //        Thus, the scheduler cannot find a single process which state is "runnable", and scheduler will keep searching, causing deadlock.
         //
         // intr_off():
         //      * immediately disable interrupts again
@@ -516,7 +514,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
         intr_off();
 
         // flag to record "did we find at least one runnable process and switched to it?"
-        // if we didn't ran anything, put the core to sleep to save CPU
+        // if we didn't run anything, put the core to sleep to save CPU
         int found = 0;
         // simple RR loop
         for (p = proc; p < &proc[NPROC]; p++) {
@@ -568,13 +566,13 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
             // note that there are two different execution paths:
             //      1. sche acq -> sche release
             //      2. sche acq -> process release -> process acq -> sche release
-            // but anyways the scheduler needs to relase here
+            // but anyway the scheduler needs to relase here
             p->lock.unlock();
         }
 
         if (found == 0) {
             // nothing to run; stop running on this core until an interrupt.
-            // found == 0 means we've scanned all processes and non of them are runnable
+            // found == 0 means we've scanned all processes and none of them are runnable
             // wfi = wait for interruption
             asm volatile("wfi");
             // when an interrupt arrives:
@@ -685,7 +683,7 @@ __attribute__((noreturn)) void scheduler(void) {
 #if defined(RR) && defined(MLFQ)
 #error "Exactly one of RR or MLFQ must be defined"
 #elif defined(RR)
-    // Round robin
+    // Round-robin
     round_robin();
 #elif defined(MLFQ)
     // Multi-level feedback queue
@@ -729,7 +727,7 @@ void sched(void) {
 void yield(void) {
     struct proc *p = myproc(); // This is me!
     p->lock.lock();
-    // I'm gonna quit running and change to runnable/ready
+    // I'm going to quit running and change to runnable/ready
     p->state = RUNNABLE;
     // I changed from RUNNING to RUNNABLE because my quanta used up, so need a reset
     // also I need to clear my need_yield flag (likely cleared already, but doesn't hurt)
@@ -814,9 +812,9 @@ void sleep(void *chan, spinlock *lk) {
     assert(!p->in_ready_q, "RUNNING process still in ready queue");
     p->state = SLEEPING;
     // Q: Do you need to explicitly handle remove from ready queue?
-    // A: No, because if I'm running, I must be popped off the ready queue and not in the queue any more!
+    // A: No, because if I'm running, I must be popped off the ready queue and not in the queue anymore!
 
-    // I'm the process that wants to sleep
+    // I'm the process that wants to sleep,
     // and I'll give the CPU to the scheduler
     sched();
 
@@ -840,7 +838,7 @@ void wakeup(void *chan) {
         if (p != myproc()) {
             p->lock.lock();
             if (p->state == SLEEPING && p->chan == chan) {
-                // I was sleeping but now I've been waken up
+                // I was sleeping, but now I've been wakened up,
                 // and I'm ready to run!
                 p->state = RUNNABLE;
                 p->qlevel = p->qticks = 0;
@@ -866,7 +864,7 @@ void wakeup(void *chan) {
 // Kill the process with the given pid.
 // The victim won't exit until it tries to return
 // to user space (see usertrap() in trap.c).
-int kkill(int pid) {
+int kkill(const int pid) {
     struct proc *p;
 
     for (p = proc; p < &proc[NPROC]; p++) {
@@ -917,7 +915,7 @@ int killed(struct proc *p) {
 // Copy to either a user address, or kernel address,
 // depending on usr_dst.
 // Returns 0 on success, -1 on error.
-int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
+int either_copyout(const int user_dst, const uint64 dst, void *src, const uint64 len) {
     struct proc *p = myproc();
     if (user_dst) {
         return copyout(p->pagetable, dst, reinterpret_cast<char *>(src), len);
@@ -930,7 +928,7 @@ int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
 // Copy from either a user address, or kernel address,
 // depending on usr_src.
 // Returns 0 on success, -1 on error.
-int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {
+int either_copyin(void *dst, const int user_src, const uint64 src, const uint64 len) {
     struct proc *p = myproc();
     if (user_src) {
         return copyin(p->pagetable, reinterpret_cast<char *>(dst), src, len);

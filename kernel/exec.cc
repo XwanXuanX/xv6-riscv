@@ -12,7 +12,7 @@ namespace xv6 {
 static int loadseg(pde_t *, uint64, struct inode *, uint, uint);
 
 // map ELF permissions to PTE permission bits.
-int flags2perm(int flags) {
+int flags2perm(const int flags) {
     int perm = 0;
     if (flags & 0x1)
         perm = PTE_X;
@@ -29,35 +29,35 @@ int kexec(const char *path, const char **argv) {
     int i, off;
     uint64 argc, sz = 0, sp, ustack[MAXARG], stackbase;
     uint64 sz1, oldsz;
-    struct elfhdr elf;
+    struct elfhdr elf{};
     struct inode *ip;
-    struct proghdr ph;
-    pagetable_t pagetable = 0, oldpagetable;
+    struct proghdr ph{};
+    pagetable_t pagetable = nullptr, oldpagetable;
     struct proc *p = myproc();
 
     begin_op();
 
     // Open the executable file.
-    if ((ip = namei(path)) == 0) {
+    if ((ip = namei(path)) == nullptr) {
         end_op();
         return -1;
     }
     ilock(ip);
 
     // Read the ELF header.
-    if (readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
+    if (readi(ip, 0, reinterpret_cast<uint64>(&elf), 0, sizeof(elf)) != sizeof(elf))
         goto bad;
 
     // Is this really an ELF file?
     if (elf.magic != ELF_MAGIC)
         goto bad;
 
-    if ((pagetable = proc_pagetable(p)) == 0)
+    if ((pagetable = proc_pagetable(p)) == nullptr)
         goto bad;
 
     // Load program into memory.
     for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
-        if (readi(ip, 0, (uint64)&ph, off, sizeof(ph)) != sizeof(ph))
+        if (readi(ip, 0, reinterpret_cast<uint64>(&ph), off, sizeof(ph)) != sizeof(ph))
             goto bad;
         if (ph.type != ELF_PROG_LOAD)
             continue;
@@ -75,7 +75,7 @@ int kexec(const char *path, const char **argv) {
     }
     iunlockput(ip);
     end_op();
-    ip = 0;
+    ip = nullptr;
 
     p = myproc();
     oldsz = p->sz;
@@ -111,7 +111,7 @@ int kexec(const char *path, const char **argv) {
     sp -= sp % 16;
     if (sp < stackbase)
         goto bad;
-    if (copyout(pagetable, sp, (char *)ustack, (argc + 1) * sizeof(uint64)) < 0)
+    if (copyout(pagetable, sp, reinterpret_cast<char *>(ustack), (argc + 1) * sizeof(uint64)) < 0)
         goto bad;
 
     // a0 and a1 contain arguments to user main(argc, argv)
@@ -150,7 +150,7 @@ bad:
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
 static int
-loadseg(pagetable_t pagetable, uint64 va, struct inode *ip, uint offset, uint sz) {
+loadseg(const pagetable_t pagetable, const uint64 va, struct inode *ip, const uint offset, const uint sz) {
     uint i, n;
     uint64 pa;
 

@@ -50,7 +50,7 @@ void die(const char *);
 
 // convert to riscv byte order
 ushort
-xshort(ushort x) {
+xshort(const ushort x) {
     ushort y;
     uchar *a = (uchar *)&y;
     a[0] = x;
@@ -58,7 +58,7 @@ xshort(ushort x) {
     return y;
 }
 
-uint xint(uint x) {
+uint xint(const uint x) {
     uint y;
     uchar *a = (uchar *)&y;
     a[0] = x;
@@ -68,7 +68,7 @@ uint xint(uint x) {
     return y;
 }
 
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
     int i, cc, fd;
     uint rootino, inum, off;
     struct dirent de;
@@ -174,14 +174,14 @@ int main(int argc, char *argv[]) {
     exit(0);
 }
 
-void wsect(uint sec, void *buf) {
+void wsect(const uint sec, void *buf) {
     if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE)
         die("lseek");
     if (write(fsfd, buf, BSIZE) != BSIZE)
         die("write");
 }
 
-void winode(uint inum, struct dinode *ip) {
+void winode(const uint inum, struct dinode *ip) {
     char buf[BSIZE];
     uint bn;
     struct dinode *dip;
@@ -193,7 +193,7 @@ void winode(uint inum, struct dinode *ip) {
     wsect(bn, buf);
 }
 
-void rinode(uint inum, struct dinode *ip) {
+void rinode(const uint inum, struct dinode *ip) {
     char buf[BSIZE];
     uint bn;
     struct dinode *dip;
@@ -204,14 +204,14 @@ void rinode(uint inum, struct dinode *ip) {
     *ip = *dip;
 }
 
-void rsect(uint sec, void *buf) {
+void rsect(const uint sec, void *buf) {
     if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE)
         die("lseek");
     if (read(fsfd, buf, BSIZE) != BSIZE)
         die("read");
 }
 
-uint ialloc(ushort type) {
+uint ialloc(const ushort type) {
     uint inum = freeinode++;
     struct dinode din;
 
@@ -223,7 +223,7 @@ uint ialloc(ushort type) {
     return inum;
 }
 
-void balloc(int used) {
+void balloc(const int used) {
     uchar buf[BSIZE];
     int i;
 
@@ -239,7 +239,7 @@ void balloc(int used) {
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
-void iappend(uint inum, void *xp, int n) {
+void iappend(const uint inum, void *xp, int n) {
     char *p = (char *)xp;
     uint fbn, off, n1;
     struct dinode din;

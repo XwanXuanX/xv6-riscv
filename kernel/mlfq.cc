@@ -30,7 +30,7 @@ void mlfq_init(struct mlfq *m) {
     m->boost_epoch = 0;
 }
 
-void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p) {
+void mlfq_enq_locked(struct mlfq *m, const int lvl, struct proc *p) {
     if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
@@ -47,7 +47,7 @@ void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p) {
 }
 
 // Enqueue a process to a specific level queue
-void mlfq_enq(struct mlfq *m, int lvl, struct proc *p) {
+void mlfq_enq(struct mlfq *m, const int lvl, struct proc *p) {
     if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
@@ -57,7 +57,7 @@ void mlfq_enq(struct mlfq *m, int lvl, struct proc *p) {
     m->lock.unlock();
 }
 
-struct proc *mlfq_deq_locked(struct mlfq *m, int lvl) {
+struct proc *mlfq_deq_locked(struct mlfq *m, const int lvl) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
@@ -86,7 +86,7 @@ struct proc *mlfq_deq_locked(struct mlfq *m, int lvl) {
 }
 
 // Deque a process from a specific level queue
-struct proc *mlfq_deq(struct mlfq *m, int lvl) {
+struct proc *mlfq_deq(struct mlfq *m, const int lvl) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
@@ -99,7 +99,7 @@ struct proc *mlfq_deq(struct mlfq *m, int lvl) {
 }
 
 // Remove a process from a specific level queue
-bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
+bool mlfq_rm_locked(struct mlfq *m, const int lvl, struct proc *p) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
@@ -147,7 +147,7 @@ bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
     return false;
 }
 
-bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p) {
+bool mlfq_rm(struct mlfq *m, const int lvl, struct proc *p) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }

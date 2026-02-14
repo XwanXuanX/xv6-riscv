@@ -70,7 +70,7 @@ void ls(const char *path) {
     close(fd);
 }
 
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
     int i;
 
     if (argc < 2) {

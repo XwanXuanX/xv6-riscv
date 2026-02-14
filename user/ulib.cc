@@ -10,7 +10,7 @@ using namespace xv6;
 //
 // wrapper so that it's OK if main() does not call exit().
 //
-extern "C" void start(int argc, char **argv) {
+extern "C" void start(const int argc, char **argv) {
     int r;
     extern int main(int argc, char **argv);
     r = main(argc, argv);
@@ -42,7 +42,7 @@ uint strlen(const char *s) {
 }
 
 void *
-memset(void *dst, int c, uint n) {
+memset(void *dst, const int c, const uint n) {
     char *cdst = (char *)dst;
     uint i;
     for (i = 0; i < n; i++) {
@@ -52,7 +52,7 @@ memset(void *dst, int c, uint n) {
 }
 
 char *
-strchr(const char *s, char c) {
+strchr(const char *s, const char c) {
     for (; *s; s++)
         if (*s == c)
             return (char *)s;
@@ -60,7 +60,7 @@ strchr(const char *s, char c) {
 }
 
 char *
-gets(char *buf, int max) {
+gets(char *buf, const int max) {
     int i, cc;
     char c;
 
@@ -129,16 +129,16 @@ int memcmp(const void *s1, const void *s2, uint n) {
 }
 
 void *
-memcpy(void *dst, const void *src, uint n) {
+memcpy(void *dst, const void *src, const uint n) {
     return memmove(dst, src, n);
 }
 
 char *
-sbrk(int n) {
+sbrk(const int n) {
     return sys_sbrk(n, SBRK_EAGER);
 }
 
 char *
-sbrklazy(int n) {
+sbrklazy(const int n) {
     return sys_sbrk(n, SBRK_LAZY);
 }

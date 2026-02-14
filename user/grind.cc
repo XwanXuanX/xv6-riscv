@@ -43,7 +43,7 @@ int rand(void) {
     return (do_rand(&rand_next));
 }
 
-void go(int which_child) {
+void go(const int which_child) {
     int fd = -1;
     static char buf[999];
     char *break0 = sbrk(0);

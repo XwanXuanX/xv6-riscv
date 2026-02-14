@@ -76,7 +76,7 @@ void uartinit(void) {
 // transmit buf[] to the uart. it blocks if the
 // uart is busy, so it cannot be called from
 // interrupts, only from write() system calls.
-void uartwrite(char buf[], int n) {
+void uartwrite(char buf[], const int n) {
     tx_lock.lock();
 
     int i = 0;
@@ -99,7 +99,7 @@ void uartwrite(char buf[], int n) {
 // interrupts, for use by kernel printf() and
 // to echo characters. it spins waiting for the uart's
 // output register to be empty.
-void uartputc_sync(int c) {
+void uartputc_sync(const int c) {
     if (panicking == 0)
         push_off();
 

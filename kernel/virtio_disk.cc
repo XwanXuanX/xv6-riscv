@@ -166,7 +166,7 @@ alloc_desc() {
 
 // mark a descriptor as free.
 static void
-free_desc(int i) {
+free_desc(const int i) {
     if (i >= NUM)
         panic("free_desc 1");
     if (disk.free[i])
@@ -208,7 +208,7 @@ alloc3_desc(int *idx) {
     return 0;
 }
 
-void virtio_disk_rw(struct buf *b, int write) {
+void virtio_disk_rw(struct buf *b, const int write) {
     uint64 sector = b->blockno * (BSIZE / 512);
 
     disk.vdisk_lock.lock();

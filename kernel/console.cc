@@ -33,7 +33,7 @@ namespace xv6 {
 // interrupts, e.g. by printf and to echo input
 // characters.
 //
-void consputc(int c) {
+void consputc(const int c) {
     if (c == BACKSPACE) {
         // if the user typed backspace, overwrite with a space.
         uartputc_sync('\b');
@@ -59,7 +59,7 @@ struct {
 // user write() system calls to the console go here.
 // uses sleep() and UART interrupts.
 //
-int consolewrite(int user_src, uint64 src, int n) {
+int consolewrite(const int user_src, const uint64 src, const int n) {
     char buf[32]; // move batches from user space to uart.
     int i = 0;
 
@@ -82,7 +82,7 @@ int consolewrite(int user_src, uint64 src, int n) {
 // user_dst indicates whether dst is a user
 // or kernel address.
 //
-int consoleread(int user_dst, uint64 dst, int n) {
+int consoleread(const int user_dst, uint64 dst, int n) {
     int target;
     int c;
     char cbuf;

@@ -2992,7 +2992,7 @@ struct test slowtests[] = {
 
 // run each test in its own process. run returns 1 if child's exit()
 // indicates success.
-int run(void f(const char *), const char *s) {
+int run(const void f(const char *), const char *s) {
     int pid;
     int xstatus;
 
@@ -3014,7 +3014,7 @@ int run(void f(const char *), const char *s) {
     }
 }
 
-int runtests(struct test *tests, char *justone, int continuous) {
+int runtests(struct test *tests, char *justone, const int continuous) {
     int ntests = 0;
     for (struct test *t = tests; t->s != 0; t++) {
         if ((justone == 0) || strcmp(t->s, justone) == 0) {
@@ -3045,7 +3045,7 @@ int countfree() {
     return n;
 }
 
-int drivetests(int quick, int continuous, char *justone) {
+int drivetests(const int quick, const int continuous, char *justone) {
     do {
         printf("usertests starting\n");
         int free0 = countfree();
@@ -3086,7 +3086,7 @@ int drivetests(int quick, int continuous, char *justone) {
     return 0;
 }
 
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
     int continuous = 0;
     int quick = 0;
     char *justone = 0;

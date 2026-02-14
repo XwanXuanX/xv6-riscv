@@ -21,7 +21,7 @@ namespace xv6 {
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
-argfd(int n, int *pfd, struct file **pf) {
+argfd(const int n, int *pfd, struct file **pf) {
     int fd;
     struct file *f;
 
@@ -235,7 +235,7 @@ bad:
 }
 
 static struct inode *
-create(char *path, short type, short major, short minor) {
+create(char *path, const short type, const short major, const short minor) {
     struct inode *ip, *dp;
     char name[DIRSIZ] = {0};
 

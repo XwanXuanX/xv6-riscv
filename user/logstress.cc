@@ -10,7 +10,7 @@
 
 char buf[BUFSZ];
 
-int main(int argc, char **argv) {
+int main(const int argc, char **argv) {
     int fd, n;
     enum { N = 250,
            SZ = 2000 };

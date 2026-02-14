@@ -129,7 +129,7 @@ void runcmd(struct cmd *cmd) {
     exit(0);
 }
 
-int getcmd(char *buf, int nbuf) {
+int getcmd(char *buf, const int nbuf) {
     write(2, "$ ", 2);
     memset(buf, 0, nbuf);
     gets(buf, nbuf);
@@ -199,7 +199,7 @@ execcmd(void) {
 }
 
 struct cmd *
-redircmd(struct cmd *subcmd, char *file, char *efile, int mode, int fd) {
+redircmd(struct cmd *subcmd, char *file, char *efile, const int mode, const int fd) {
     struct redircmd *cmd;
 
     cmd = (struct redircmd *)malloc(sizeof(*cmd));

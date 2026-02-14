@@ -55,7 +55,7 @@ void binit(void) {
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
 static struct buf *
-bget(uint dev, uint blockno) {
+bget(const uint dev, const uint blockno) {
     struct buf *b;
 
     bcache.lock.lock();
@@ -88,7 +88,7 @@ bget(uint dev, uint blockno) {
 
 // Return a locked buf with the contents of the indicated block.
 struct buf *
-bread(uint dev, uint blockno) {
+bread(const uint dev, const uint blockno) {
     struct buf *b;
 
     b = bget(dev, blockno);

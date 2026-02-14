@@ -52,7 +52,7 @@ struct log log;
 static void recover_from_log(void);
 static void commit();
 
-void initlog(int dev, struct superblock *sb) {
+void initlog(const int dev, struct superblock *sb) {
     if (sizeof(struct logheader) >= BSIZE)
         panic("initlog: too big logheader");
 
@@ -64,7 +64,7 @@ void initlog(int dev, struct superblock *sb) {
 
 // Copy committed blocks from log to their home location
 static void
-install_trans(int recovering) {
+install_trans(const int recovering) {
     int tail;
 
     for (tail = 0; tail < log.lh.n; tail++) {

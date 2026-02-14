@@ -58,7 +58,7 @@ morecore(uint nu) {
 }
 
 void *
-malloc(uint nbytes) {
+malloc(const uint nbytes) {
     Header *p, *prevp;
     uint nunits;
 

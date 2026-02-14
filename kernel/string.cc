@@ -3,7 +3,7 @@
 namespace xv6 {
 
 void *
-memset(void *dst, int c, uint n) {
+memset(void *dst, const int c, const uint n) {
     char *cdst = (char *)dst;
     uint i;
     for (i = 0; i < n; i++) {
@@ -50,7 +50,7 @@ memmove(void *dst, const void *src, uint n) {
 
 // memcpy exists to placate GCC.  Use memmove.
 void *
-memcpy(void *dst, const void *src, uint n) {
+memcpy(void *dst, const void *src, const uint n) {
     return memmove(dst, src, n);
 }
 
@@ -100,15 +100,15 @@ int strlen(const char *s) {
 
 // Global aliases for compiler-generated calls
 extern "C" {
-void *memset(void *dst, int c, uint n) {
+void *memset(void *dst, const int c, const uint n) {
     return xv6::memset(dst, c, n);
 }
 
-void *memmove(void *dst, const void *src, uint n) {
+void *memmove(void *dst, const void *src, const uint n) {
     return xv6::memmove(dst, src, n);
 }
 
-int memcmp(const void *v1, const void *v2, uint n) {
+int memcmp(const void *v1, const void *v2, const uint n) {
     return xv6::memcmp(v1, v2, n);
 }
 }

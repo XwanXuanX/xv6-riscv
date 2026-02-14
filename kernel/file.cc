@@ -80,8 +80,8 @@ void fileclose(struct file *f) {
 
 // Get metadata about file f.
 // addr is a user virtual address, pointing to a struct stat.
-int filestat(struct file *f, uint64 addr) {
-    struct proc *p = myproc();
+int filestat(struct file *f, const uint64 addr) {
+    const struct proc *p = myproc();
     struct stat st;
 
     if (f->type == FD_INODE || f->type == FD_DEVICE) {
@@ -97,7 +97,7 @@ int filestat(struct file *f, uint64 addr) {
 
 // Read from file f.
 // addr is a user virtual address.
-int fileread(struct file *f, uint64 addr, int n) {
+int fileread(struct file *f, const uint64 addr, const int n) {
     int r = 0;
 
     if (f->readable == 0)
@@ -123,7 +123,7 @@ int fileread(struct file *f, uint64 addr, int n) {
 
 // Write to file f.
 // addr is a user virtual address.
-int filewrite(struct file *f, uint64 addr, int n) {
+int filewrite(struct file *f, const uint64 addr, const int n) {
     int r, ret = 0;
 
     if (f->writable == 0)
@@ -140,7 +140,7 @@ int filewrite(struct file *f, uint64 addr, int n) {
         // the maximum log transaction size, including
         // i-node, indirect block, allocation blocks,
         // and 2 blocks of slop for non-aligned writes.
-        int max = ((MAXOPBLOCKS - 1 - 1 - 2) / 2) * BSIZE;
+        const int max = ((MAXOPBLOCKS - 1 - 1 - 2) / 2) * BSIZE;
         int i = 0;
         while (i < n) {
             int n1 = n - i;

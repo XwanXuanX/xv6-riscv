@@ -35,7 +35,7 @@ int plic_claim(void) {
 }
 
 // tell the PLIC we've served this IRQ.
-void plic_complete(int irq) {
+void plic_complete(const int irq) {
     int hart = cpuid();
     *(uint32 *)PLIC_SCLAIM(hart) = irq;
 }

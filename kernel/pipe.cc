@@ -55,7 +55,7 @@ bad:
     return -1;
 }
 
-void pipeclose(struct pipe *pi, int writable) {
+void pipeclose(struct pipe *pi, const int writable) {
     pi->lock.lock();
     if (writable) {
         pi->writeopen = 0;
@@ -71,7 +71,7 @@ void pipeclose(struct pipe *pi, int writable) {
         pi->lock.unlock();
 }
 
-int pipewrite(struct pipe *pi, uint64 addr, int n) {
+int pipewrite(struct pipe *pi, const uint64 addr, const int n) {
     int i = 0;
     struct proc *pr = myproc();
 
@@ -98,7 +98,7 @@ int pipewrite(struct pipe *pi, uint64 addr, int n) {
     return i;
 }
 
-int piperead(struct pipe *pi, uint64 addr, int n) {
+int piperead(struct pipe *pi, const uint64 addr, const int n) {
     int i;
     struct proc *pr = myproc();
     char ch;
