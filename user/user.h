@@ -1,6 +1,13 @@
 #define SBRK_ERROR ((char *)-1)
 
+#ifdef __cplusplus
+namespace xv6 {
 struct stat;
+}
+using xv6::stat;
+#else
+struct stat;
+#endif
 
 /**
  * Using <extern "C"> is crucial!
@@ -31,7 +38,7 @@ int write(int, const void *, int);
 int read(int, void *, int);
 int close(int);
 int kill(int);
-int exec(const char *, char **);
+int exec(const char *, const char **);
 int open(const char *, int);
 int mknod(const char *, short, short);
 int unlink(const char *);

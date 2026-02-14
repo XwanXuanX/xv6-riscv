@@ -1,8 +1,14 @@
+namespace xv6 {
+
+enum file_type {
+    FD_NONE,
+    FD_PIPE,
+    FD_INODE,
+    FD_DEVICE
+};
+
 struct file {
-    enum { FD_NONE,
-           FD_PIPE,
-           FD_INODE,
-           FD_DEVICE } type;
+    enum file_type type;
     int ref; // reference count
     char readable;
     char writable;
@@ -41,3 +47,5 @@ struct devsw {
 extern struct devsw devsw[];
 
 #define CONSOLE 1
+
+} // namespace xv6
