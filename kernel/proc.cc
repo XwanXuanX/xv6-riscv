@@ -356,8 +356,8 @@ int kfork(void) {
 
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
-void reparent(const struct proc * const p) {
-    for (struct proc* pp = proc; pp < &proc[NPROC]; pp++) {
+void reparent(const struct proc *const p) {
+    for (struct proc *pp = proc; pp < &proc[NPROC]; pp++) {
         if (pp->parent == p) {
             pp->parent = initproc;
             wakeup(initproc);
