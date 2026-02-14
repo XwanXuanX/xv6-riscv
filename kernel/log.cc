@@ -223,4 +223,4 @@ void log_write(struct buf *b) {
     log.lock.unlock();
 }
 
-}
+} // namespace xv6

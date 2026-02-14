@@ -96,19 +96,19 @@ int strlen(const char *s) {
     return n;
 }
 
-}
+} // namespace xv6
 
 // Global aliases for compiler-generated calls
 extern "C" {
-    void *memset(void *dst, int c, uint n) {
-        return xv6::memset(dst, c, n);
-    }
-    
-    void *memmove(void *dst, const void *src, uint n) {
-        return xv6::memmove(dst, src, n);
-    }
-    
-    int memcmp(const void *v1, const void *v2, uint n) {
-        return xv6::memcmp(v1, v2, n);
-    }
+void *memset(void *dst, int c, uint n) {
+    return xv6::memset(dst, c, n);
+}
+
+void *memmove(void *dst, const void *src, uint n) {
+    return xv6::memmove(dst, src, n);
+}
+
+int memcmp(const void *v1, const void *v2, uint n) {
+    return xv6::memcmp(v1, v2, n);
+}
 }

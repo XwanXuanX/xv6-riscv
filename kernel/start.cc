@@ -10,7 +10,7 @@ using namespace xv6;
 __attribute__((aligned(16))) char stack0[4096 * NCPU];
 
 extern "C" {
-    void timerinit();
+void timerinit();
 }
 
 // entry.S jumps here in machine mode on stack0.

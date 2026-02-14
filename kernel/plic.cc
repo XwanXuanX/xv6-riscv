@@ -4,7 +4,7 @@
 #include "riscv.h"
 #include "defs.hh"
 
-namespace xv6{
+namespace xv6 {
 
 //
 // the riscv Platform Level Interrupt Controller (PLIC).
@@ -40,4 +40,4 @@ void plic_complete(int irq) {
     *(uint32 *)PLIC_SCLAIM(hart) = irq;
 }
 
-}
+} // namespace xv6

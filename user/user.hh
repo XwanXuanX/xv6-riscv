@@ -2,7 +2,7 @@
 
 #ifdef __cplusplus
 namespace xv6 {
-    struct stat;
+struct stat;
 }
 using xv6::stat;
 #else

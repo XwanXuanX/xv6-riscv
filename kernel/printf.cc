@@ -145,4 +145,4 @@ void printfinit(void) {
     pr.lock.init_lock("pr");
 }
 
-}
+} // namespace xv6

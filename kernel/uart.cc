@@ -151,4 +151,4 @@ void uartintr(void) {
     }
 }
 
-}
+} // namespace xv6

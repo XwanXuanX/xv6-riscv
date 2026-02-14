@@ -49,7 +49,7 @@ void proc_mapstacks(pagetable_t kpgtbl) {
     struct proc *p;
 
     for (p = proc; p < &proc[NPROC]; p++) {
-        char *pa = reinterpret_cast<char*>(kalloc());
+        char *pa = reinterpret_cast<char *>(kalloc());
         if (pa == 0)
             panic("kalloc");
         uint64 va = KSTACK((int)(p - proc));
@@ -920,7 +920,7 @@ int killed(struct proc *p) {
 int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
     struct proc *p = myproc();
     if (user_dst) {
-        return copyout(p->pagetable, dst, reinterpret_cast<char*>(src), len);
+        return copyout(p->pagetable, dst, reinterpret_cast<char *>(src), len);
     } else {
         memmove((char *)dst, src, len);
         return 0;
@@ -933,7 +933,7 @@ int either_copyout(int user_dst, uint64 dst, void *src, uint64 len) {
 int either_copyin(void *dst, int user_src, uint64 src, uint64 len) {
     struct proc *p = myproc();
     if (user_src) {
-        return copyin(p->pagetable, reinterpret_cast<char*>(dst), src, len);
+        return copyin(p->pagetable, reinterpret_cast<char *>(dst), src, len);
     } else {
         memmove(dst, (char *)src, len);
         return 0;
@@ -991,4 +991,4 @@ void procdump(void) {
     mlfq_dump_nolock();
 }
 
-}
+} // namespace xv6

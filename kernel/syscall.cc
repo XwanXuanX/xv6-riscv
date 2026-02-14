@@ -135,4 +135,4 @@ void syscall(void) {
         p->trapframe->a0 = -1;
     }
 }
-}
+} // namespace xv6

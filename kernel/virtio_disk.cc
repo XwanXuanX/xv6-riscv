@@ -318,4 +318,4 @@ void virtio_disk_intr() {
     disk.vdisk_lock.unlock();
 }
 
-}
+} // namespace xv6

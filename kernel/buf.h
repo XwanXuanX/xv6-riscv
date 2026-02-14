@@ -12,4 +12,4 @@ struct buf {
     uchar data[BSIZE];
 };
 
-}
+} // namespace xv6

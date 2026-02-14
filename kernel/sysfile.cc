@@ -442,23 +442,23 @@ sys_exec(void) {
             argv[i] = 0;
             break;
         }
-        argv[i] = reinterpret_cast<char*>(kalloc());
+        argv[i] = reinterpret_cast<char *>(kalloc());
         if (argv[i] == 0)
             goto bad;
-        if (fetchstr(uarg, (char*)argv[i], PGSIZE) < 0)
+        if (fetchstr(uarg, (char *)argv[i], PGSIZE) < 0)
             goto bad;
     }
 
     ret = kexec(path, argv);
 
     for (i = 0; i < NELEM(argv) && argv[i] != 0; i++)
-        kfree((void*)(argv[i]));
+        kfree((void *)(argv[i]));
 
     return ret;
 
 bad:
     for (i = 0; i < NELEM(argv) && argv[i] != 0; i++)
-        kfree((void*)(argv[i]));
+        kfree((void *)(argv[i]));
     return -1;
 }
 
@@ -491,4 +491,4 @@ sys_pipe(void) {
     return 0;
 }
 
-}
+} // namespace xv6

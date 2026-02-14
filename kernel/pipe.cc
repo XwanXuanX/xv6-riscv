@@ -127,4 +127,4 @@ int piperead(struct pipe *pi, uint64 addr, int n) {
     return i;
 }
 
-}
+} // namespace xv6

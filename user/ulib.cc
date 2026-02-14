@@ -102,8 +102,8 @@ memmove(void *vdst, const void *vsrc, int n) {
     char *dst;
     const char *src;
 
-    dst = (char*)vdst;
-    src = (char*)vsrc;
+    dst = (char *)vdst;
+    src = (char *)vsrc;
     if (src > dst) {
         while (n-- > 0)
             *dst++ = *src++;
@@ -117,7 +117,7 @@ memmove(void *vdst, const void *vsrc, int n) {
 }
 
 int memcmp(const void *s1, const void *s2, uint n) {
-    const char *p1 = (char*)s1, *p2 = (char*)s2;
+    const char *p1 = (char *)s1, *p2 = (char *)s2;
     while (n-- > 0) {
         if (*p1 != *p2) {
             return *p1 - *p2;

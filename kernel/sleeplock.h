@@ -2,7 +2,7 @@ namespace xv6 {
 
 // Long-term locks for processes
 struct sleeplock {
-    uint locked;        // Is the lock held?
+    uint locked; // Is the lock held?
     spinlock lk; // spinlock protecting this sleep lock
 
     // For debugging:
@@ -10,4 +10,4 @@ struct sleeplock {
     int pid;    // Process holding lock
 };
 
-}
+} // namespace xv6

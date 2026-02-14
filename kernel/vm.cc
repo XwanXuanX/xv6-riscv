@@ -211,7 +211,7 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm) {
 
     oldsz = PGROUNDUP(oldsz);
     for (a = oldsz; a < newsz; a += PGSIZE) {
-        mem = reinterpret_cast<char*>(kalloc());
+        mem = reinterpret_cast<char *>(kalloc());
         if (mem == 0) {
             uvmdealloc(pagetable, a, oldsz);
             return 0;
@@ -288,7 +288,7 @@ int uvmcopy(pagetable_t old, pagetable_t nw, uint64 sz) {
             continue; // physical page hasn't been allocated
         pa = PTE2PA(*pte);
         flags = PTE_FLAGS(*pte);
-        if ((mem = reinterpret_cast<char*>(kalloc())) == 0)
+        if ((mem = reinterpret_cast<char *>(kalloc())) == 0)
             goto err;
         memmove(mem, (char *)pa, PGSIZE);
         if (mappages(nw, i, PGSIZE, (uint64)mem, flags) != 0) {
@@ -454,4 +454,4 @@ int ismapped(pagetable_t pagetable, uint64 va) {
     return 0;
 }
 
-}
+} // namespace xv6

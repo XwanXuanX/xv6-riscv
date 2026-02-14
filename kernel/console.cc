@@ -191,4 +191,4 @@ void consoleinit(void) {
     devsw[CONSOLE].write = consolewrite;
 }
 
-}
+} // namespace xv6

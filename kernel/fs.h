@@ -61,4 +61,4 @@ struct dirent {
     char name[DIRSIZ] __attribute__((nonstring));
 };
 
-}
+} // namespace xv6

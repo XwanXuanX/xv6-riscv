@@ -176,4 +176,4 @@ struct proc {
     char name[16];               // Process name (debugging)
 };
 
-}
+} // namespace xv6

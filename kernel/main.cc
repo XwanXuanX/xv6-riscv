@@ -48,4 +48,4 @@ void main() {
     scheduler();
 }
 
-}
+} // namespace xv6

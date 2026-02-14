@@ -12,4 +12,4 @@ struct stat {
     uint64 size; // Size of file in bytes
 };
 
-}
+} // namespace xv6

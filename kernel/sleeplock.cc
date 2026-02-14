@@ -42,4 +42,4 @@ int holdingsleep(struct sleeplock *lk) {
     return r;
 }
 
-}
+} // namespace xv6

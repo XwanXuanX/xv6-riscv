@@ -48,4 +48,4 @@ extern struct devsw devsw[];
 
 #define CONSOLE 1
 
-}
+} // namespace xv6

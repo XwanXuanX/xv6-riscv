@@ -16,16 +16,16 @@ struct superblock;
 
 // External symbols from linker script and assembly
 extern "C" {
-    extern char end[];      // first address after kernel
-    extern char etext[];    // first address after kernel code
-    extern char trampoline[];
-    extern char userret[];
-    extern char uservec[];
-    void kernelvec();
-    void swtch(struct context *, struct context *);
-    void start();
-    void main();
-    void kerneltrap();
+extern char end[];   // first address after kernel
+extern char etext[]; // first address after kernel code
+extern char trampoline[];
+extern char userret[];
+extern char uservec[];
+void kernelvec();
+void swtch(struct context *, struct context *);
+void start();
+void main();
+void kerneltrap();
 }
 
 // /**
@@ -223,4 +223,4 @@ void virtio_disk_intr(void);
 // }
 // #endif // __cplusplus
 
-}
+} // namespace xv6

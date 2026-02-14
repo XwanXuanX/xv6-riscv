@@ -102,4 +102,4 @@ sys_uptime(void) {
     return xticks;
 }
 
-}
+} // namespace xv6

@@ -76,4 +76,4 @@ kalloc(void) {
     return (void *)r;
 }
 
-}
+} // namespace xv6
