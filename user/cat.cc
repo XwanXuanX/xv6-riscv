@@ -1,4 +1,3 @@
-#include "kernel/types.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
 
@@ -20,14 +19,14 @@ void cat(const int fd) {
 }
 
 int main(const int argc, char *argv[]) {
-    int fd, i;
+    int fd;
 
     if (argc <= 1) {
         cat(0);
         exit(0);
     }
 
-    for (i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if ((fd = open(argv[i], O_RDONLY)) < 0) {
             fprintf(2, "cat: cannot open %s\n", argv[i]);
             exit(1);

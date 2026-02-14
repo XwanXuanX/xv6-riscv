@@ -1,9 +1,7 @@
 #include "types.h"
-#include "riscv.h"
 #include "defs.h"
 #include "param.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "fs.h"
 #include "buf.h"
 
@@ -65,9 +63,8 @@ void initlog(const int dev, struct superblock *sb) {
 // Copy committed blocks from log to their home location
 static void
 install_trans(const int recovering) {
-    int tail;
 
-    for (tail = 0; tail < log.lh.n; tail++) {
+    for (int tail = 0; tail < log.lh.n; tail++) {
         if (recovering) {
             printf("recovering tail %d dst %d\n", tail, log.lh.block[tail]);
         }
@@ -87,9 +84,8 @@ static void
 read_head(void) {
     struct buf *buf = bread(log.dev, log.start);
     struct logheader *lh = (struct logheader *)(buf->data);
-    int i;
     log.lh.n = lh->n;
-    for (i = 0; i < log.lh.n; i++) {
+    for (int i = 0; i < log.lh.n; i++) {
         log.lh.block[i] = lh->block[i];
     }
     brelse(buf);
@@ -102,9 +98,8 @@ static void
 write_head(void) {
     struct buf *buf = bread(log.dev, log.start);
     struct logheader *hb = (struct logheader *)(buf->data);
-    int i;
     hb->n = log.lh.n;
-    for (i = 0; i < log.lh.n; i++) {
+    for (int i = 0; i < log.lh.n; i++) {
         hb->block[i] = log.lh.block[i];
     }
     bwrite(buf);
@@ -170,9 +165,8 @@ void end_op(void) {
 // Copy modified blocks from cache to log.
 static void
 write_log(void) {
-    int tail;
 
-    for (tail = 0; tail < log.lh.n; tail++) {
+    for (int tail = 0; tail < log.lh.n; tail++) {
         struct buf *to = bread(log.dev, log.start + tail + 1); // log block
         struct buf *from = bread(log.dev, log.lh.block[tail]); // cache block
         memmove(to->data, from->data, BSIZE);

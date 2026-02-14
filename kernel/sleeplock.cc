@@ -1,10 +1,6 @@
 // Sleeping locks
 
-#include "types.h"
-#include "riscv.h"
 #include "defs.h"
-#include "param.h"
-#include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
 #include "sleeplock.h"
@@ -34,10 +30,9 @@ void releasesleep(struct sleeplock *lk) {
 }
 
 int holdingsleep(struct sleeplock *lk) {
-    int r;
 
     lk->lk.lock();
-    r = lk->locked && (lk->pid == myproc()->pid);
+    int r = lk->locked && (lk->pid == myproc()->pid);
     lk->lk.unlock();
     return r;
 }

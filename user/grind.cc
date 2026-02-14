@@ -2,15 +2,10 @@
 // run random system calls in parallel forever.
 //
 
-#include "kernel/param.h"
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
-#include "kernel/fs.h"
 #include "kernel/fcntl.h"
-#include "kernel/syscall.h"
-#include "kernel/memlayout.h"
-#include "kernel/riscv.h"
 
 // from FreeBSD.
 int do_rand(unsigned long *ctx) {
@@ -22,12 +17,11 @@ int do_rand(unsigned long *ctx) {
      * Park and Miller, Communications of the ACM, vol. 31, no. 10,
      * October 1988, p. 1195.
      */
-    long hi, lo, x;
 
     /* Transform to [1, 0x7ffffffe] range. */
-    x = (*ctx % 0x7ffffffe) + 1;
-    hi = x / 127773;
-    lo = x % 127773;
+    long x = (*ctx % 0x7ffffffe) + 1;
+    long hi = x / 127773;
+    long lo = x % 127773;
     x = 16807 * lo - 2836 * hi;
     if (x < 0)
         x += 0x7fffffff;
@@ -39,7 +33,7 @@ int do_rand(unsigned long *ctx) {
 
 unsigned long rand_next = 1;
 
-int rand(void) {
+int rand() {
     return (do_rand(&rand_next));
 }
 

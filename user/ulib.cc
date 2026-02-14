@@ -1,7 +1,6 @@
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
-#include "kernel/riscv.h"
 #include "kernel/vm.h"
 #include "user/user.h"
 
@@ -11,17 +10,15 @@ using namespace xv6;
 // wrapper so that it's OK if main() does not call exit().
 //
 extern "C" void start(const int argc, char **argv) {
-    int r;
     extern int main(int argc, char **argv);
-    r = main(argc, argv);
+    int r = main(argc, argv);
     exit(r);
 }
 
 char *
 strcpy(char *s, const char *t) {
-    char *os;
 
-    os = s;
+    char *os = s;
     while ((*s++ = *t++) != 0)
         ;
     return os;
@@ -44,8 +41,7 @@ uint strlen(const char *s) {
 void *
 memset(void *dst, const int c, const uint n) {
     char *cdst = (char *)dst;
-    uint i;
-    for (i = 0; i < n; i++) {
+    for (uint i = 0; i < n; i++) {
         cdst[i] = c;
     }
     return dst;
@@ -61,11 +57,11 @@ strchr(const char *s, const char c) {
 
 char *
 gets(char *buf, const int max) {
-    int i, cc;
+    int i;
     char c;
 
     for (i = 0; i + 1 < max;) {
-        cc = read(0, &c, 1);
+        int cc = read(0, &c, 1);
         if (cc < 1)
             break;
         buf[i++] = c;
@@ -77,21 +73,18 @@ gets(char *buf, const int max) {
 }
 
 int stat(const char *n, xv6::stat *st) {
-    int fd;
-    int r;
 
-    fd = open(n, O_RDONLY);
+    int fd = open(n, O_RDONLY);
     if (fd < 0)
         return -1;
-    r = fstat(fd, st);
+    int r = fstat(fd, st);
     close(fd);
     return r;
 }
 
 int atoi(const char *s) {
-    int n;
 
-    n = 0;
+    int n = 0;
     while ('0' <= *s && *s <= '9')
         n = n * 10 + *s++ - '0';
     return n;
@@ -99,11 +92,9 @@ int atoi(const char *s) {
 
 void *
 memmove(void *vdst, const void *vsrc, int n) {
-    char *dst;
-    const char *src;
 
-    dst = (char *)vdst;
-    src = (char *)vsrc;
+    char *dst = (char *)vdst;
+    const char *src = (char *)vsrc;
     if (src > dst) {
         while (n-- > 0)
             *dst++ = *src++;

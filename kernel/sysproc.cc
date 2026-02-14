@@ -1,7 +1,6 @@
 #include "types.h"
 #include "riscv.h"
 #include "defs.h"
-#include "param.h"
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
@@ -10,7 +9,7 @@
 namespace xv6 {
 
 uint64
-sys_exit(void) {
+sys_exit() {
     int n;
     argint(0, &n);
     kexit(n);
@@ -18,31 +17,30 @@ sys_exit(void) {
 }
 
 uint64
-sys_getpid(void) {
+sys_getpid() {
     return myproc()->pid;
 }
 
 uint64
-sys_fork(void) {
+sys_fork() {
     return kfork();
 }
 
 uint64
-sys_wait(void) {
+sys_wait() {
     uint64 p;
     argaddr(0, &p);
     return kwait(p);
 }
 
 uint64
-sys_sbrk(void) {
-    uint64 addr;
+sys_sbrk() {
     int t;
     int n;
 
     argint(0, &n);
     argint(1, &t);
-    addr = myproc()->sz;
+    uint64 addr = myproc()->sz;
 
     if (t == SBRK_EAGER || n < 0) {
         if (growproc(n) < 0) {
@@ -50,7 +48,7 @@ sys_sbrk(void) {
         }
     } else {
         // Lazily allocate memory for this process: increase its memory
-        // size but don't allocate memory. If the processes uses the
+        // size but don't allocate memory. If the processes use the
         // memory, vmfault() will allocate it.
         if (addr + n < addr)
             return -1;
@@ -62,15 +60,14 @@ sys_sbrk(void) {
 }
 
 uint64
-sys_pause(void) {
+sys_pause() {
     int n;
-    uint ticks0;
 
     argint(0, &n);
     if (n < 0)
         n = 0;
     tickslock.lock();
-    ticks0 = ticks;
+    uint ticks0 = ticks;
     while (ticks - ticks0 < static_cast<uint>(n)) {
         if (killed(myproc())) {
             tickslock.unlock();
@@ -83,7 +80,7 @@ sys_pause(void) {
 }
 
 uint64
-sys_kill(void) {
+sys_kill() {
     int pid;
 
     argint(0, &pid);
@@ -93,11 +90,10 @@ sys_kill(void) {
 // return how many clock tick interrupts have occurred
 // since start.
 uint64
-sys_uptime(void) {
-    uint xticks;
+sys_uptime() {
 
     tickslock.lock();
-    xticks = ticks;
+    uint xticks = ticks;
     tickslock.unlock();
     return xticks;
 }

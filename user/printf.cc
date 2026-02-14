@@ -1,5 +1,4 @@
 #include "kernel/types.h"
-#include "kernel/stat.h"
 #include "user/user.h"
 
 #include <stdarg.h>
@@ -14,10 +13,9 @@ putc(const int fd, const char c) {
 static void
 printint(const int fd, const long long xx, const int base, const int sgn) {
     char buf[20];
-    int i, neg;
     unsigned long long x;
 
-    neg = 0;
+    int neg = 0;
     if (sgn && xx < 0) {
         neg = 1;
         x = -xx;
@@ -25,7 +23,7 @@ printint(const int fd, const long long xx, const int base, const int sgn) {
         x = xx;
     }
 
-    i = 0;
+    int i = 0;
     do {
         buf[i++] = digits[x % base];
     } while ((x /= base) != 0);
@@ -38,21 +36,20 @@ printint(const int fd, const long long xx, const int base, const int sgn) {
 
 static void
 printptr(const int fd, uint64 x) {
-    uint i;
     putc(fd, '0');
     putc(fd, 'x');
-    for (i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
+    for (uint i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
         putc(fd, digits[x >> (sizeof(uint64) * 8 - 4)]);
 }
 
 // Print to the given fd. Only understands %d, %x, %p, %c, %s.
 void vprintf(const int fd, const char *fmt, const va_list ap) {
     const char *s;
-    int c0, c1, c2, i, state;
+    int c2;
 
-    state = 0;
-    for (i = 0; fmt[i]; i++) {
-        c0 = fmt[i] & 0xff;
+    int state = 0;
+    for (int i = 0; fmt[i]; i++) {
+        int c0 = fmt[i] & 0xff;
         if (state == 0) {
             if (c0 == '%') {
                 state = '%';
@@ -60,7 +57,7 @@ void vprintf(const int fd, const char *fmt, const va_list ap) {
                 putc(fd, c0);
             }
         } else if (state == '%') {
-            c1 = c2 = 0;
+            int c1 = c2 = 0;
             if (c0)
                 c1 = fmt[i + 1] & 0xff;
             if (c1)

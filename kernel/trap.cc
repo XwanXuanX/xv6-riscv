@@ -1,5 +1,4 @@
 #include "types.h"
-#include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
@@ -38,12 +37,12 @@ int allotment[NLEVELS] = {
  */
 int quantum[NLEVELS] = {2, 4, 8, 16, 32};
 
-void trapinit(void) {
+void trapinit() {
     tickslock.init_lock("time");
 }
 
 // set up to take exceptions and traps while in the kernel.
-void trapinithart(void) {
+void trapinithart() {
     w_stvec((uint64)kernelvec);
 }
 
@@ -53,7 +52,7 @@ void trapinithart(void) {
 // return value is user satp for trampoline.S to switch to.
 //
 uint64
-usertrap(void) {
+usertrap() {
     int which_dev = 0;
 
     if ((r_sstatus() & SSTATUS_SPP) != 0)
@@ -130,7 +129,7 @@ usertrap(void) {
 //
 // set up trapframe and control registers for a return to user space
 //
-void prepare_return(void) {
+void prepare_return() {
     struct proc *p = myproc();
 
     // we're about to switch the destination of traps from

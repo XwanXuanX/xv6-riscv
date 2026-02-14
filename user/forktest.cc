@@ -1,8 +1,6 @@
 // Test that fork fails gracefully.
 // Tiny executable so that the limit can be filling the proc table.
 
-#include "kernel/types.h"
-#include "kernel/stat.h"
 #include "user/user.h"
 
 #define N 1000
@@ -12,12 +10,12 @@ void print(const char *s) {
 }
 
 void forktest(void) {
-    int n, pid;
+    int n;
 
     print("fork test\n");
 
     for (n = 0; n < N; n++) {
-        pid = fork();
+        int pid = fork();
         if (pid < 0)
             break;
         if (pid == 0)

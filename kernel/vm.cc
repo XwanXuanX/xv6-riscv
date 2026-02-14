@@ -1,12 +1,8 @@
-#include "param.h"
 #include "types.h"
 #include "memlayout.h"
-#include "elf.h"
 #include "riscv.h"
 #include "defs.h"
-#include "spinlock.h"
 #include "proc.h"
-#include "fs.h"
 
 namespace xv6 {
 
@@ -22,9 +18,8 @@ extern char trampoline[]; // trampoline.S
 // Make a direct-map page table for the kernel.
 pagetable_t
 kvmmake(void) {
-    pagetable_t kpgtbl;
 
-    kpgtbl = (pagetable_t)kalloc();
+    pagetable_t kpgtbl = (pagetable_t)kalloc();
     memset(kpgtbl, 0, PGSIZE);
 
     // uart registers
@@ -113,20 +108,18 @@ walk(pagetable_t pagetable, const uint64 va, const int alloc) {
 // Can only be used to look up user pages.
 uint64
 walkaddr(const pagetable_t pagetable, const uint64 va) {
-    pte_t *pte;
-    uint64 pa;
 
     if (va >= MAXVA)
         return 0;
 
-    pte = walk(pagetable, va, 0);
+    pte_t *pte = walk(pagetable, va, 0);
     if (pte == nullptr)
         return 0;
     if ((*pte & PTE_V) == 0)
         return 0;
     if ((*pte & PTE_U) == 0)
         return 0;
-    pa = PTE2PA(*pte);
+    uint64 pa = PTE2PA(*pte);
     return pa;
 }
 
@@ -136,7 +129,6 @@ walkaddr(const pagetable_t pagetable, const uint64 va) {
 // Returns 0 on success, -1 if walk() couldn't
 // allocate a needed page-table page.
 int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size, uint64 pa, const int perm) {
-    uint64 a, last;
     pte_t *pte;
 
     if ((va % PGSIZE) != 0)
@@ -148,8 +140,8 @@ int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size, ui
     if (size == 0)
         panic("mappages: size");
 
-    a = va;
-    last = va + size - PGSIZE;
+    uint64 a = va;
+    uint64 last = va + size - PGSIZE;
     for (;;) {
         if ((pte = walk(pagetable, a, 1)) == nullptr)
             return -1;
@@ -168,8 +160,7 @@ int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size, ui
 // returns 0 if out of memory.
 pagetable_t
 uvmcreate() {
-    pagetable_t pagetable;
-    pagetable = (pagetable_t)kalloc();
+    pagetable_t pagetable = (pagetable_t)kalloc();
     if (pagetable == nullptr)
         return nullptr;
     memset(pagetable, 0, PGSIZE);
@@ -180,13 +171,12 @@ uvmcreate() {
 // page-aligned. It's OK if the mappings don't exist.
 // Optionally free the physical memory.
 void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages, const int do_free) {
-    uint64 a;
     pte_t *pte;
 
     if ((va % PGSIZE) != 0)
         panic("uvmunmap: not aligned");
 
-    for (a = va; a < va + npages * PGSIZE; a += PGSIZE) {
+    for (uint64 a = va; a < va + npages * PGSIZE; a += PGSIZE) {
         if ((pte = walk(pagetable, a, 0)) == nullptr) // leaf page table entry allocated?
             continue;
         if ((*pte & PTE_V) == 0) // has physical page been allocated?
@@ -203,15 +193,13 @@ void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages,
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 uint64
 uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz, const int xperm) {
-    char *mem;
-    uint64 a;
 
     if (newsz < oldsz)
         return oldsz;
 
     oldsz = PGROUNDUP(oldsz);
-    for (a = oldsz; a < newsz; a += PGSIZE) {
-        mem = reinterpret_cast<char *>(kalloc());
+    for (uint64 a = oldsz; a < newsz; a += PGSIZE) {
+        char *mem = reinterpret_cast<char *>(kalloc());
         if (mem == nullptr) {
             uvmdealloc(pagetable, a, oldsz);
             return 0;
@@ -306,9 +294,8 @@ err:
 // mark a PTE invalid for user access.
 // used by exec for the user stack guard page.
 void uvmclear(const pagetable_t pagetable, const uint64 va) {
-    pte_t *pte;
 
-    pte = walk(pagetable, va, 0);
+    pte_t *pte = walk(pagetable, va, 0);
     if (pte == nullptr)
         panic("uvmclear");
     *pte &= ~PTE_U;
@@ -318,27 +305,25 @@ void uvmclear(const pagetable_t pagetable, const uint64 va) {
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
 int copyout(const pagetable_t pagetable, uint64 dstva, const char *src, uint64 len) {
-    uint64 n, va0, pa0;
-    pte_t *pte;
 
     while (len > 0) {
-        va0 = PGROUNDDOWN(dstva);
+        uint64 va0 = PGROUNDDOWN(dstva);
         if (va0 >= MAXVA)
             return -1;
 
-        pa0 = walkaddr(pagetable, va0);
+        uint64 pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0) {
             if ((pa0 = vmfault(pagetable, va0, 0)) == 0) {
                 return -1;
             }
         }
 
-        pte = walk(pagetable, va0, 0);
+        pte_t *pte = walk(pagetable, va0, 0);
         // forbid copyout over read-only user text pages.
         if ((*pte & PTE_W) == 0)
             return -1;
 
-        n = PGSIZE - (dstva - va0);
+        uint64 n = PGSIZE - (dstva - va0);
         if (n > len)
             n = len;
         memmove((void *)(pa0 + (dstva - va0)), src, n);
@@ -354,17 +339,16 @@ int copyout(const pagetable_t pagetable, uint64 dstva, const char *src, uint64 l
 // Copy len bytes to dst from virtual address srcva in a given page table.
 // Return 0 on success, -1 on error.
 int copyin(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
-    uint64 n, va0, pa0;
 
     while (len > 0) {
-        va0 = PGROUNDDOWN(srcva);
-        pa0 = walkaddr(pagetable, va0);
+        uint64 va0 = PGROUNDDOWN(srcva);
+        uint64 pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0) {
             if ((pa0 = vmfault(pagetable, va0, 0)) == 0) {
                 return -1;
             }
         }
-        n = PGSIZE - (srcva - va0);
+        uint64 n = PGSIZE - (srcva - va0);
         if (n > len)
             n = len;
         memmove(dst, (void *)(pa0 + (srcva - va0)), n);
@@ -381,15 +365,14 @@ int copyin(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
 // until a '\0', or max.
 // Return 0 on success, -1 on error.
 int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {
-    uint64 n, va0, pa0;
     int got_null = 0;
 
     while (got_null == 0 && max > 0) {
-        va0 = PGROUNDDOWN(srcva);
-        pa0 = walkaddr(pagetable, va0);
+        uint64 va0 = PGROUNDDOWN(srcva);
+        uint64 pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0)
             return -1;
-        n = PGSIZE - (srcva - va0);
+        uint64 n = PGSIZE - (srcva - va0);
         if (n > max)
             n = max;
 
@@ -423,7 +406,6 @@ int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) 
 // out of physical memory, and physical address if successful.
 uint64
 vmfault(const pagetable_t pagetable, uint64 va, int read) {
-    uint64 mem;
     struct proc *p = myproc();
 
     if (va >= p->sz)
@@ -432,7 +414,7 @@ vmfault(const pagetable_t pagetable, uint64 va, int read) {
     if (ismapped(pagetable, va)) {
         return 0;
     }
-    mem = (uint64)kalloc();
+    uint64 mem = (uint64)kalloc();
     if (mem == 0)
         return 0;
     memset((void *)mem, 0, PGSIZE);

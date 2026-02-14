@@ -3,12 +3,10 @@
 //
 
 #include "types.h"
-#include "riscv.h"
 #include "defs.h"
 #include "param.h"
 #include "fs.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "file.h"
 #include "stat.h"
 #include "proc.h"
@@ -28,10 +26,9 @@ void fileinit(void) {
 // Allocate a file structure.
 struct file *
 filealloc(void) {
-    struct file *f;
 
     ftable.lock.lock();
-    for (f = ftable.file; f < ftable.file + NFILE; f++) {
+    for (struct file *f = ftable.file; f < ftable.file + NFILE; f++) {
         if (f->ref == 0) {
             f->ref = 1;
             ftable.lock.unlock();
@@ -55,7 +52,6 @@ filedup(struct file *f) {
 
 // Close file f.  (Decrement ref count, close when reaches 0.)
 void fileclose(struct file *f) {
-    struct file ff;
 
     ftable.lock.lock();
     if (f->ref < 1)
@@ -64,7 +60,7 @@ void fileclose(struct file *f) {
         ftable.lock.unlock();
         return;
     }
-    ff = *f;
+    struct file ff = *f;
     f->ref = 0;
     f->type = FD_NONE;
     ftable.lock.unlock();

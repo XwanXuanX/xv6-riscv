@@ -7,14 +7,11 @@
 //    for (i = 0; i < 40000; i++)
 //      asm volatile("");
 
-#include "kernel/types.h"
-#include "kernel/stat.h"
 #include "user/user.h"
-#include "kernel/fs.h"
 #include "kernel/fcntl.h"
 
 int main(int argc, char *argv[]) {
-    int fd, i;
+    int i;
     char path[] = "stressfs0";
     char data[512];
 
@@ -28,7 +25,7 @@ int main(int argc, char *argv[]) {
     printf("write %d\n", i);
 
     path[8] += i;
-    fd = open(path, O_CREATE | O_RDWR);
+    int fd = open(path, O_CREATE | O_RDWR);
     for (i = 0; i < 20; i++)
         //    printf(fd, "%d\n", i);
         write(fd, data, sizeof(data));

@@ -9,10 +9,8 @@
 #include "defs.h"
 #include "param.h"
 #include "stat.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "fs.h"
-#include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
 
@@ -39,10 +37,9 @@ argfd(const int n, int *pfd, struct file **pf) {
 // Takes over file reference from caller on success.
 static int
 fdalloc(struct file *f) {
-    int fd;
     struct proc *p = myproc();
 
-    for (fd = 0; fd < NOFILE; fd++) {
+    for (int fd = 0; fd < NOFILE; fd++) {
         if (p->ofile[fd] == nullptr) {
             p->ofile[fd] = f;
             return fd;
@@ -52,7 +49,7 @@ fdalloc(struct file *f) {
 }
 
 uint64
-sys_dup(void) {
+sys_dup() {
     struct file *f;
     int fd;
 
@@ -166,10 +163,9 @@ bad:
 // Is the directory dp empty except for "." and ".." ?
 static int
 isdirempty(struct inode *dp) {
-    uint off;
     struct dirent de;
 
-    for (off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
+    for (uint off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
         if (readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
             panic("isdirempty: readi");
         if (de.inum != 0)
@@ -466,13 +462,13 @@ uint64
 sys_pipe(void) {
     uint64 fdarray; // user pointer to array of two integers
     struct file *rf, *wf;
-    int fd0, fd1;
+    int fd1;
     struct proc *p = myproc();
 
     argaddr(0, &fdarray);
     if (pipealloc(&rf, &wf) < 0)
         return -1;
-    fd0 = -1;
+    int fd0 = -1;
     if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
         if (fd0 >= 0)
             p->ofile[fd0] = nullptr;

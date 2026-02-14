@@ -1,8 +1,5 @@
 // Mutual exclusion spin locks.
 
-#include "types.h"
-#include "param.h"
-#include "memlayout.h"
 #include "spinlock.h"
 #include "riscv.h"
 #include "proc.h"
@@ -129,8 +126,7 @@ void spinlock::unlock() {
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
 bool spinlock::holding() {
-    int r;
-    r = (locked && cpu == mycpu());
+    int r = (locked && cpu == mycpu());
     return r;
 }
 

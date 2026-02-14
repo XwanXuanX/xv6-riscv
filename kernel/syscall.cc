@@ -1,8 +1,4 @@
 #include "types.h"
-#include "param.h"
-#include "memlayout.h"
-#include "riscv.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "syscall.h"
 #include "defs.h"
@@ -71,27 +67,27 @@ int argstr(const int n, char *buf, const int max) {
 }
 
 // Prototypes for the functions that handle system calls.
-extern uint64 sys_fork(void);
-extern uint64 sys_exit(void);
-extern uint64 sys_wait(void);
-extern uint64 sys_pipe(void);
-extern uint64 sys_read(void);
-extern uint64 sys_kill(void);
-extern uint64 sys_exec(void);
-extern uint64 sys_fstat(void);
-extern uint64 sys_chdir(void);
-extern uint64 sys_dup(void);
-extern uint64 sys_getpid(void);
-extern uint64 sys_sbrk(void);
-extern uint64 sys_pause(void);
-extern uint64 sys_uptime(void);
-extern uint64 sys_open(void);
-extern uint64 sys_write(void);
-extern uint64 sys_mknod(void);
-extern uint64 sys_unlink(void);
-extern uint64 sys_link(void);
-extern uint64 sys_mkdir(void);
-extern uint64 sys_close(void);
+extern uint64 sys_fork();
+extern uint64 sys_exit();
+extern uint64 sys_wait();
+extern uint64 sys_pipe();
+extern uint64 sys_read();
+extern uint64 sys_kill();
+extern uint64 sys_exec();
+extern uint64 sys_fstat();
+extern uint64 sys_chdir();
+extern uint64 sys_dup();
+extern uint64 sys_getpid();
+extern uint64 sys_sbrk();
+extern uint64 sys_pause();
+extern uint64 sys_uptime();
+extern uint64 sys_open();
+extern uint64 sys_write();
+extern uint64 sys_mknod();
+extern uint64 sys_unlink();
+extern uint64 sys_link();
+extern uint64 sys_mkdir();
+extern uint64 sys_close();
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -120,11 +116,10 @@ static uint64 (*syscalls[])(void) = {
     sys_close   // 21
 };
 
-void syscall(void) {
-    uint64 num;
+void syscall() {
     struct proc *p = myproc();
 
-    num = p->trapframe->a7;
+    uint64 num = p->trapframe->a7;
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
         // Use num to lookup the system call function for num, call it,
         // and store its return value in p->trapframe->a0

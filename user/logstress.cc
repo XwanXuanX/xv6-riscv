@@ -1,5 +1,3 @@
-#include "kernel/types.h"
-#include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
 
@@ -11,7 +9,7 @@
 char buf[BUFSZ];
 
 int main(const int argc, char **argv) {
-    int fd, n;
+    int n;
     enum { N = 250,
            SZ = 2000 };
 
@@ -22,7 +20,7 @@ int main(const int argc, char **argv) {
             exit(1);
         }
         if (pid1 == 0) {
-            fd = open(argv[i], O_CREATE | O_RDWR);
+            int fd = open(argv[i], O_CREATE | O_RDWR);
             if (fd < 0) {
                 printf("%s: create %s failed\n", argv[0], argv[i]);
                 exit(1);

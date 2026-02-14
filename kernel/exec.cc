@@ -1,8 +1,6 @@
 #include "types.h"
 #include "param.h"
-#include "memlayout.h"
 #include "riscv.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
 #include "elf.h"
@@ -151,11 +149,10 @@ bad:
 // Returns 0 on success, -1 on failure.
 static int
 loadseg(const pagetable_t pagetable, const uint64 va, struct inode *ip, const uint offset, const uint sz) {
-    uint i, n;
-    uint64 pa;
+    uint n;
 
-    for (i = 0; i < sz; i += PGSIZE) {
-        pa = walkaddr(pagetable, va + i);
+    for (uint i = 0; i < sz; i += PGSIZE) {
+        uint64 pa = walkaddr(pagetable, va + i);
         if (pa == 0)
             panic("loadseg: address should exist");
         if (sz - i < PGSIZE)

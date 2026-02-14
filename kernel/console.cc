@@ -9,18 +9,11 @@
 //   control-p -- print process list
 //
 
-#include <stdarg.h>
-
 #include "types.h"
-#include "param.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "fs.h"
 #include "file.h"
-#include "memlayout.h"
-#include "riscv.h"
 #include "defs.h"
-#include "proc.h"
 
 #define BACKSPACE 0x100  // erase the last output character
 #define C(x) ((x) - '@') // Control-x
@@ -83,11 +76,9 @@ int consolewrite(const int user_src, const uint64 src, const int n) {
 // or kernel address.
 //
 int consoleread(const int user_dst, uint64 dst, int n) {
-    int target;
-    int c;
     char cbuf;
 
-    target = n;
+    int target = n;
     cons.lock.lock();
     while (n > 0) {
         // wait until interrupt handler has put some
@@ -100,7 +91,7 @@ int consoleread(const int user_dst, uint64 dst, int n) {
             sleep(&cons.r, &cons.lock);
         }
 
-        c = cons.buf[cons.r++ % INPUT_BUF_SIZE];
+        int c = cons.buf[cons.r++ % INPUT_BUF_SIZE];
 
         if (c == C('D')) { // end-of-file
             if (n < target) {
@@ -180,7 +171,7 @@ void consoleintr(int c) {
     cons.lock.unlock();
 }
 
-void consoleinit(void) {
+void consoleinit() {
     cons.lock.init_lock("cons");
 
     uartinit();

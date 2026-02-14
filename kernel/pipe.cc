@@ -1,11 +1,7 @@
 #include "types.h"
-#include "riscv.h"
 #include "defs.h"
-#include "param.h"
 #include "spinlock.h"
 #include "proc.h"
-#include "fs.h"
-#include "sleeplock.h"
 #include "file.h"
 
 namespace xv6 {
@@ -22,9 +18,8 @@ struct pipe {
 };
 
 int pipealloc(struct file **f0, struct file **f1) {
-    struct pipe *pi;
 
-    pi = nullptr;
+    struct pipe *pi = nullptr;
     *f0 = *f1 = nullptr;
     if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr)
         goto bad;

@@ -1,5 +1,4 @@
 #include "types.h"
-#include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
@@ -46,9 +45,8 @@ spinlock wait_lock;
 // Map it high in memory, followed by an invalid
 // guard page.
 void proc_mapstacks(const pagetable_t kpgtbl) {
-    struct proc *p;
 
-    for (p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         char *pa = reinterpret_cast<char *>(kalloc());
         if (pa == nullptr)
             panic("kalloc");
@@ -59,11 +57,10 @@ void proc_mapstacks(const pagetable_t kpgtbl) {
 
 // initialize the proc table.
 void procinit(void) {
-    struct proc *p;
 
     pid_lock.init_lock("nextpid");
     wait_lock.init_lock("wait_lock");
-    for (p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         p->lock.init_lock("proc");
         p->state = UNUSED;
         p->kstack = KSTACK((int)(p - proc));
@@ -98,10 +95,9 @@ myproc(void) {
 }
 
 int allocpid() {
-    int pid;
 
     pid_lock.lock();
-    pid = nextpid;
+    int pid = nextpid;
     nextpid = nextpid + 1;
     pid_lock.unlock();
 
@@ -210,10 +206,9 @@ freeproc(struct proc *p) {
 // but with trampoline and trapframe pages.
 pagetable_t
 proc_pagetable(struct proc *p) {
-    pagetable_t pagetable;
 
     // An empty page table.
-    pagetable = uvmcreate();
+    pagetable_t pagetable = uvmcreate();
     if (pagetable == nullptr)
         return nullptr;
 
@@ -249,9 +244,8 @@ void proc_freepagetable(const pagetable_t pagetable, const uint64 sz) {
 
 // Set up first user process.
 void userinit(void) {
-    struct proc *p;
 
-    p = allocproc();
+    struct proc *p = allocproc();
     // Process lock is still held
     initproc = p;
 
@@ -279,10 +273,9 @@ void userinit(void) {
 // Grow or shrink user memory by n bytes.
 // Return 0 on success, -1 on failure.
 int growproc(const int n) {
-    uint64 sz;
     struct proc *p = myproc();
 
-    sz = p->sz;
+    uint64 sz = p->sz;
     if (n > 0) {
         if (sz + n > TRAPFRAME) {
             return -1;
@@ -300,7 +293,6 @@ int growproc(const int n) {
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
 int kfork(void) {
-    int i, pid;
     struct proc *np;
     struct proc *p = myproc();
 
@@ -324,14 +316,14 @@ int kfork(void) {
     np->trapframe->a0 = 0;
 
     // increment reference counts on open file descriptors.
-    for (i = 0; i < NOFILE; i++)
+    for (int i = 0; i < NOFILE; i++)
         if (p->ofile[i])
             np->ofile[i] = filedup(p->ofile[i]);
     np->cwd = idup(p->cwd);
 
     safestrcpy(np->name, p->name, sizeof(p->name));
 
-    pid = np->pid;
+    int pid = np->pid;
 
     np->lock.unlock();
 
@@ -426,16 +418,14 @@ void kexit(const int status) {
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int kwait(const uint64 addr) {
-    struct proc *pp;
-    int havekids, pid;
     struct proc *p = myproc();
 
     wait_lock.lock();
 
     for (;;) {
         // Scan through table looking for exited children.
-        havekids = 0;
-        for (pp = proc; pp < &proc[NPROC]; pp++) {
+        int havekids = 0;
+        for (struct proc *pp = proc; pp < &proc[NPROC]; pp++) {
             if (pp->parent == p) {
                 // make sure the child isn't still in exit() or swtch().
                 pp->lock.lock();
@@ -443,7 +433,7 @@ int kwait(const uint64 addr) {
                 havekids = 1;
                 if (pp->state == ZOMBIE) {
                     // Found one.
-                    pid = pp->pid;
+                    int pid = pp->pid;
                     if (addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
                                              sizeof(pp->xstate)) < 0) {
                         pp->lock.unlock();
@@ -702,7 +692,6 @@ __attribute__((noreturn)) void scheduler(void) {
 // there's no process.
 void sched(void) {
     // I'm the process calling this
-    int intena;
     struct proc *p = myproc();
 
     if (!p->lock.holding())
@@ -714,7 +703,7 @@ void sched(void) {
     if (intr_get())
         panic("sched interruptible");
 
-    intena = mycpu()->intena;
+    int intena = mycpu()->intena;
     // I will switch to scheduler for now...
     swtch(&p->context, &mycpu()->context);
     // Scheduler doing its stuff... Scheduler done
@@ -832,9 +821,8 @@ void sleep(void *chan, spinlock *lk) {
 // Wake up all processes sleeping on channel chan.
 // Caller should hold the condition lock.
 void wakeup(void *chan) {
-    struct proc *p;
 
-    for (p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         if (p != myproc()) {
             p->lock.lock();
             if (p->state == SLEEPING && p->chan == chan) {
@@ -865,9 +853,8 @@ void wakeup(void *chan) {
 // The victim won't exit until it tries to return
 // to user space (see usertrap() in trap.c).
 int kkill(const int pid) {
-    struct proc *p;
 
-    for (p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         p->lock.lock();
         if (p->pid == pid) {
             p->killed = 1;
@@ -904,10 +891,9 @@ void setkilled(struct proc *p) {
 }
 
 int killed(struct proc *p) {
-    int k;
 
     p->lock.lock();
-    k = p->killed;
+    int k = p->killed;
     p->lock.unlock();
     return k;
 }
@@ -970,11 +956,10 @@ void procdump(void) {
         [RUNNABLE] = "runble",
         [RUNNING] = "run   ",
         [ZOMBIE] = "zombie"};
-    struct proc *p;
     const char *state;
 
     printf("PID\tSTATE\tNAME\n");
-    for (p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         if (p->state == UNUSED)
             continue;
         if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
