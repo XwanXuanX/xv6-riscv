@@ -1,8 +1,5 @@
 // Mutual exclusion spin locks.
 
-#include "types.h"
-#include "param.h"
-#include "memlayout.h"
 #include "spinlock.h"
 #include "riscv.h"
 #include "proc.h"
@@ -27,7 +24,7 @@ namespace impl {
 // release(&A);   // pop_off()
 
 void push_off() {
-    int old = intr_get();
+    const int old = intr_get();
 
     // disable interrupts to prevent an involuntary context
     // switch while using mycpu().
@@ -58,7 +55,7 @@ void pop_off() {
 void spinlock::init_lock(const char *name) {
     this->name = name;
     locked = 0;
-    cpu = 0;
+    cpu = nullptr;
 }
 
 // Acquire the lock.
@@ -104,7 +101,7 @@ void spinlock::unlock() {
         panic("release");
     }
 
-    cpu = 0;
+    cpu = nullptr;
 
     // Tell the C compiler and the CPU to not move loads or stores
     // past this point, to ensure that all the stores in the critical
@@ -129,8 +126,7 @@ void spinlock::unlock() {
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
 bool spinlock::holding() {
-    int r;
-    r = (locked && cpu == mycpu());
+    const int r = (locked && cpu == mycpu());
     return r;
 }
 

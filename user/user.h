@@ -1,3 +1,7 @@
+#pragma once
+
+#include "kernel/types.h"
+
 #define SBRK_ERROR ((char *)-1)
 
 #ifdef __cplusplus

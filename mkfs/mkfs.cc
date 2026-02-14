@@ -50,7 +50,7 @@ void die(const char *);
 
 // convert to riscv byte order
 ushort
-xshort(ushort x) {
+xshort(const ushort x) {
     ushort y;
     uchar *a = (uchar *)&y;
     a[0] = x;
@@ -58,7 +58,7 @@ xshort(ushort x) {
     return y;
 }
 
-uint xint(uint x) {
+uint xint(const uint x) {
     uint y;
     uchar *a = (uchar *)&y;
     a[0] = x;
@@ -68,9 +68,8 @@ uint xint(uint x) {
     return y;
 }
 
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
     int i, cc, fd;
-    uint rootino, inum, off;
     struct dirent de;
     char buf[BSIZE];
     struct dinode din;
@@ -114,7 +113,7 @@ int main(int argc, char *argv[]) {
     memmove(buf, &sb, sizeof(sb));
     wsect(1, buf);
 
-    rootino = ialloc(T_DIR);
+    const uint rootino = ialloc(T_DIR);
     assert(rootino == ROOTINO);
 
     bzero(&de, sizeof(de));
@@ -149,7 +148,7 @@ int main(int argc, char *argv[]) {
 
         assert(strlen(shortname) <= DIRSIZ);
 
-        inum = ialloc(T_FILE);
+        const uint inum = ialloc(T_FILE);
 
         bzero(&de, sizeof(de));
         de.inum = xshort(inum);
@@ -164,7 +163,7 @@ int main(int argc, char *argv[]) {
 
     // fix size of root inode dir
     rinode(rootino, &din);
-    off = xint(din.size);
+    uint off = xint(din.size);
     off = ((off / BSIZE) + 1) * BSIZE;
     din.size = xint(off);
     winode(rootino, &din);
@@ -174,45 +173,41 @@ int main(int argc, char *argv[]) {
     exit(0);
 }
 
-void wsect(uint sec, void *buf) {
+void wsect(const uint sec, void *buf) {
     if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE)
         die("lseek");
     if (write(fsfd, buf, BSIZE) != BSIZE)
         die("write");
 }
 
-void winode(uint inum, struct dinode *ip) {
+void winode(const uint inum, struct dinode *ip) {
     char buf[BSIZE];
-    uint bn;
-    struct dinode *dip;
 
-    bn = IBLOCK(inum, sb);
+    const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf);
-    dip = ((struct dinode *)buf) + (inum % IPB);
+    struct dinode *dip = ((struct dinode *)buf) + (inum % IPB);
     *dip = *ip;
     wsect(bn, buf);
 }
 
-void rinode(uint inum, struct dinode *ip) {
+void rinode(const uint inum, struct dinode *ip) {
     char buf[BSIZE];
-    uint bn;
-    struct dinode *dip;
 
-    bn = IBLOCK(inum, sb);
+    const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf);
-    dip = ((struct dinode *)buf) + (inum % IPB);
+    const struct dinode *dip = ((struct dinode *)buf) + (inum % IPB);
     *ip = *dip;
 }
 
-void rsect(uint sec, void *buf) {
+void rsect(const uint sec, void *buf) {
     if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE)
         die("lseek");
     if (read(fsfd, buf, BSIZE) != BSIZE)
         die("read");
 }
 
-uint ialloc(ushort type) {
-    uint inum = freeinode++;
+uint ialloc(const ushort type) {
+    const uint inum = freeinode++;
     struct dinode din;
 
     bzero(&din, sizeof(din));
@@ -223,14 +218,13 @@ uint ialloc(ushort type) {
     return inum;
 }
 
-void balloc(int used) {
+void balloc(const int used) {
     uchar buf[BSIZE];
-    int i;
 
     printf("balloc: first %d blocks have been allocated\n", used);
     assert(used < BPB);
     bzero(buf, BSIZE);
-    for (i = 0; i < used; i++) {
+    for (int i = 0; i < used; i++) {
         buf[i / 8] = buf[i / 8] | (0x1 << (i % 8));
     }
     printf("balloc: write bitmap block at sector %d\n", sb.bmapstart);
@@ -239,19 +233,18 @@ void balloc(int used) {
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
-void iappend(uint inum, void *xp, int n) {
-    char *p = (char *)xp;
-    uint fbn, off, n1;
+void iappend(const uint inum, void *xp, int n) {
+    const char *p = (char *)xp;
     struct dinode din;
     char buf[BSIZE];
     uint indirect[NINDIRECT];
     uint x;
 
     rinode(inum, &din);
-    off = xint(din.size);
+    uint off = xint(din.size);
     // printf("append inum %d at off %d sz %d\n", inum, off, n);
     while (n > 0) {
-        fbn = off / BSIZE;
+        const uint fbn = off / BSIZE;
         assert(fbn < MAXFILE);
         if (fbn < NDIRECT) {
             if (xint(din.addrs[fbn]) == 0) {
@@ -269,7 +262,7 @@ void iappend(uint inum, void *xp, int n) {
             }
             x = xint(indirect[fbn - NDIRECT]);
         }
-        n1 = min(n, (fbn + 1) * BSIZE - off);
+        const uint n1 = min(n, (fbn + 1) * BSIZE - off);
         rsect(x, buf);
         bcopy(p, buf + off - (fbn * BSIZE), n1);
         wsect(x, buf);

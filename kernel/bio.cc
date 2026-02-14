@@ -16,10 +16,7 @@
 #include "types.h"
 #include "param.h"
 #include "spinlock.h"
-#include "sleeplock.h"
-#include "riscv.h"
 #include "defs.h"
-#include "fs.h"
 #include "buf.h"
 
 namespace xv6 {
@@ -34,15 +31,14 @@ struct {
     struct buf head;
 } bcache;
 
-void binit(void) {
-    struct buf *b;
+void binit() {
 
     bcache.lock.init_lock("bcache");
 
     // Create linked list of buffers
     bcache.head.prev = &bcache.head;
     bcache.head.next = &bcache.head;
-    for (b = bcache.buf; b < bcache.buf + NBUF; b++) {
+    for (struct buf *b = bcache.buf; b < bcache.buf + NBUF; b++) {
         b->next = bcache.head.next;
         b->prev = &bcache.head;
         initsleeplock(&b->lock, "buffer");
@@ -55,7 +51,7 @@ void binit(void) {
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
 static struct buf *
-bget(uint dev, uint blockno) {
+bget(const uint dev, const uint blockno) {
     struct buf *b;
 
     bcache.lock.lock();
@@ -88,10 +84,9 @@ bget(uint dev, uint blockno) {
 
 // Return a locked buf with the contents of the indicated block.
 struct buf *
-bread(uint dev, uint blockno) {
-    struct buf *b;
+bread(const uint dev, const uint blockno) {
 
-    b = bget(dev, blockno);
+    struct buf *b = bget(dev, blockno);
     if (!b->valid) {
         virtio_disk_rw(b, 0);
         b->valid = 1;

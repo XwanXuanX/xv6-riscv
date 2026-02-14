@@ -1,23 +1,21 @@
 // Simple grep.  Only supports ^ . * $ operators.
 
-#include "kernel/types.h"
-#include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
 
 char buf[1024];
 int match(char *, char *);
 
-void grep(char *pattern, int fd) {
-    int n, m;
-    char *p, *q;
+void grep(char *pattern, const int fd) {
+    int n;
+    char *q;
 
-    m = 0;
+    int m = 0;
     while ((n = read(fd, buf + m, sizeof(buf) - m - 1)) > 0) {
         m += n;
         buf[m] = '\0';
-        p = buf;
-        while ((q = strchr(p, '\n')) != 0) {
+        char *p = buf;
+        while ((q = strchr(p, '\n')) != nullptr) {
             *q = 0;
             if (match(pattern, p)) {
                 *q = '\n';
@@ -32,22 +30,21 @@ void grep(char *pattern, int fd) {
     }
 }
 
-int main(int argc, char *argv[]) {
-    int fd, i;
-    char *pattern;
+int main(const int argc, char *argv[]) {
+    int fd;
 
     if (argc <= 1) {
         fprintf(2, "usage: grep pattern [file ...]\n");
         exit(1);
     }
-    pattern = argv[1];
+    char *pattern = argv[1];
 
     if (argc <= 2) {
         grep(pattern, 0);
         exit(0);
     }
 
-    for (i = 2; i < argc; i++) {
+    for (int i = 2; i < argc; i++) {
         if ((fd = open(argv[i], O_RDONLY)) < 0) {
             printf("grep: cannot open %s\n", argv[i]);
             exit(1);
@@ -89,7 +86,7 @@ int matchhere(char *re, char *text) {
 }
 
 // matchstar: search for c*re at beginning of text
-int matchstar(int c, char *re, char *text) {
+int matchstar(const int c, char *re, char *text) {
     do { // a * matches zero or more instances
         if (matchhere(re, text))
             return 1;

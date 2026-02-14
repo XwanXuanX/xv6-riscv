@@ -1,10 +1,9 @@
-#include "kernel/types.h"
 #include "user/user.h"
 
 int main(void) {
     // Create 9 children + parent = 10 CPU-bound processes total.
     for (int i = 0; i < 9; i++) {
-        int pid = fork();
+        const int pid = fork();
         if (pid < 0) {
             printf("fork failed at i=%d\n", i);
             exit(1);

@@ -1,8 +1,12 @@
+#pragma once
+
+#include "kernel/types.h"
+
+namespace xv6 {
+
 #define T_DIR 1    // Directory
 #define T_FILE 2   // File
 #define T_DEVICE 3 // Device
-
-namespace xv6 {
 
 struct stat {
     int dev;     // File system's disk device

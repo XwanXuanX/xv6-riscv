@@ -1,3 +1,8 @@
+#pragma once
+
+#include "sleeplock.h"
+#include "fs.h"
+
 namespace xv6 {
 
 struct buf {

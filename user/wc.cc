@@ -1,18 +1,16 @@
-#include "kernel/types.h"
-#include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
 
 char buf[512];
 
-void wc(int fd, const char *name) {
-    int i, n;
-    int l, w, c, inword;
+void wc(const int fd, const char *name) {
+    int n;
+    int w, c;
 
-    l = w = c = 0;
-    inword = 0;
+    int l = w = c = 0;
+    int inword = 0;
     while ((n = read(fd, buf, sizeof(buf))) > 0) {
-        for (i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++) {
             c++;
             if (buf[i] == '\n')
                 l++;
@@ -31,15 +29,15 @@ void wc(int fd, const char *name) {
     printf("%d %d %d %s\n", l, w, c, name);
 }
 
-int main(int argc, char *argv[]) {
-    int fd, i;
+int main(const int argc, char *argv[]) {
+    int fd;
 
     if (argc <= 1) {
         wc(0, "");
         exit(0);
     }
 
-    for (i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if ((fd = open(argv[i], O_RDONLY)) < 0) {
             printf("wc: cannot open %s\n", argv[i]);
             exit(1);

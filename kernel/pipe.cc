@@ -1,11 +1,7 @@
 #include "types.h"
-#include "riscv.h"
 #include "defs.h"
-#include "param.h"
 #include "spinlock.h"
 #include "proc.h"
-#include "fs.h"
-#include "sleeplock.h"
 #include "file.h"
 
 namespace xv6 {
@@ -22,13 +18,12 @@ struct pipe {
 };
 
 int pipealloc(struct file **f0, struct file **f1) {
-    struct pipe *pi;
 
-    pi = 0;
-    *f0 = *f1 = 0;
-    if ((*f0 = filealloc()) == 0 || (*f1 = filealloc()) == 0)
+    struct pipe *pi = nullptr;
+    *f0 = *f1 = nullptr;
+    if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr)
         goto bad;
-    if ((pi = (struct pipe *)kalloc()) == 0)
+    if ((pi = (struct pipe *)kalloc()) == nullptr)
         goto bad;
     pi->readopen = 1;
     pi->writeopen = 1;
@@ -55,7 +50,7 @@ bad:
     return -1;
 }
 
-void pipeclose(struct pipe *pi, int writable) {
+void pipeclose(struct pipe *pi, const int writable) {
     pi->lock.lock();
     if (writable) {
         pi->writeopen = 0;
@@ -71,7 +66,7 @@ void pipeclose(struct pipe *pi, int writable) {
         pi->lock.unlock();
 }
 
-int pipewrite(struct pipe *pi, uint64 addr, int n) {
+int pipewrite(struct pipe *pi, const uint64 addr, const int n) {
     int i = 0;
     struct proc *pr = myproc();
 
@@ -98,7 +93,7 @@ int pipewrite(struct pipe *pi, uint64 addr, int n) {
     return i;
 }
 
-int piperead(struct pipe *pi, uint64 addr, int n) {
+int piperead(struct pipe *pi, const uint64 addr, const int n) {
     int i;
     struct proc *pr = myproc();
     char ch;

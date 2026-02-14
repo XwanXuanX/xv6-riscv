@@ -1,8 +1,4 @@
 #include "types.h"
-#include "param.h"
-#include "memlayout.h"
-#include "riscv.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "syscall.h"
 #include "defs.h"
@@ -10,7 +6,7 @@
 namespace xv6 {
 
 // Fetch the uint64 at addr from the current process.
-int fetchaddr(uint64 addr, uint64 *ip) {
+int fetchaddr(const uint64 addr, uint64 *ip) {
     struct proc *p = myproc();
     if (addr >= p->sz || addr + sizeof(uint64) > p->sz) // both tests needed, in case of overflow
         return -1;
@@ -21,7 +17,7 @@ int fetchaddr(uint64 addr, uint64 *ip) {
 
 // Fetch the nul-terminated string at addr from the current process.
 // Returns length of string, not including nul, or -1 for error.
-int fetchstr(uint64 addr, char *buf, int max) {
+int fetchstr(const uint64 addr, char *buf, const int max) {
     struct proc *p = myproc();
     if (copyinstr(p->pagetable, buf, addr, max) < 0)
         return -1;
@@ -29,8 +25,8 @@ int fetchstr(uint64 addr, char *buf, int max) {
 }
 
 static uint64
-argraw(int n) {
-    struct proc *p = myproc();
+argraw(const int n) {
+    const struct proc *p = myproc();
     switch (n) {
     case 0:
         return p->trapframe->a0;
@@ -50,53 +46,53 @@ argraw(int n) {
 }
 
 // Fetch the nth 32-bit system call argument.
-void argint(int n, int *ip) {
+void argint(const int n, int *ip) {
     *ip = argraw(n);
 }
 
 // Retrieve an argument as a pointer.
 // Doesn't check for legality, since
 // copyin/copyout will do that.
-void argaddr(int n, uint64 *ip) {
+void argaddr(const int n, uint64 *ip) {
     *ip = argraw(n);
 }
 
 // Fetch the nth word-sized system call argument as a null-terminated string.
 // Copies into buf, at most max.
 // Returns string length if OK (including nul), -1 if error.
-int argstr(int n, char *buf, int max) {
+int argstr(const int n, char *buf, const int max) {
     uint64 addr;
     argaddr(n, &addr);
     return fetchstr(addr, buf, max);
 }
 
 // Prototypes for the functions that handle system calls.
-extern uint64 sys_fork(void);
-extern uint64 sys_exit(void);
-extern uint64 sys_wait(void);
-extern uint64 sys_pipe(void);
-extern uint64 sys_read(void);
-extern uint64 sys_kill(void);
-extern uint64 sys_exec(void);
-extern uint64 sys_fstat(void);
-extern uint64 sys_chdir(void);
-extern uint64 sys_dup(void);
-extern uint64 sys_getpid(void);
-extern uint64 sys_sbrk(void);
-extern uint64 sys_pause(void);
-extern uint64 sys_uptime(void);
-extern uint64 sys_open(void);
-extern uint64 sys_write(void);
-extern uint64 sys_mknod(void);
-extern uint64 sys_unlink(void);
-extern uint64 sys_link(void);
-extern uint64 sys_mkdir(void);
-extern uint64 sys_close(void);
+extern uint64 sys_fork();
+extern uint64 sys_exit();
+extern uint64 sys_wait();
+extern uint64 sys_pipe();
+extern uint64 sys_read();
+extern uint64 sys_kill();
+extern uint64 sys_exec();
+extern uint64 sys_fstat();
+extern uint64 sys_chdir();
+extern uint64 sys_dup();
+extern uint64 sys_getpid();
+extern uint64 sys_sbrk();
+extern uint64 sys_pause();
+extern uint64 sys_uptime();
+extern uint64 sys_open();
+extern uint64 sys_write();
+extern uint64 sys_mknod();
+extern uint64 sys_unlink();
+extern uint64 sys_link();
+extern uint64 sys_mkdir();
+extern uint64 sys_close();
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
 static uint64 (*syscalls[])(void) = {
-    0,
+    nullptr,
     sys_fork,   // 1
     sys_exit,   // 2
     sys_wait,   // 3
@@ -120,11 +116,10 @@ static uint64 (*syscalls[])(void) = {
     sys_close   // 21
 };
 
-void syscall(void) {
-    uint64 num;
+void syscall() {
     struct proc *p = myproc();
 
-    num = p->trapframe->a7;
+    const uint64 num = p->trapframe->a7;
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
         // Use num to lookup the system call function for num, call it,
         // and store its return value in p->trapframe->a0

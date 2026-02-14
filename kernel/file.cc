@@ -3,12 +3,10 @@
 //
 
 #include "types.h"
-#include "riscv.h"
 #include "defs.h"
 #include "param.h"
 #include "fs.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "file.h"
 #include "stat.h"
 #include "proc.h"
@@ -28,10 +26,9 @@ void fileinit(void) {
 // Allocate a file structure.
 struct file *
 filealloc(void) {
-    struct file *f;
 
     ftable.lock.lock();
-    for (f = ftable.file; f < ftable.file + NFILE; f++) {
+    for (struct file *f = ftable.file; f < ftable.file + NFILE; f++) {
         if (f->ref == 0) {
             f->ref = 1;
             ftable.lock.unlock();
@@ -39,7 +36,7 @@ filealloc(void) {
         }
     }
     ftable.lock.unlock();
-    return 0;
+    return nullptr;
 }
 
 // Increment ref count for file f.
@@ -55,7 +52,6 @@ filedup(struct file *f) {
 
 // Close file f.  (Decrement ref count, close when reaches 0.)
 void fileclose(struct file *f) {
-    struct file ff;
 
     ftable.lock.lock();
     if (f->ref < 1)
@@ -64,7 +60,7 @@ void fileclose(struct file *f) {
         ftable.lock.unlock();
         return;
     }
-    ff = *f;
+    const struct file ff = *f;
     f->ref = 0;
     f->type = FD_NONE;
     ftable.lock.unlock();
@@ -80,15 +76,15 @@ void fileclose(struct file *f) {
 
 // Get metadata about file f.
 // addr is a user virtual address, pointing to a struct stat.
-int filestat(struct file *f, uint64 addr) {
-    struct proc *p = myproc();
+int filestat(struct file *f, const uint64 addr) {
+    const struct proc *p = myproc();
     struct stat st;
 
     if (f->type == FD_INODE || f->type == FD_DEVICE) {
         ilock(f->ip);
         stati(f->ip, &st);
         iunlock(f->ip);
-        if (copyout(p->pagetable, addr, (char *)&st, sizeof(st)) < 0)
+        if (copyout(p->pagetable, addr, reinterpret_cast<char *>(&st), sizeof(st)) < 0)
             return -1;
         return 0;
     }
@@ -97,7 +93,7 @@ int filestat(struct file *f, uint64 addr) {
 
 // Read from file f.
 // addr is a user virtual address.
-int fileread(struct file *f, uint64 addr, int n) {
+int fileread(struct file *f, const uint64 addr, const int n) {
     int r = 0;
 
     if (f->readable == 0)
@@ -123,7 +119,7 @@ int fileread(struct file *f, uint64 addr, int n) {
 
 // Write to file f.
 // addr is a user virtual address.
-int filewrite(struct file *f, uint64 addr, int n) {
+int filewrite(struct file *f, const uint64 addr, const int n) {
     int r, ret = 0;
 
     if (f->writable == 0)
@@ -140,7 +136,7 @@ int filewrite(struct file *f, uint64 addr, int n) {
         // the maximum log transaction size, including
         // i-node, indirect block, allocation blocks,
         // and 2 blocks of slop for non-aligned writes.
-        int max = ((MAXOPBLOCKS - 1 - 1 - 2) / 2) * BSIZE;
+        const int max = ((MAXOPBLOCKS - 1 - 1 - 2) / 2) * BSIZE;
         int i = 0;
         while (i < n) {
             int n1 = n - i;

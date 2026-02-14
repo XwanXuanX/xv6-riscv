@@ -2,15 +2,10 @@
 // run random system calls in parallel forever.
 //
 
-#include "kernel/param.h"
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
-#include "kernel/fs.h"
 #include "kernel/fcntl.h"
-#include "kernel/syscall.h"
-#include "kernel/memlayout.h"
-#include "kernel/riscv.h"
 
 // from FreeBSD.
 int do_rand(unsigned long *ctx) {
@@ -22,12 +17,11 @@ int do_rand(unsigned long *ctx) {
      * Park and Miller, Communications of the ACM, vol. 31, no. 10,
      * October 1988, p. 1195.
      */
-    long hi, lo, x;
 
     /* Transform to [1, 0x7ffffffe] range. */
-    x = (*ctx % 0x7ffffffe) + 1;
-    hi = x / 127773;
-    lo = x % 127773;
+    long x = (*ctx % 0x7ffffffe) + 1;
+    const long hi = x / 127773;
+    const long lo = x % 127773;
     x = 16807 * lo - 2836 * hi;
     if (x < 0)
         x += 0x7fffffff;
@@ -39,14 +33,14 @@ int do_rand(unsigned long *ctx) {
 
 unsigned long rand_next = 1;
 
-int rand(void) {
+int rand() {
     return (do_rand(&rand_next));
 }
 
-void go(int which_child) {
+void go(const int which_child) {
     int fd = -1;
     static char buf[999];
-    char *break0 = sbrk(0);
+    const char *break0 = sbrk(0);
     uint64 iters = 0;
 
     mkdir("grindir");
@@ -60,7 +54,7 @@ void go(int which_child) {
         iters++;
         if ((iters % 500) == 0)
             write(1, which_child ? "B" : "A", 1);
-        int what = rand() % 23;
+        const int what = rand() % 23;
         if (what == 1) {
             close(open("grindir/../a", O_CREATE | O_RDWR));
         } else if (what == 2) {
@@ -99,16 +93,16 @@ void go(int which_child) {
             unlink("../grindir/../a");
             link(".././b", "/grindir/../a");
         } else if (what == 13) {
-            int pid = fork();
+            const int pid = fork();
             if (pid == 0) {
                 exit(0);
             } else if (pid < 0) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
-            wait(0);
+            wait(nullptr);
         } else if (what == 14) {
-            int pid = fork();
+            const int pid = fork();
             if (pid == 0) {
                 fork();
                 fork();
@@ -117,14 +111,14 @@ void go(int which_child) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
-            wait(0);
+            wait(nullptr);
         } else if (what == 15) {
             sbrk(6011);
         } else if (what == 16) {
             if (sbrk(0) > break0)
                 sbrk(-(sbrk(0) - break0));
         } else if (what == 17) {
-            int pid = fork();
+            const int pid = fork();
             if (pid == 0) {
                 close(open("a", O_CREATE | O_RDWR));
                 exit(0);
@@ -137,9 +131,9 @@ void go(int which_child) {
                 exit(1);
             }
             kill(pid);
-            wait(0);
+            wait(nullptr);
         } else if (what == 18) {
-            int pid = fork();
+            const int pid = fork();
             if (pid == 0) {
                 kill(getpid());
                 exit(0);
@@ -147,14 +141,14 @@ void go(int which_child) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
-            wait(0);
+            wait(nullptr);
         } else if (what == 19) {
             int fds[2];
             if (pipe(fds) < 0) {
                 printf("grind: pipe failed\n");
                 exit(1);
             }
-            int pid = fork();
+            const int pid = fork();
             if (pid == 0) {
                 fork();
                 fork();
@@ -170,9 +164,9 @@ void go(int which_child) {
             }
             close(fds[0]);
             close(fds[1]);
-            wait(0);
+            wait(nullptr);
         } else if (what == 20) {
-            int pid = fork();
+            const int pid = fork();
             if (pid == 0) {
                 unlink("a");
                 mkdir("a");
@@ -185,12 +179,12 @@ void go(int which_child) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
-            wait(0);
+            wait(nullptr);
         } else if (what == 21) {
             unlink("c");
             // should always succeed. check that there are free i-nodes,
             // file descriptors, blocks.
-            int fd1 = open("c", O_CREATE | O_RDWR);
+            const int fd1 = open("c", O_CREATE | O_RDWR);
             if (fd1 < 0) {
                 printf("grind: create c failed\n");
                 exit(1);
@@ -225,7 +219,7 @@ void go(int which_child) {
                 fprintf(2, "grind: pipe failed\n");
                 exit(1);
             }
-            int pid1 = fork();
+            const int pid1 = fork();
             if (pid1 == 0) {
                 close(bb[0]);
                 close(bb[1]);
@@ -236,7 +230,7 @@ void go(int which_child) {
                     exit(1);
                 }
                 close(aa[1]);
-                const char *args[3] = {"echo", "hi", 0};
+                const char *args[3] = {"echo", "hi", nullptr};
                 exec("grindir/../echo", (const char **)args);
                 fprintf(2, "grind: echo: not found\n");
                 exit(2);
@@ -244,7 +238,7 @@ void go(int which_child) {
                 fprintf(2, "grind: fork failed\n");
                 exit(3);
             }
-            int pid2 = fork();
+            const int pid2 = fork();
             if (pid2 == 0) {
                 close(aa[1]);
                 close(bb[0]);
@@ -260,7 +254,7 @@ void go(int which_child) {
                     exit(5);
                 }
                 close(bb[1]);
-                const char *args[2] = {"cat", 0};
+                const char *args[2] = {"cat", nullptr};
                 exec("/cat", (const char **)args);
                 fprintf(2, "grind: cat: not found\n");
                 exit(6);
@@ -291,7 +285,7 @@ void iter() {
     unlink("a");
     unlink("b");
 
-    int pid1 = fork();
+    const int pid1 = fork();
     if (pid1 < 0) {
         printf("grind: fork failed\n");
         exit(1);
@@ -302,7 +296,7 @@ void iter() {
         exit(0);
     }
 
-    int pid2 = fork();
+    const int pid2 = fork();
     if (pid2 < 0) {
         printf("grind: fork failed\n");
         exit(1);
@@ -327,13 +321,13 @@ void iter() {
 
 int main() {
     while (1) {
-        int pid = fork();
+        const int pid = fork();
         if (pid == 0) {
             iter();
             exit(0);
         }
         if (pid > 0) {
-            wait(0);
+            wait(nullptr);
         }
         pause(20);
         rand_next += 1;

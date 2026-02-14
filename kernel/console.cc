@@ -9,18 +9,11 @@
 //   control-p -- print process list
 //
 
-#include <stdarg.h>
-
 #include "types.h"
-#include "param.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "fs.h"
 #include "file.h"
-#include "memlayout.h"
-#include "riscv.h"
 #include "defs.h"
-#include "proc.h"
 
 #define BACKSPACE 0x100  // erase the last output character
 #define C(x) ((x) - '@') // Control-x
@@ -33,7 +26,7 @@ namespace xv6 {
 // interrupts, e.g. by printf and to echo input
 // characters.
 //
-void consputc(int c) {
+void consputc(const int c) {
     if (c == BACKSPACE) {
         // if the user typed backspace, overwrite with a space.
         uartputc_sync('\b');
@@ -59,7 +52,7 @@ struct {
 // user write() system calls to the console go here.
 // uses sleep() and UART interrupts.
 //
-int consolewrite(int user_src, uint64 src, int n) {
+int consolewrite(const int user_src, const uint64 src, const int n) {
     char buf[32]; // move batches from user space to uart.
     int i = 0;
 
@@ -82,12 +75,10 @@ int consolewrite(int user_src, uint64 src, int n) {
 // user_dst indicates whether dst is a user
 // or kernel address.
 //
-int consoleread(int user_dst, uint64 dst, int n) {
-    int target;
-    int c;
+int consoleread(const int user_dst, uint64 dst, int n) {
     char cbuf;
 
-    target = n;
+    const int target = n;
     cons.lock.lock();
     while (n > 0) {
         // wait until interrupt handler has put some
@@ -100,7 +91,7 @@ int consoleread(int user_dst, uint64 dst, int n) {
             sleep(&cons.r, &cons.lock);
         }
 
-        c = cons.buf[cons.r++ % INPUT_BUF_SIZE];
+        const int c = cons.buf[cons.r++ % INPUT_BUF_SIZE];
 
         if (c == C('D')) { // end-of-file
             if (n < target) {
@@ -180,7 +171,7 @@ void consoleintr(int c) {
     cons.lock.unlock();
 }
 
-void consoleinit(void) {
+void consoleinit() {
     cons.lock.init_lock("cons");
 
     uartinit();

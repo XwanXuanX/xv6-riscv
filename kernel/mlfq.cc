@@ -1,6 +1,3 @@
-#include "types.h"
-#include "riscv.h"
-#include "param.h"
 #include "spinlock.h"
 #include "defs.h"
 #include "proc.h"
@@ -24,20 +21,20 @@ void mlfq_init(struct mlfq *m) {
     // For initialization, we don't lock
     m->lock.init_lock("MLFQ_lock");
     for (int i = 0; i < NLEVELS; ++i) {
-        m->q[i].head = m->q[i].tail = 0;
+        m->q[i].head = m->q[i].tail = nullptr;
     }
     // start from version 0
     m->boost_epoch = 0;
 }
 
-void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p) {
+void mlfq_enq_locked(struct mlfq *m, const int lvl, struct proc *p) {
     if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
     assert(m->lock.holding(), "mlfq_enq_locked m_lock");
     assert(p->lock.holding(), "mlfq_enq_locked p->lock");
 
-    p->rqnext = 0;
+    p->rqnext = nullptr;
     if (m->q[lvl].tail) {
         m->q[lvl].tail->rqnext = p;
         m->q[lvl].tail = p;
@@ -47,7 +44,7 @@ void mlfq_enq_locked(struct mlfq *m, int lvl, struct proc *p) {
 }
 
 // Enqueue a process to a specific level queue
-void mlfq_enq(struct mlfq *m, int lvl, struct proc *p) {
+void mlfq_enq(struct mlfq *m, const int lvl, struct proc *p) {
     if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
@@ -57,7 +54,7 @@ void mlfq_enq(struct mlfq *m, int lvl, struct proc *p) {
     m->lock.unlock();
 }
 
-struct proc *mlfq_deq_locked(struct mlfq *m, int lvl) {
+struct proc *mlfq_deq_locked(struct mlfq *m, const int lvl) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
@@ -66,13 +63,13 @@ struct proc *mlfq_deq_locked(struct mlfq *m, int lvl) {
     struct proc *p = m->q[lvl].head;
     if (!p) {
         // return nullptr when the current queue is empty
-        return 0;
+        return nullptr;
     }
 
     // modify the queue with lock hold is fine
     m->q[lvl].head = p->rqnext;
-    if (m->q[lvl].head == 0) {
-        m->q[lvl].tail = 0;
+    if (m->q[lvl].head == nullptr) {
+        m->q[lvl].tail = nullptr;
     }
 
     // IMPORTANT:
@@ -81,12 +78,12 @@ struct proc *mlfq_deq_locked(struct mlfq *m, int lvl) {
     // answer is: Yes. Because `p->rqnext` is NOT a process state,
     // it's actually the MLFQ's state, which is protected by the m->lock!
     // Thus since we are holding m->lock, this is valid.
-    p->rqnext = 0;
+    p->rqnext = nullptr;
     return p;
 }
 
 // Deque a process from a specific level queue
-struct proc *mlfq_deq(struct mlfq *m, int lvl) {
+struct proc *mlfq_deq(struct mlfq *m, const int lvl) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
@@ -99,7 +96,7 @@ struct proc *mlfq_deq(struct mlfq *m, int lvl) {
 }
 
 // Remove a process from a specific level queue
-bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
+bool mlfq_rm_locked(struct mlfq *m, const int lvl, struct proc *p) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
@@ -113,7 +110,7 @@ bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
     assert(p->lock.holding(), "mlfq_rm_locked p->lock");
     struct rqueue *rq = &m->q[lvl];
     struct proc *cur = rq->head;
-    struct proc *prev = 0;
+    struct proc *prev = nullptr;
 
     while (cur) {
         if (cur == p) {
@@ -129,11 +126,11 @@ bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
                 rq->tail = prev;
             }
 
-            cur->rqnext = 0;
+            cur->rqnext = nullptr;
 
             // If queue became empty, ensure tail is also NULL
-            if (rq->head == 0) {
-                rq->tail = 0;
+            if (rq->head == nullptr) {
+                rq->tail = nullptr;
             }
 
             return true;
@@ -147,7 +144,7 @@ bool mlfq_rm_locked(struct mlfq *m, int lvl, struct proc *p) {
     return false;
 }
 
-bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p) {
+bool mlfq_rm(struct mlfq *m, const int lvl, struct proc *p) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
@@ -156,7 +153,7 @@ bool mlfq_rm(struct mlfq *m, int lvl, struct proc *p) {
     }
 
     m->lock.lock();
-    bool ok = mlfq_rm_locked(m, lvl, p);
+    const bool ok = mlfq_rm_locked(m, lvl, p);
     m->lock.unlock();
 
     return ok;

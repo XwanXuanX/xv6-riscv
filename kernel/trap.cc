@@ -1,5 +1,4 @@
 #include "types.h"
-#include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
 #include "spinlock.h"
@@ -38,12 +37,12 @@ int allotment[NLEVELS] = {
  */
 int quantum[NLEVELS] = {2, 4, 8, 16, 32};
 
-void trapinit(void) {
+void trapinit() {
     tickslock.init_lock("time");
 }
 
 // set up to take exceptions and traps while in the kernel.
-void trapinithart(void) {
+void trapinithart() {
     w_stvec((uint64)kernelvec);
 }
 
@@ -53,7 +52,7 @@ void trapinithart(void) {
 // return value is user satp for trampoline.S to switch to.
 //
 uint64
-usertrap(void) {
+usertrap() {
     int which_dev = 0;
 
     if ((r_sstatus() & SSTATUS_SPP) != 0)
@@ -121,7 +120,7 @@ usertrap(void) {
     prepare_return();
 
     // the user page table to switch to, for trampoline.S
-    uint64 satp = MAKE_SATP(p->pagetable);
+    const uint64 satp = MAKE_SATP(p->pagetable);
 
     // return to trampoline.S; satp value in a0.
     return satp;
@@ -130,8 +129,8 @@ usertrap(void) {
 //
 // set up trapframe and control registers for a return to user space
 //
-void prepare_return(void) {
-    struct proc *p = myproc();
+void prepare_return() {
+    const struct proc *p = myproc();
 
     // we're about to switch the destination of traps from
     // kerneltrap() to usertrap(). because a trap from kernel
@@ -139,7 +138,7 @@ void prepare_return(void) {
     intr_off();
 
     // send syscalls, interrupts, and exceptions to uservec in trampoline.S
-    uint64 trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
+    const uint64 trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
     w_stvec(trampoline_uservec);
 
     // set up trapframe values that uservec will need when
@@ -169,9 +168,9 @@ void prepare_return(void) {
 // NOTE: This function must have C linkage because it's called from assembly (kernelvec.S)
 extern "C" void kerneltrap() {
     int which_dev = 0;
-    uint64 sepc = xv6::r_sepc();
-    uint64 sstatus = xv6::r_sstatus();
-    uint64 scause = xv6::r_scause();
+    const uint64 sepc = xv6::r_sepc();
+    const uint64 sstatus = xv6::r_sstatus();
+    const uint64 scause = xv6::r_scause();
 
     if ((sstatus & SSTATUS_SPP) == 0)
         xv6::panic("kerneltrap: not from supervisor mode");
@@ -185,7 +184,7 @@ extern "C" void kerneltrap() {
     }
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2 && xv6::myproc() != 0) {
+    if (which_dev == 2 && xv6::myproc() != nullptr) {
         struct xv6::proc *p = xv6::myproc();
         if (!p)
             xv6::panic("p nullptr");
@@ -279,13 +278,13 @@ void clockintr() {
 // 1 if other device,
 // 0 if not recognized.
 int devintr() {
-    uint64 scause = r_scause();
+    const uint64 scause = r_scause();
 
     if (scause == 0x8000000000000009L) {
         // this is a supervisor external interrupt, via PLIC.
 
         // irq indicates which device interrupted.
-        int irq = plic_claim();
+        const int irq = plic_claim();
 
         if (irq == UART0_IRQ) {
             uartintr();

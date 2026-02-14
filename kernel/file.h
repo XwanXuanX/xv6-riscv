@@ -1,3 +1,10 @@
+#pragma once
+
+#include "kernel/types.h"
+#include "kernel/fs.h"
+#include "kernel/spinlock.h"
+#include "kernel/sleeplock.h"
+
 namespace xv6 {
 
 enum file_type {

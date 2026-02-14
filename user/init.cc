@@ -1,18 +1,13 @@
 // init: The initial user-level program
 
-#include "kernel/types.h"
-#include "kernel/stat.h"
-#include "kernel/spinlock.h"
-#include "kernel/sleeplock.h"
 #include "kernel/fs.h"
 #include "kernel/file.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
-const char *argv[] = {"sh", 0};
+const char *argv[] = {"sh", nullptr};
 
 int main(void) {
-    int pid, wpid;
 
     if (open("console", O_RDWR) < 0) {
         mknod("console", CONSOLE, 0);
@@ -23,7 +18,7 @@ int main(void) {
 
     for (;;) {
         printf("init: starting sh\n");
-        pid = fork();
+        const int pid = fork();
         if (pid < 0) {
             printf("init: fork failed\n");
             exit(1);
@@ -37,7 +32,7 @@ int main(void) {
         for (;;) {
             // this call to wait() returns if the shell exits,
             // or if a parentless process exits.
-            wpid = wait((int *)0);
+            const int wpid = wait((int *)nullptr);
             if (wpid == pid) {
                 // the shell exited; restart it.
                 break;

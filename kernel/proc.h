@@ -1,3 +1,9 @@
+#pragma once
+
+#include "param.h"
+#include "riscv.h"
+#include "spinlock.h"
+
 namespace xv6 {
 
 // Saved registers for kernel context switches.

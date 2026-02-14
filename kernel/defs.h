@@ -1,3 +1,8 @@
+#pragma once
+
+#include "types.h"
+#include "riscv.h"
+
 namespace xv6 {
 
 struct buf;
@@ -6,7 +11,7 @@ struct file;
 struct inode;
 struct pipe;
 struct proc;
-struct spinlock;
+class spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
@@ -49,7 +54,7 @@ void kerneltrap();
 // #endif // __cplusplus
 
 // bio.c
-void binit(void);
+void binit();
 struct buf *bread(uint, uint);
 void brelse(struct buf *);
 void bwrite(struct buf *);
@@ -57,7 +62,7 @@ void bpin(struct buf *);
 void bunpin(struct buf *);
 
 // console.c
-void consoleinit(void);
+void consoleinit();
 void consoleintr(int);
 void consputc(int);
 
@@ -65,10 +70,10 @@ void consputc(int);
 int kexec(const char *, const char **);
 
 // file.c
-struct file *filealloc(void);
+struct file *filealloc();
 void fileclose(struct file *);
 struct file *filedup(struct file *);
-void fileinit(void);
+void fileinit();
 int fileread(struct file *, uint64, int n);
 int filestat(struct file *, uint64 addr);
 int filewrite(struct file *, uint64, int n);
@@ -95,15 +100,15 @@ void itrunc(struct inode *);
 void ireclaim(int);
 
 // kalloc.c
-void *kalloc(void);
+void *kalloc();
 void kfree(void *);
-void kinit(void);
+void kinit();
 
 // log.c
 void initlog(int, struct superblock *);
 void log_write(struct buf *);
-void begin_op(void);
-void end_op(void);
+void begin_op();
+void end_op();
 
 // pipe.c
 int pipealloc(struct file **, struct file **);
@@ -114,12 +119,12 @@ int pipewrite(struct pipe *, uint64, int);
 // printf.c
 int printf(const char *, ...) __attribute__((format(printf, 1, 2)));
 void panic(const char *) __attribute__((noreturn));
-void printfinit(void);
+void printfinit();
 
 // proc.c
-int cpuid(void);
+int cpuid();
 void kexit(int);
-int kfork(void);
+int kfork();
 int growproc(int);
 void proc_mapstacks(pagetable_t);
 pagetable_t proc_pagetable(struct proc *);
@@ -127,19 +132,19 @@ void proc_freepagetable(pagetable_t, uint64);
 int kkill(int);
 int killed(struct proc *);
 void setkilled(struct proc *);
-struct cpu *mycpu(void);
+struct cpu *mycpu();
 struct proc *myproc();
-void procinit(void);
-void scheduler(void) __attribute__((noreturn));
-void sched(void);
+void procinit();
+void scheduler() __attribute__((noreturn));
+void sched();
 void sleep(void *, struct spinlock *);
-void userinit(void);
+void userinit();
 int kwait(uint64);
 void wakeup(void *);
-void yield(void);
+void yield();
 int either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int either_copyin(void *dst, int user_src, uint64 src, uint64 len);
-void procdump(void);
+void procdump();
 
 // swtch.S - already declared above in extern "C"
 
@@ -148,8 +153,8 @@ void acquire(struct spinlock *);
 int holding(struct spinlock *);
 void initlock(struct spinlock *, const char *);
 void release(struct spinlock *);
-void push_off(void);
-void pop_off(void);
+void push_off();
+void pop_off();
 
 // sleeplock.c
 void acquiresleep(struct sleeplock *);
@@ -176,24 +181,24 @@ void syscall();
 
 // trap.c
 extern uint ticks;
-void trapinit(void);
-void trapinithart(void);
+void trapinit();
+void trapinithart();
 extern struct spinlock tickslock;
-void prepare_return(void);
+void prepare_return();
 
 // uart.c
-void uartinit(void);
-void uartintr(void);
+void uartinit();
+void uartintr();
 void uartwrite(char[], int);
 void uartputc_sync(int);
-int uartgetc(void);
+int uartgetc();
 
 // vm.c
-void kvminit(void);
-void kvminithart(void);
+void kvminit();
+void kvminithart();
 void kvmmap(pagetable_t, uint64, uint64, uint64, int);
 int mappages(pagetable_t, uint64, uint64, uint64, int);
-pagetable_t uvmcreate(void);
+pagetable_t uvmcreate();
 uint64 uvmalloc(pagetable_t, uint64, uint64, int);
 uint64 uvmdealloc(pagetable_t, uint64, uint64);
 int uvmcopy(pagetable_t, pagetable_t, uint64);
@@ -209,15 +214,15 @@ int ismapped(pagetable_t, uint64);
 uint64 vmfault(pagetable_t, uint64, int);
 
 // plic.c
-void plicinit(void);
-void plicinithart(void);
-int plic_claim(void);
+void plicinit();
+void plicinithart();
+int plic_claim();
 void plic_complete(int);
 
 // virtio_disk.c
-void virtio_disk_init(void);
+void virtio_disk_init();
 void virtio_disk_rw(struct buf *, int);
-void virtio_disk_intr(void);
+void virtio_disk_intr();
 
 // #ifdef __cplusplus
 // }

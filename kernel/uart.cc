@@ -2,12 +2,8 @@
 // low-level driver for 16550a UART.
 //
 
-#include "types.h"
-#include "param.h"
 #include "memlayout.h"
-#include "riscv.h"
 #include "spinlock.h"
-#include "proc.h"
 #include "defs.h"
 
 namespace xv6 {
@@ -47,7 +43,7 @@ static int tx_chan; // &tx_chan is the "wait channel"
 extern volatile int panicking; // from printf.c
 extern volatile int panicked;  // from printf.c
 
-void uartinit(void) {
+void uartinit() {
     // disable interrupts.
     WriteReg(IER, 0x00);
 
@@ -76,7 +72,7 @@ void uartinit(void) {
 // transmit buf[] to the uart. it blocks if the
 // uart is busy, so it cannot be called from
 // interrupts, only from write() system calls.
-void uartwrite(char buf[], int n) {
+void uartwrite(char buf[], const int n) {
     tx_lock.lock();
 
     int i = 0;
@@ -99,7 +95,7 @@ void uartwrite(char buf[], int n) {
 // interrupts, for use by kernel printf() and
 // to echo characters. it spins waiting for the uart's
 // output register to be empty.
-void uartputc_sync(int c) {
+void uartputc_sync(const int c) {
     if (panicking == 0)
         push_off();
 
@@ -119,7 +115,7 @@ void uartputc_sync(int c) {
 
 // try to read one input character from the UART.
 // return -1 if none is waiting.
-int uartgetc(void) {
+int uartgetc() {
     if (ReadReg(LSR) & LSR_RX_READY) {
         // input data is ready.
         return ReadReg(RHR);
@@ -131,7 +127,7 @@ int uartgetc(void) {
 // handle a uart interrupt, raised because input has
 // arrived, or the uart is ready for more output, or
 // both. called from devintr().
-void uartintr(void) {
+void uartintr() {
     ReadReg(ISR); // acknowledge the interrupt
 
     tx_lock.lock();
@@ -144,7 +140,7 @@ void uartintr(void) {
 
     // read and process incoming characters, if any.
     while (1) {
-        int c = uartgetc();
+        const int c = uartgetc();
         if (c == -1)
             break;
         consoleintr(c);

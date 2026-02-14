@@ -8,10 +8,8 @@
 #include "types.h"
 #include "riscv.h"
 #include "defs.h"
-#include "param.h"
 #include "memlayout.h"
 #include "spinlock.h"
-#include "sleeplock.h"
 #include "fs.h"
 #include "buf.h"
 #include "virtio.h"
@@ -111,7 +109,7 @@ void virtio_disk_init(void) {
         panic("virtio disk should not be ready");
 
     // check maximum queue size.
-    uint32 max = *R(VIRTIO_MMIO_QUEUE_NUM_MAX);
+    const uint32 max = *R(VIRTIO_MMIO_QUEUE_NUM_MAX);
     if (max == 0)
         panic("virtio disk has no queue 0");
     if (max < NUM)
@@ -166,7 +164,7 @@ alloc_desc() {
 
 // mark a descriptor as free.
 static void
-free_desc(int i) {
+free_desc(const int i) {
     if (i >= NUM)
         panic("free_desc 1");
     if (disk.free[i])
@@ -183,8 +181,8 @@ free_desc(int i) {
 static void
 free_chain(int i) {
     while (1) {
-        int flag = disk.desc[i].flags;
-        int nxt = disk.desc[i].next;
+        const int flag = disk.desc[i].flags;
+        const int nxt = disk.desc[i].next;
         free_desc(i);
         if (flag & VRING_DESC_F_NEXT)
             i = nxt;
@@ -208,8 +206,8 @@ alloc3_desc(int *idx) {
     return 0;
 }
 
-void virtio_disk_rw(struct buf *b, int write) {
-    uint64 sector = b->blockno * (BSIZE / 512);
+void virtio_disk_rw(struct buf *b, const int write) {
+    const uint64 sector = b->blockno * (BSIZE / 512);
 
     disk.vdisk_lock.lock();
 
@@ -279,7 +277,7 @@ void virtio_disk_rw(struct buf *b, int write) {
         sleep(b, &disk.vdisk_lock);
     }
 
-    disk.info[idx[0]].b = 0;
+    disk.info[idx[0]].b = nullptr;
     free_chain(idx[0]);
 
     disk.vdisk_lock.unlock();
@@ -303,7 +301,7 @@ void virtio_disk_intr() {
 
     while (disk.used_idx != disk.used->idx) {
         __sync_synchronize();
-        int id = disk.used->ring[disk.used_idx % NUM].id;
+        const int id = disk.used->ring[disk.used_idx % NUM].id;
 
         if (disk.info[id].status != 0)
             panic("virtio_disk_intr status");

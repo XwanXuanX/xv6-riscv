@@ -1,6 +1,5 @@
 // Shell.
 
-#include "kernel/types.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
@@ -63,7 +62,7 @@ void runcmd(struct cmd *cmd) {
     struct pipecmd *pcmd;
     struct redircmd *rcmd;
 
-    if (cmd == 0)
+    if (cmd == nullptr)
         exit(1);
 
     switch (cmd->type) {
@@ -72,7 +71,7 @@ void runcmd(struct cmd *cmd) {
 
     case EXEC:
         ecmd = (struct execcmd *)cmd;
-        if (ecmd->argv[0] == 0)
+        if (ecmd->argv[0] == nullptr)
             exit(1);
         exec(ecmd->argv[0], (const char **)ecmd->argv);
         fprintf(2, "exec %s failed\n", ecmd->argv[0]);
@@ -92,7 +91,7 @@ void runcmd(struct cmd *cmd) {
         lcmd = (struct listcmd *)cmd;
         if (fork1() == 0)
             runcmd(lcmd->left);
-        wait(0);
+        wait(nullptr);
         runcmd(lcmd->right);
         break;
 
@@ -116,8 +115,8 @@ void runcmd(struct cmd *cmd) {
         }
         close(p[0]);
         close(p[1]);
-        wait(0);
-        wait(0);
+        wait(nullptr);
+        wait(nullptr);
         break;
 
     case BACK:
@@ -129,7 +128,7 @@ void runcmd(struct cmd *cmd) {
     exit(0);
 }
 
-int getcmd(char *buf, int nbuf) {
+int getcmd(char *buf, const int nbuf) {
     write(2, "$ ", 2);
     memset(buf, 0, nbuf);
     gets(buf, nbuf);
@@ -165,7 +164,7 @@ int main(void) {
         } else {
             if (fork1() == 0)
                 runcmd(parsecmd(cmd));
-            wait(0);
+            wait(nullptr);
         }
     }
     exit(0);
@@ -177,9 +176,8 @@ void panic(const char *s) {
 }
 
 int fork1(void) {
-    int pid;
 
-    pid = fork();
+    const int pid = fork();
     if (pid == -1)
         panic("fork");
     return pid;
@@ -190,19 +188,17 @@ int fork1(void) {
 
 struct cmd *
 execcmd(void) {
-    struct execcmd *cmd;
 
-    cmd = (struct execcmd *)malloc(sizeof(*cmd));
+    struct execcmd *cmd = (struct execcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = EXEC;
     return (struct cmd *)cmd;
 }
 
 struct cmd *
-redircmd(struct cmd *subcmd, char *file, char *efile, int mode, int fd) {
-    struct redircmd *cmd;
+redircmd(struct cmd *subcmd, char *file, char *efile, const int mode, const int fd) {
 
-    cmd = (struct redircmd *)malloc(sizeof(*cmd));
+    struct redircmd *cmd = (struct redircmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = REDIR;
     cmd->cmd = subcmd;
@@ -215,9 +211,8 @@ redircmd(struct cmd *subcmd, char *file, char *efile, int mode, int fd) {
 
 struct cmd *
 pipecmd(struct cmd *left, struct cmd *right) {
-    struct pipecmd *cmd;
 
-    cmd = (struct pipecmd *)malloc(sizeof(*cmd));
+    struct pipecmd *cmd = (struct pipecmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = PIPE;
     cmd->left = left;
@@ -227,9 +222,8 @@ pipecmd(struct cmd *left, struct cmd *right) {
 
 struct cmd *
 listcmd(struct cmd *left, struct cmd *right) {
-    struct listcmd *cmd;
 
-    cmd = (struct listcmd *)malloc(sizeof(*cmd));
+    struct listcmd *cmd = (struct listcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = LIST;
     cmd->left = left;
@@ -239,9 +233,8 @@ listcmd(struct cmd *left, struct cmd *right) {
 
 struct cmd *
 backcmd(struct cmd *subcmd) {
-    struct backcmd *cmd;
 
-    cmd = (struct backcmd *)malloc(sizeof(*cmd));
+    struct backcmd *cmd = (struct backcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = BACK;
     cmd->cmd = subcmd;
@@ -253,16 +246,14 @@ backcmd(struct cmd *subcmd) {
 char whitespace[] = " \t\r\n\v";
 char symbols[] = "<|>&;()";
 
-int gettoken(char **ps, char *es, char **q, char **eq) {
-    char *s;
-    int ret;
+int gettoken(char **ps, const char *es, char **q, char **eq) {
 
-    s = *ps;
+    char *s = *ps;
     while (s < es && strchr(whitespace, *s))
         s++;
     if (q)
         *q = s;
-    ret = *s;
+    int ret = *s;
     switch (*s) {
     case 0:
         break;
@@ -296,10 +287,9 @@ int gettoken(char **ps, char *es, char **q, char **eq) {
     return ret;
 }
 
-int peek(char **ps, char *es, const char *toks) {
-    char *s;
+int peek(char **ps, const char *es, const char *toks) {
 
-    s = *ps;
+    char *s = *ps;
     while (s < es && strchr(whitespace, *s))
         s++;
     *ps = s;
@@ -313,11 +303,9 @@ struct cmd *nulterminate(struct cmd *);
 
 struct cmd *
 parsecmd(char *s) {
-    char *es;
-    struct cmd *cmd;
 
-    es = s + strlen(s);
-    cmd = parseline(&s, es);
+    char *es = s + strlen(s);
+    struct cmd *cmd = parseline(&s, es);
     peek(&s, es, "");
     if (s != es) {
         fprintf(2, "leftovers: %s\n", s);
@@ -329,15 +317,14 @@ parsecmd(char *s) {
 
 struct cmd *
 parseline(char **ps, char *es) {
-    struct cmd *cmd;
 
-    cmd = parsepipe(ps, es);
+    struct cmd *cmd = parsepipe(ps, es);
     while (peek(ps, es, "&")) {
-        gettoken(ps, es, 0, 0);
+        gettoken(ps, es, nullptr, nullptr);
         cmd = backcmd(cmd);
     }
     if (peek(ps, es, ";")) {
-        gettoken(ps, es, 0, 0);
+        gettoken(ps, es, nullptr, nullptr);
         cmd = listcmd(cmd, parseline(ps, es));
     }
     return cmd;
@@ -345,11 +332,10 @@ parseline(char **ps, char *es) {
 
 struct cmd *
 parsepipe(char **ps, char *es) {
-    struct cmd *cmd;
 
-    cmd = parseexec(ps, es);
+    struct cmd *cmd = parseexec(ps, es);
     if (peek(ps, es, "|")) {
-        gettoken(ps, es, 0, 0);
+        gettoken(ps, es, nullptr, nullptr);
         cmd = pipecmd(cmd, parsepipe(ps, es));
     }
     return cmd;
@@ -357,11 +343,10 @@ parsepipe(char **ps, char *es) {
 
 struct cmd *
 parseredirs(struct cmd *cmd, char **ps, char *es) {
-    int tok;
     char *q, *eq;
 
     while (peek(ps, es, "<>")) {
-        tok = gettoken(ps, es, 0, 0);
+        const int tok = gettoken(ps, es, nullptr, nullptr);
         if (gettoken(ps, es, &q, &eq) != 'a')
             panic("missing file for redirection");
         switch (tok) {
@@ -381,15 +366,14 @@ parseredirs(struct cmd *cmd, char **ps, char *es) {
 
 struct cmd *
 parseblock(char **ps, char *es) {
-    struct cmd *cmd;
 
     if (!peek(ps, es, "("))
         panic("parseblock");
-    gettoken(ps, es, 0, 0);
-    cmd = parseline(ps, es);
+    gettoken(ps, es, nullptr, nullptr);
+    struct cmd *cmd = parseline(ps, es);
     if (!peek(ps, es, ")"))
         panic("syntax - missing )");
-    gettoken(ps, es, 0, 0);
+    gettoken(ps, es, nullptr, nullptr);
     cmd = parseredirs(cmd, ps, es);
     return cmd;
 }
@@ -397,17 +381,15 @@ parseblock(char **ps, char *es) {
 struct cmd *
 parseexec(char **ps, char *es) {
     char *q, *eq;
-    int tok, argc;
-    struct execcmd *cmd;
-    struct cmd *ret;
+    int tok;
 
     if (peek(ps, es, "("))
         return parseblock(ps, es);
 
-    ret = execcmd();
-    cmd = (struct execcmd *)ret;
+    struct cmd *ret = execcmd();
+    struct execcmd *cmd = (struct execcmd *)ret;
 
-    argc = 0;
+    int argc = 0;
     ret = parseredirs(ret, ps, es);
     while (!peek(ps, es, "|)&;")) {
         if ((tok = gettoken(ps, es, &q, &eq)) == 0)
@@ -421,8 +403,8 @@ parseexec(char **ps, char *es) {
             panic("too many args");
         ret = parseredirs(ret, ps, es);
     }
-    cmd->argv[argc] = 0;
-    cmd->eargv[argc] = 0;
+    cmd->argv[argc] = nullptr;
+    cmd->eargv[argc] = nullptr;
     return ret;
 }
 
@@ -436,8 +418,8 @@ nulterminate(struct cmd *cmd) {
     struct pipecmd *pcmd;
     struct redircmd *rcmd;
 
-    if (cmd == 0)
-        return 0;
+    if (cmd == nullptr)
+        return nullptr;
 
     switch (cmd->type) {
     case EXEC:
