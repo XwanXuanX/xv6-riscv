@@ -1006,7 +1006,7 @@ void mem(const char *s) {
     if ((pid = fork()) == 0) {
         m1 = 0;
         while ((m2 = malloc(10001)) != 0) {
-            *(char **)m2 = reinterpret_cast<char*>(m1);
+            *(char **)m2 = reinterpret_cast<char *>(m1);
             m1 = m2;
         }
         while (m1) {
@@ -2053,7 +2053,7 @@ void kernmem(const char *s) {
 // user code should not be able to write to addresses above MAXVA.
 void MAXVAplus(const char *s) {
     volatile uint64 a = MAXVA;
-    for (; a != 0; ) {
+    for (; a != 0;) {
         int pid;
         pid = fork();
         if (pid < 0) {
@@ -2358,8 +2358,8 @@ void *big = (void *)0xeaeb0b5b00002f5e;
 void pgbug(const char *s) {
     char *argv[1];
     argv[0] = 0;
-    exec((char*)big, (const char **)argv);
-    pipe((int*)big);
+    exec((char *)big, (const char **)argv);
+    pipe((int *)big);
 
     exit(0);
 }
