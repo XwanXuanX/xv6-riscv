@@ -9,7 +9,7 @@
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
-const char *argv[] = {"sh", 0};
+const char *argv[] = {"sh", nullptr};
 
 int main(void) {
     int pid, wpid;
@@ -37,7 +37,7 @@ int main(void) {
         for (;;) {
             // this call to wait() returns if the shell exits,
             // or if a parentless process exits.
-            wpid = wait((int *)0);
+            wpid = wait((int *)nullptr);
             if (wpid == pid) {
                 // the shell exited; restart it.
                 break;

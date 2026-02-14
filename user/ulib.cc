@@ -56,7 +56,7 @@ strchr(const char *s, const char c) {
     for (; *s; s++)
         if (*s == c)
             return (char *)s;
-    return 0;
+    return nullptr;
 }
 
 char *

@@ -17,7 +17,7 @@ void grep(char *pattern, const int fd) {
         m += n;
         buf[m] = '\0';
         p = buf;
-        while ((q = strchr(p, '\n')) != 0) {
+        while ((q = strchr(p, '\n')) != nullptr) {
             *q = 0;
             if (match(pattern, p)) {
                 *q = '\n';

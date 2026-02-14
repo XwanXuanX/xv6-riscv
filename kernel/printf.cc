@@ -110,7 +110,7 @@ int printf(const char *fmt, ...) {
         } else if (c0 == 'c') {
             consputc(va_arg(ap, uint));
         } else if (c0 == 's') {
-            if ((s = va_arg(ap, char *)) == 0)
+            if ((s = va_arg(ap, char *)) == nullptr)
                 s = "(null)";
             for (; *s; s++)
                 consputc(*s);

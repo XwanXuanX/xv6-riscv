@@ -63,7 +63,7 @@ void runcmd(struct cmd *cmd) {
     struct pipecmd *pcmd;
     struct redircmd *rcmd;
 
-    if (cmd == 0)
+    if (cmd == nullptr)
         exit(1);
 
     switch (cmd->type) {
@@ -72,7 +72,7 @@ void runcmd(struct cmd *cmd) {
 
     case EXEC:
         ecmd = (struct execcmd *)cmd;
-        if (ecmd->argv[0] == 0)
+        if (ecmd->argv[0] == nullptr)
             exit(1);
         exec(ecmd->argv[0], (const char **)ecmd->argv);
         fprintf(2, "exec %s failed\n", ecmd->argv[0]);
@@ -92,7 +92,7 @@ void runcmd(struct cmd *cmd) {
         lcmd = (struct listcmd *)cmd;
         if (fork1() == 0)
             runcmd(lcmd->left);
-        wait(0);
+        wait(nullptr);
         runcmd(lcmd->right);
         break;
 
@@ -116,8 +116,8 @@ void runcmd(struct cmd *cmd) {
         }
         close(p[0]);
         close(p[1]);
-        wait(0);
-        wait(0);
+        wait(nullptr);
+        wait(nullptr);
         break;
 
     case BACK:
@@ -165,7 +165,7 @@ int main(void) {
         } else {
             if (fork1() == 0)
                 runcmd(parsecmd(cmd));
-            wait(0);
+            wait(nullptr);
         }
     }
     exit(0);
@@ -333,11 +333,11 @@ parseline(char **ps, char *es) {
 
     cmd = parsepipe(ps, es);
     while (peek(ps, es, "&")) {
-        gettoken(ps, es, 0, 0);
+        gettoken(ps, es, nullptr, nullptr);
         cmd = backcmd(cmd);
     }
     if (peek(ps, es, ";")) {
-        gettoken(ps, es, 0, 0);
+        gettoken(ps, es, nullptr, nullptr);
         cmd = listcmd(cmd, parseline(ps, es));
     }
     return cmd;
@@ -349,7 +349,7 @@ parsepipe(char **ps, char *es) {
 
     cmd = parseexec(ps, es);
     if (peek(ps, es, "|")) {
-        gettoken(ps, es, 0, 0);
+        gettoken(ps, es, nullptr, nullptr);
         cmd = pipecmd(cmd, parsepipe(ps, es));
     }
     return cmd;
@@ -361,7 +361,7 @@ parseredirs(struct cmd *cmd, char **ps, char *es) {
     char *q, *eq;
 
     while (peek(ps, es, "<>")) {
-        tok = gettoken(ps, es, 0, 0);
+        tok = gettoken(ps, es, nullptr, nullptr);
         if (gettoken(ps, es, &q, &eq) != 'a')
             panic("missing file for redirection");
         switch (tok) {
@@ -385,11 +385,11 @@ parseblock(char **ps, char *es) {
 
     if (!peek(ps, es, "("))
         panic("parseblock");
-    gettoken(ps, es, 0, 0);
+    gettoken(ps, es, nullptr, nullptr);
     cmd = parseline(ps, es);
     if (!peek(ps, es, ")"))
         panic("syntax - missing )");
-    gettoken(ps, es, 0, 0);
+    gettoken(ps, es, nullptr, nullptr);
     cmd = parseredirs(cmd, ps, es);
     return cmd;
 }
@@ -421,8 +421,8 @@ parseexec(char **ps, char *es) {
             panic("too many args");
         ret = parseredirs(ret, ps, es);
     }
-    cmd->argv[argc] = 0;
-    cmd->eargv[argc] = 0;
+    cmd->argv[argc] = nullptr;
+    cmd->eargv[argc] = nullptr;
     return ret;
 }
 
@@ -436,8 +436,8 @@ nulterminate(struct cmd *cmd) {
     struct pipecmd *pcmd;
     struct redircmd *rcmd;
 
-    if (cmd == 0)
-        return 0;
+    if (cmd == nullptr)
+        return nullptr;
 
     switch (cmd->type) {
     case EXEC:

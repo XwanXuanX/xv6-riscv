@@ -185,7 +185,7 @@ extern "C" void kerneltrap() {
     }
 
     // give up the CPU if this is a timer interrupt.
-    if (which_dev == 2 && xv6::myproc() != 0) {
+    if (which_dev == 2 && xv6::myproc() != nullptr) {
         struct xv6::proc *p = xv6::myproc();
         if (!p)
             xv6::panic("p nullptr");

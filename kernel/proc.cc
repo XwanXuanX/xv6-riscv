@@ -147,16 +147,16 @@ found:
 
     // An empty user page table.
     p->pagetable = proc_pagetable(p);
-    if (p->pagetable == 0) {
+    if (p->pagetable == nullptr) {
         freeproc(p);
         p->lock.unlock();
-        return 0;
+        return nullptr;
     }
 
     // Initialize MLFQ related fields
     // DO NOT enqueue JUST YET!
     p->qlevel = p->qticks = 0;
-    p->rqnext = 0;
+    p->rqnext = nullptr;
     p->in_ready_q = 0;
     p->epoch = 0;
 
@@ -186,20 +186,20 @@ static void
 freeproc(struct proc *p) {
     if (p->trapframe)
         kfree((void *)p->trapframe);
-    p->trapframe = 0;
+    p->trapframe = nullptr;
     if (p->pagetable)
         proc_freepagetable(p->pagetable, p->sz);
-    p->pagetable = 0;
+    p->pagetable = nullptr;
     p->sz = 0;
     p->pid = 0;
     p->parent = nullptr;
     p->name[0] = 0;
-    p->chan = 0;
+    p->chan = nullptr;
     p->killed = 0;
     p->xstate = 0;
     p->state = UNUSED;
     p->qlevel = p->qticks = 0;
-    p->rqnext = 0;
+    p->rqnext = nullptr;
     p->in_ready_q = 0;
     p->epoch = 0;
     p->slice_left = 0;
@@ -214,8 +214,8 @@ proc_pagetable(struct proc *p) {
 
     // An empty page table.
     pagetable = uvmcreate();
-    if (pagetable == 0)
-        return 0;
+    if (pagetable == nullptr)
+        return nullptr;
 
     // map the trampoline code (for system call return)
     // at the highest user virtual address.
@@ -224,7 +224,7 @@ proc_pagetable(struct proc *p) {
     if (mappages(pagetable, TRAMPOLINE, PGSIZE,
                  (uint64)trampoline, PTE_R | PTE_X) < 0) {
         uvmfree(pagetable, 0);
-        return 0;
+        return nullptr;
     }
 
     // map the trapframe page just below the trampoline page, for
@@ -233,7 +233,7 @@ proc_pagetable(struct proc *p) {
                  (uint64)(p->trapframe), PTE_R | PTE_W) < 0) {
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
         uvmfree(pagetable, 0);
-        return 0;
+        return nullptr;
     }
 
     return pagetable;
@@ -305,7 +305,7 @@ int kfork(void) {
     struct proc *p = myproc();
 
     // Allocate process.
-    if ((np = allocproc()) == 0) {
+    if ((np = allocproc()) == nullptr) {
         return -1;
     }
 
@@ -388,7 +388,7 @@ void kexit(const int status) {
         if (p->ofile[fd]) {
             struct file *f = p->ofile[fd];
             fileclose(f);
-            p->ofile[fd] = 0;
+            p->ofile[fd] = nullptr;
         }
     }
 
@@ -396,7 +396,7 @@ void kexit(const int status) {
     begin_op();
     iput(p->cwd);
     end_op();
-    p->cwd = 0;
+    p->cwd = nullptr;
 
     // acq wait_lock to manipulate the parent and child relations
     wait_lock.lock();
@@ -486,7 +486,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
     struct cpu *c = mycpu();
 
     // in initialization, the CPU is not running anything
-    c->proc = 0;
+    c->proc = nullptr;
     for (;;) {
         // The most recent process to run may have had interrupts
         // turned off; enable them to avoid a deadlock if all
@@ -558,7 +558,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
                 // Process is done running for now.
                 // It should have changed its p->state before coming back.
                 // scheduler is running now, no process is currently running
-                c->proc = 0;
+                c->proc = nullptr;
                 // we did run something in this scan loop
                 found = 1;
             }
@@ -601,7 +601,7 @@ __attribute__((unused)) static int first_non_empty(void) {
 __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedback_q(void) {
     struct cpu *c = mycpu();
 
-    c->proc = 0;
+    c->proc = nullptr;
     for (;;) {
         intr_on();
         intr_off();
@@ -671,7 +671,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         swtch(&c->context, &p->context);
 
         // process p is done running
-        c->proc = 0;
+        c->proc = nullptr;
 
         // release the locks for both process and mlfq (in the reverse order)
         p->lock.unlock();
@@ -777,7 +777,7 @@ void forkret(void) {
 
         // We can invoke kexec() now that file system is initialized.
         // Put the return value (argc) of kexec into a0.
-        p->trapframe->a0 = kexec("/init", (const char *[]){"/init", 0});
+        p->trapframe->a0 = kexec("/init", (const char *[]){"/init", nullptr});
         if (p->trapframe->a0 == static_cast<uint64>(-1)) {
             panic("exec");
         }
@@ -822,7 +822,7 @@ void sleep(void *chan, spinlock *lk) {
     // This means some other processes wakes me up and put me in the ready queue
 
     // Tidy up.
-    p->chan = 0;
+    p->chan = nullptr;
 
     // Reacquire original lock.
     p->lock.unlock();

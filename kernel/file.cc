@@ -39,7 +39,7 @@ filealloc(void) {
         }
     }
     ftable.lock.unlock();
-    return 0;
+    return nullptr;
 }
 
 // Increment ref count for file f.
@@ -88,7 +88,7 @@ int filestat(struct file *f, const uint64 addr) {
         ilock(f->ip);
         stati(f->ip, &st);
         iunlock(f->ip);
-        if (copyout(p->pagetable, addr, (char *)&st, sizeof(st)) < 0)
+        if (copyout(p->pagetable, addr, reinterpret_cast<char *>(&st), sizeof(st)) < 0)
             return -1;
         return 0;
     }

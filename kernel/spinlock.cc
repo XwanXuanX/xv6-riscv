@@ -58,7 +58,7 @@ void pop_off() {
 void spinlock::init_lock(const char *name) {
     this->name = name;
     locked = 0;
-    cpu = 0;
+    cpu = nullptr;
 }
 
 // Acquire the lock.
@@ -104,7 +104,7 @@ void spinlock::unlock() {
         panic("release");
     }
 
-    cpu = 0;
+    cpu = nullptr;
 
     // Tell the C compiler and the CPU to not move loads or stores
     // past this point, to ensure that all the stores in the critical

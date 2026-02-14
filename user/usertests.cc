@@ -155,7 +155,7 @@ void copyinstr2(const char *s) {
         exit(1);
     }
 
-    const char *args[] = {"xx", 0};
+    const char *args[] = {"xx", nullptr};
     ret = exec(b, args);
     if (ret != -1) {
         printf("exec(%s) returned %d, not -1\n", b, fd);
@@ -172,7 +172,7 @@ void copyinstr2(const char *s) {
         for (int i = 0; i < PGSIZE; i++)
             big[i] = 'x';
         big[PGSIZE] = '\0';
-        const char *args2[] = {big, big, big, 0};
+        const char *args2[] = {big, big, big, nullptr};
         ret = exec("echo", args2);
         if (ret != -1) {
             printf("exec(echo, BIG) returned %d, not -1\n", fd);
@@ -223,7 +223,7 @@ void copyinstr3(const char *s) {
         exit(1);
     }
 
-    const char *args[] = {"xx", 0};
+    const char *args[] = {"xx", nullptr};
     ret = exec(b, args);
     if (ret != -1) {
         printf("exec(%s) returned %d, not -1\n", b, fd);
@@ -647,7 +647,7 @@ void dirtest(const char *s) {
 
 void exectest(const char *s) {
     int fd, xstatus, pid;
-    const char *echoargv[] = {"echo", "OK", 0};
+    const char *echoargv[] = {"echo", "OK", nullptr};
     char buf[3];
 
     unlink("echo-ok");
@@ -827,9 +827,9 @@ void preempt(const char *s) {
     kill(pid2);
     kill(pid3);
     printf("wait... ");
-    wait(0);
-    wait(0);
-    wait(0);
+    wait(nullptr);
+    wait(nullptr);
+    wait(nullptr);
 }
 
 // try to find any races between exit and wait
@@ -870,7 +870,7 @@ void reparent(const char *s) {
             exit(1);
         }
         if (pid) {
-            if (wait(0) != pid) {
+            if (wait(nullptr) != pid) {
                 printf("%s: wait wrong pid\n", s);
                 exit(1);
             }
@@ -905,8 +905,8 @@ void twochildren(const char *s) {
             if (pid2 == 0) {
                 exit(0);
             } else {
-                wait(0);
-                wait(0);
+                wait(nullptr);
+                wait(nullptr);
             }
         }
     }
@@ -931,7 +931,7 @@ void forkfork(const char *s) {
                 if (pid1 == 0) {
                     exit(0);
                 }
-                wait(0);
+                wait(nullptr);
             }
             exit(0);
         }
@@ -971,7 +971,7 @@ void forkforkfork(const char *s) {
 
     pause(20); // two seconds
     close(open("stopforking", O_CREATE | O_RDWR));
-    wait(0);
+    wait(nullptr);
     pause(10); // one second
 }
 
@@ -992,7 +992,7 @@ void reparent2(const char *s) {
             fork();
             exit(0);
         }
-        wait(0);
+        wait(nullptr);
     }
 
     exit(0);
@@ -1004,8 +1004,8 @@ void mem(const char *s) {
     int pid;
 
     if ((pid = fork()) == 0) {
-        m1 = 0;
-        while ((m2 = malloc(10001)) != 0) {
+        m1 = nullptr;
+        while ((m2 = malloc(10001)) != nullptr) {
             *(char **)m2 = reinterpret_cast<char *>(m1);
             m1 = m2;
         }
@@ -1015,7 +1015,7 @@ void mem(const char *s) {
             m1 = m2;
         }
         m1 = malloc(1024 * 20);
-        if (m1 == 0) {
+        if (m1 == nullptr) {
             printf("%s: couldn't allocate mem?!!\n", s);
             exit(1);
         }
@@ -1421,7 +1421,7 @@ void concreate(const char *s) {
         if (pid == 0)
             exit(0);
         else
-            wait(0);
+            wait(nullptr);
     }
 }
 
@@ -1450,7 +1450,7 @@ void linkunlink(const char *s) {
     }
 
     if (pid)
-        wait(0);
+        wait(nullptr);
     else
         exit(0);
 }
@@ -1901,13 +1901,13 @@ void forktest(const char *s) {
     }
 
     for (; n > 0; n--) {
-        if (wait(0) < 0) {
+        if (wait(nullptr) < 0) {
             printf("%s: wait stopped early\n", s);
             exit(1);
         }
     }
 
-    if (wait(0) != -1) {
+    if (wait(nullptr) != -1) {
         printf("%s: wait got too many\n", s);
         exit(1);
     }
@@ -2118,7 +2118,7 @@ void sbrkfail(const char *s) {
         if (pids[i] == -1)
             continue;
         kill(pids[i]);
-        wait(0);
+        wait(nullptr);
     }
     if (c == (char *)SBRK_ERROR) {
         printf("%s: failed sbrk leaked memory\n", s);
@@ -2214,7 +2214,7 @@ void bigargtest(const char *s) {
         big[sizeof(big) - 1] = '\0';
         for (i = 0; i < MAXARG - 1; i++)
             args[i] = big;
-        args[MAXARG - 1] = 0;
+        args[MAXARG - 1] = nullptr;
         // this exec() should fail (and return) because the
         // arguments are too large.
         exec("echo", args);
@@ -2357,7 +2357,7 @@ void nowrite(const char *s) {
 void *big = (void *)0xeaeb0b5b00002f5e;
 void pgbug(const char *s) {
     char *argv[1];
-    argv[0] = 0;
+    argv[0] = nullptr;
     exec((char *)big, (const char **)argv);
     pipe((int *)big);
 
@@ -2382,7 +2382,7 @@ void sbrkbugs(const char *s) {
         // user page fault here.
         exit(0);
     }
-    wait(0);
+    wait(nullptr);
 
     pid = fork();
     if (pid < 0) {
@@ -2397,7 +2397,7 @@ void sbrkbugs(const char *s) {
         sbrk(-(sz - 3500));
         exit(0);
     }
-    wait(0);
+    wait(nullptr);
 
     pid = fork();
     if (pid < 0) {
@@ -2415,7 +2415,7 @@ void sbrkbugs(const char *s) {
 
         exit(0);
     }
-    wait(0);
+    wait(nullptr);
 
     exit(0);
 }
@@ -2458,7 +2458,7 @@ void badarg(const char *s) {
     for (int i = 0; i < 50000; i++) {
         char *argv[2];
         argv[0] = (char *)0xffffffff;
-        argv[1] = 0;
+        argv[1] = nullptr;
         exec("echo", (const char **)argv);
     }
 
@@ -2699,7 +2699,7 @@ struct test {
     {lazy_unmap, "lazy_unmap"},
     {lazy_copy, "lazy_copy"},
     {lazy_sbrk, "lazy_sbrk"},
-    {0, 0},
+    {nullptr, nullptr},
 };
 
 //
@@ -2856,11 +2856,11 @@ void execout(const char *s) {
                 sbrk(-PGSIZE);
 
             close(1);
-            const char *args[] = {"echo", "x", 0};
+            const char *args[] = {"echo", "x", nullptr};
             exec("echo", args);
             exit(0);
         } else {
-            wait((int *)0);
+            wait((int *)nullptr);
         }
     }
 
@@ -2983,7 +2983,7 @@ struct test slowtests[] = {
     {diskfull, "diskfull"},
     {outofinodes, "outofinodes"},
 
-    {0, 0},
+    {nullptr, nullptr},
 };
 
 //
@@ -3016,8 +3016,8 @@ int run(const void f(const char *), const char *s) {
 
 int runtests(struct test *tests, char *justone, const int continuous) {
     int ntests = 0;
-    for (struct test *t = tests; t->s != 0; t++) {
-        if ((justone == 0) || strcmp(t->s, justone) == 0) {
+    for (struct test *t = tests; t->s != nullptr; t++) {
+        if ((justone == nullptr) || strcmp(t->s, justone) == 0) {
             ntests++;
             if (!run(t->f, t->s)) {
                 if (continuous != 2) {
@@ -3061,7 +3061,7 @@ int drivetests(const int quick, const int continuous, char *justone) {
             ntests += n;
         }
         if (!quick) {
-            if (justone == 0)
+            if (justone == nullptr)
                 printf("usertests slow tests starting\n");
             n = runtests(slowtests, justone, continuous);
             if (n < 0) {
@@ -3078,7 +3078,7 @@ int drivetests(const int quick, const int continuous, char *justone) {
                 return 1;
             }
         }
-        if (justone != 0 && ntests == 0) {
+        if (justone != nullptr && ntests == 0) {
             printf("NO TESTS EXECUTED\n");
             return 1;
         }
@@ -3089,7 +3089,7 @@ int drivetests(const int quick, const int continuous, char *justone) {
 int main(const int argc, char *argv[]) {
     int continuous = 0;
     int quick = 0;
-    char *justone = 0;
+    char *justone = nullptr;
 
     if (argc == 2 && strcmp(argv[1], "-q") == 0) {
         quick = 1;

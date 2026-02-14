@@ -50,7 +50,7 @@ morecore(uint nu) {
         nu = 4096;
     p = sbrk(nu * sizeof(Header));
     if (p == SBRK_ERROR)
-        return 0;
+        return nullptr;
     hp = (Header *)p;
     hp->s.size = nu;
     free((void *)(hp + 1));
@@ -63,7 +63,7 @@ malloc(const uint nbytes) {
     uint nunits;
 
     nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
-    if ((prevp = freep) == 0) {
+    if ((prevp = freep) == nullptr) {
         base.s.ptr = freep = prevp = &base;
         base.s.size = 0;
     }
@@ -80,7 +80,7 @@ malloc(const uint nbytes) {
             return (void *)(p + 1);
         }
         if (p == freep)
-            if ((p = morecore(nunits)) == 0)
-                return 0;
+            if ((p = morecore(nunits)) == nullptr)
+                return nullptr;
     }
 }

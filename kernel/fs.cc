@@ -67,7 +67,7 @@ balloc(const uint dev) {
     uint b, bi, m;
     struct buf *bp;
 
-    bp = 0;
+    bp = nullptr;
     for (b = 0; b < sb.size; b += BPB) {
         bp = bread(dev, BBLOCK(b, sb));
         for (bi = 0; bi < BPB && b + bi < sb.size; bi++) {
@@ -199,7 +199,7 @@ ialloc(const uint dev, const short type) {
 
     for (inum = 1; inum < sb.ninodes; inum++) {
         bp = bread(dev, IBLOCK(inum, sb));
-        dip = (struct dinode *)bp->data + inum % IPB;
+        dip = reinterpret_cast<struct dinode *>(bp->data) + inum % IPB;
         if (dip->type == 0) { // a free inode
             memset(dip, 0, sizeof(*dip));
             dip->type = type;
@@ -210,7 +210,7 @@ ialloc(const uint dev, const short type) {
         brelse(bp);
     }
     printf("ialloc: no inodes\n");
-    return 0;
+    return nullptr;
 }
 
 // Copy a modified in-memory inode to disk.
@@ -243,19 +243,19 @@ iget(const uint dev, const uint inum) {
     itable.lock.lock();
 
     // Is the inode already in the table?
-    empty = 0;
+    empty = nullptr;
     for (ip = &itable.inode[0]; ip < &itable.inode[NINODE]; ip++) {
         if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
             ip->ref++;
             itable.lock.unlock();
             return ip;
         }
-        if (empty == 0 && ip->ref == 0) // Remember empty slot.
+        if (empty == nullptr && ip->ref == 0) // Remember empty slot.
             empty = ip;
     }
 
     // Recycle an inode entry.
-    if (empty == 0)
+    if (empty == nullptr)
         panic("iget: no inodes");
 
     ip = empty;
@@ -284,7 +284,7 @@ void ilock(struct inode *ip) {
     struct buf *bp;
     struct dinode *dip;
 
-    if (ip == 0 || ip->ref < 1)
+    if (ip == nullptr || ip->ref < 1)
         panic("ilock");
 
     acquiresleep(&ip->lock);
@@ -307,7 +307,7 @@ void ilock(struct inode *ip) {
 
 // Unlock the given inode.
 void iunlock(struct inode *ip) {
-    if (ip == 0 || !holdingsleep(&ip->lock) || ip->ref < 1)
+    if (ip == nullptr || !holdingsleep(&ip->lock) || ip->ref < 1)
         panic("iunlock");
 
     releasesleep(&ip->lock);
@@ -561,7 +561,7 @@ dirlookup(struct inode *dp, const char *name, uint *poff) {
         }
     }
 
-    return 0;
+    return nullptr;
 }
 
 // Write a new directory entry (name, inum) into the directory dp.
@@ -572,7 +572,7 @@ int dirlink(struct inode *dp, const char *name, const uint inum) {
     struct inode *ip;
 
     // Check that name is not present.
-    if ((ip = dirlookup(dp, name, 0)) != 0) {
+    if ((ip = dirlookup(dp, name, nullptr)) != nullptr) {
         iput(ip);
         return -1;
     }
@@ -615,7 +615,7 @@ skipelem(const char *path, char *name) {
     while (*path == '/')
         path++;
     if (*path == 0)
-        return 0;
+        return nullptr;
     s = path;
     while (*path != '/' && *path != 0)
         path++;
@@ -644,27 +644,27 @@ namex(const char *path, const int nameiparent, char *name) {
     else
         ip = idup(myproc()->cwd);
 
-    while ((path = skipelem(path, name)) != 0) {
+    while ((path = skipelem(path, name)) != nullptr) {
         ilock(ip);
         if (ip->type != T_DIR) {
             iunlockput(ip);
-            return 0;
+            return nullptr;
         }
         if (nameiparent && *path == '\0') {
             // Stop one level early.
             iunlock(ip);
             return ip;
         }
-        if ((next = dirlookup(ip, name, 0)) == 0) {
+        if ((next = dirlookup(ip, name, nullptr)) == nullptr) {
             iunlockput(ip);
-            return 0;
+            return nullptr;
         }
         iunlockput(ip);
         ip = next;
     }
     if (nameiparent) {
         iput(ip);
-        return 0;
+        return nullptr;
     }
     return ip;
 }

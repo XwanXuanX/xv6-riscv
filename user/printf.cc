@@ -94,7 +94,7 @@ void vprintf(const int fd, const char *fmt, const va_list ap) {
             } else if (c0 == 'c') {
                 putc(fd, va_arg(ap, uint32));
             } else if (c0 == 's') {
-                if ((s = va_arg(ap, char *)) == 0)
+                if ((s = va_arg(ap, char *)) == nullptr)
                     s = "(null)";
                 for (; *s; s++)
                     putc(fd, *s);

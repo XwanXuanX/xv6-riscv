@@ -106,7 +106,7 @@ void go(const int which_child) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
-            wait(0);
+            wait(nullptr);
         } else if (what == 14) {
             int pid = fork();
             if (pid == 0) {
@@ -117,7 +117,7 @@ void go(const int which_child) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
-            wait(0);
+            wait(nullptr);
         } else if (what == 15) {
             sbrk(6011);
         } else if (what == 16) {
@@ -137,7 +137,7 @@ void go(const int which_child) {
                 exit(1);
             }
             kill(pid);
-            wait(0);
+            wait(nullptr);
         } else if (what == 18) {
             int pid = fork();
             if (pid == 0) {
@@ -147,7 +147,7 @@ void go(const int which_child) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
-            wait(0);
+            wait(nullptr);
         } else if (what == 19) {
             int fds[2];
             if (pipe(fds) < 0) {
@@ -170,7 +170,7 @@ void go(const int which_child) {
             }
             close(fds[0]);
             close(fds[1]);
-            wait(0);
+            wait(nullptr);
         } else if (what == 20) {
             int pid = fork();
             if (pid == 0) {
@@ -185,7 +185,7 @@ void go(const int which_child) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
-            wait(0);
+            wait(nullptr);
         } else if (what == 21) {
             unlink("c");
             // should always succeed. check that there are free i-nodes,
@@ -236,7 +236,7 @@ void go(const int which_child) {
                     exit(1);
                 }
                 close(aa[1]);
-                const char *args[3] = {"echo", "hi", 0};
+                const char *args[3] = {"echo", "hi", nullptr};
                 exec("grindir/../echo", (const char **)args);
                 fprintf(2, "grind: echo: not found\n");
                 exit(2);
@@ -260,7 +260,7 @@ void go(const int which_child) {
                     exit(5);
                 }
                 close(bb[1]);
-                const char *args[2] = {"cat", 0};
+                const char *args[2] = {"cat", nullptr};
                 exec("/cat", (const char **)args);
                 fprintf(2, "grind: cat: not found\n");
                 exit(6);
@@ -333,7 +333,7 @@ int main() {
             exit(0);
         }
         if (pid > 0) {
-            wait(0);
+            wait(nullptr);
         }
         pause(20);
         rand_next += 1;

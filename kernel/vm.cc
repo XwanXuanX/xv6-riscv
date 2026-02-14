@@ -99,8 +99,8 @@ walk(pagetable_t pagetable, const uint64 va, const int alloc) {
         if (*pte & PTE_V) {
             pagetable = (pagetable_t)PTE2PA(*pte);
         } else {
-            if (!alloc || (pagetable = (pde_t *)kalloc()) == 0)
-                return 0;
+            if (!alloc || (pagetable = (pde_t *)kalloc()) == nullptr)
+                return nullptr;
             memset(pagetable, 0, PGSIZE);
             *pte = PA2PTE(pagetable) | PTE_V;
         }
@@ -120,7 +120,7 @@ walkaddr(const pagetable_t pagetable, const uint64 va) {
         return 0;
 
     pte = walk(pagetable, va, 0);
-    if (pte == 0)
+    if (pte == nullptr)
         return 0;
     if ((*pte & PTE_V) == 0)
         return 0;
@@ -151,7 +151,7 @@ int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size, ui
     a = va;
     last = va + size - PGSIZE;
     for (;;) {
-        if ((pte = walk(pagetable, a, 1)) == 0)
+        if ((pte = walk(pagetable, a, 1)) == nullptr)
             return -1;
         if (*pte & PTE_V)
             panic("mappages: remap");
@@ -170,8 +170,8 @@ pagetable_t
 uvmcreate() {
     pagetable_t pagetable;
     pagetable = (pagetable_t)kalloc();
-    if (pagetable == 0)
-        return 0;
+    if (pagetable == nullptr)
+        return nullptr;
     memset(pagetable, 0, PGSIZE);
     return pagetable;
 }
@@ -187,7 +187,7 @@ void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages,
         panic("uvmunmap: not aligned");
 
     for (a = va; a < va + npages * PGSIZE; a += PGSIZE) {
-        if ((pte = walk(pagetable, a, 0)) == 0) // leaf page table entry allocated?
+        if ((pte = walk(pagetable, a, 0)) == nullptr) // leaf page table entry allocated?
             continue;
         if ((*pte & PTE_V) == 0) // has physical page been allocated?
             continue;
@@ -212,7 +212,7 @@ uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz, const in
     oldsz = PGROUNDUP(oldsz);
     for (a = oldsz; a < newsz; a += PGSIZE) {
         mem = reinterpret_cast<char *>(kalloc());
-        if (mem == 0) {
+        if (mem == nullptr) {
             uvmdealloc(pagetable, a, oldsz);
             return 0;
         }
@@ -282,13 +282,13 @@ int uvmcopy(const pagetable_t old, const pagetable_t nw, const uint64 sz) {
     char *mem;
 
     for (i = 0; i < sz; i += PGSIZE) {
-        if ((pte = walk(old, i, 0)) == 0)
+        if ((pte = walk(old, i, 0)) == nullptr)
             continue; // page table entry hasn't been allocated
         if ((*pte & PTE_V) == 0)
             continue; // physical page hasn't been allocated
         pa = PTE2PA(*pte);
         flags = PTE_FLAGS(*pte);
-        if ((mem = reinterpret_cast<char *>(kalloc())) == 0)
+        if ((mem = reinterpret_cast<char *>(kalloc())) == nullptr)
             goto err;
         memmove(mem, (char *)pa, PGSIZE);
         if (mappages(nw, i, PGSIZE, (uint64)mem, flags) != 0) {
@@ -309,7 +309,7 @@ void uvmclear(const pagetable_t pagetable, const uint64 va) {
     pte_t *pte;
 
     pte = walk(pagetable, va, 0);
-    if (pte == 0)
+    if (pte == nullptr)
         panic("uvmclear");
     *pte &= ~PTE_U;
 }
@@ -445,7 +445,7 @@ vmfault(const pagetable_t pagetable, uint64 va, int read) {
 
 int ismapped(const pagetable_t pagetable, const uint64 va) {
     pte_t *pte = walk(pagetable, va, 0);
-    if (pte == 0) {
+    if (pte == nullptr) {
         return 0;
     }
     if (*pte & PTE_V) {

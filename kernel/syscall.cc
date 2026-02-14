@@ -96,7 +96,7 @@ extern uint64 sys_close(void);
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
 static uint64 (*syscalls[])(void) = {
-    0,
+    nullptr,
     sys_fork,   // 1
     sys_exit,   // 2
     sys_wait,   // 3

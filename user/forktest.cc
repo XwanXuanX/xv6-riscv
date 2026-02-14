@@ -30,13 +30,13 @@ void forktest(void) {
     }
 
     for (; n > 0; n--) {
-        if (wait(0) < 0) {
+        if (wait(nullptr) < 0) {
             print("wait stopped early\n");
             exit(1);
         }
     }
 
-    if (wait(0) != -1) {
+    if (wait(nullptr) != -1) {
         print("wait got too many\n");
         exit(1);
     }

@@ -279,7 +279,7 @@ void virtio_disk_rw(struct buf *b, const int write) {
         sleep(b, &disk.vdisk_lock);
     }
 
-    disk.info[idx[0]].b = 0;
+    disk.info[idx[0]].b = nullptr;
     free_chain(idx[0]);
 
     disk.vdisk_lock.unlock();
