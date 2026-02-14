@@ -5,7 +5,7 @@
 #include "spinlock.hh"
 #include "proc.h"
 #include "syscall.h"
-#include "defs.hh"
+#include "defs.h"
 
 namespace xv6 {
 

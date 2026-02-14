@@ -1,6 +1,6 @@
 #include "types.h"
 #include "riscv.h"
-#include "defs.hh"
+#include "defs.h"
 #include "param.h"
 #include "spinlock.hh"
 #include "proc.h"

@@ -4,7 +4,7 @@
 #include "riscv.h"
 #include "spinlock.hh"
 #include "proc.h"
-#include "defs.hh"
+#include "defs.h"
 #include "elf.h"
 
 namespace xv6 {

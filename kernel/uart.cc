@@ -8,7 +8,7 @@
 #include "riscv.h"
 #include "spinlock.hh"
 #include "proc.h"
-#include "defs.hh"
+#include "defs.h"
 
 namespace xv6 {
 

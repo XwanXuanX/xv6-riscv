@@ -12,7 +12,7 @@
 #include "file.h"
 #include "memlayout.h"
 #include "riscv.h"
-#include "defs.hh"
+#include "defs.h"
 #include "proc.h"
 
 namespace xv6 {

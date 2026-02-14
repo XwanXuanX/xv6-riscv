@@ -18,7 +18,7 @@
 #include "spinlock.hh"
 #include "sleeplock.h"
 #include "riscv.h"
-#include "defs.hh"
+#include "defs.h"
 #include "fs.h"
 #include "buf.h"
 

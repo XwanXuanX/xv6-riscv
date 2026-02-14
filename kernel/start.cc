@@ -2,7 +2,7 @@
 #include "param.h"
 #include "memlayout.h"
 #include "riscv.h"
-#include "defs.hh"
+#include "defs.h"
 
 using namespace xv6;
 

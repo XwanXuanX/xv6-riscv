@@ -7,7 +7,7 @@
 #include "memlayout.h"
 #include "spinlock.hh"
 #include "riscv.h"
-#include "defs.hh"
+#include "defs.h"
 
 namespace xv6 {
 

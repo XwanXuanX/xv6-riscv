@@ -19,7 +19,7 @@
 #include "file.h"
 #include "memlayout.h"
 #include "riscv.h"
-#include "defs.hh"
+#include "defs.h"
 #include "proc.h"
 
 #define BACKSPACE 0x100  // erase the last output character
