@@ -60,7 +60,7 @@ void fileclose(struct file *f) {
         ftable.lock.unlock();
         return;
     }
-    struct file ff = *f;
+    const struct file ff = *f;
     f->ref = 0;
     f->type = FD_NONE;
     ftable.lock.unlock();

@@ -49,7 +49,7 @@ void vprintf(const int fd, const char *fmt, const va_list ap) {
 
     int state = 0;
     for (int i = 0; fmt[i]; i++) {
-        int c0 = fmt[i] & 0xff;
+        const int c0 = fmt[i] & 0xff;
         if (state == 0) {
             if (c0 == '%') {
                 state = '%';

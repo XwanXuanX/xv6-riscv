@@ -11,7 +11,7 @@ using namespace xv6;
 //
 extern "C" void start(const int argc, char **argv) {
     extern int main(int argc, char **argv);
-    int r = main(argc, argv);
+    const int r = main(argc, argv);
     exit(r);
 }
 
@@ -61,7 +61,7 @@ gets(char *buf, const int max) {
     char c;
 
     for (i = 0; i + 1 < max;) {
-        int cc = read(0, &c, 1);
+        const int cc = read(0, &c, 1);
         if (cc < 1)
             break;
         buf[i++] = c;
@@ -74,10 +74,10 @@ gets(char *buf, const int max) {
 
 int stat(const char *n, xv6::stat *st) {
 
-    int fd = open(n, O_RDONLY);
+    const int fd = open(n, O_RDONLY);
     if (fd < 0)
         return -1;
-    int r = fstat(fd, st);
+    const int r = fstat(fd, st);
     close(fd);
     return r;
 }

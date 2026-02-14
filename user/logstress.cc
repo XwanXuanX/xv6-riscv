@@ -14,13 +14,13 @@ int main(const int argc, char **argv) {
            SZ = 2000 };
 
     for (int i = 1; i < argc; i++) {
-        int pid1 = fork();
+        const int pid1 = fork();
         if (pid1 < 0) {
             printf("%s: fork failed\n", argv[0]);
             exit(1);
         }
         if (pid1 == 0) {
-            int fd = open(argv[i], O_CREATE | O_RDWR);
+            const int fd = open(argv[i], O_CREATE | O_RDWR);
             if (fd < 0) {
                 printf("%s: create %s failed\n", argv[0], argv[i]);
                 exit(1);

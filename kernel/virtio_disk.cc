@@ -109,7 +109,7 @@ void virtio_disk_init(void) {
         panic("virtio disk should not be ready");
 
     // check maximum queue size.
-    uint32 max = *R(VIRTIO_MMIO_QUEUE_NUM_MAX);
+    const uint32 max = *R(VIRTIO_MMIO_QUEUE_NUM_MAX);
     if (max == 0)
         panic("virtio disk has no queue 0");
     if (max < NUM)
@@ -181,8 +181,8 @@ free_desc(const int i) {
 static void
 free_chain(int i) {
     while (1) {
-        int flag = disk.desc[i].flags;
-        int nxt = disk.desc[i].next;
+        const int flag = disk.desc[i].flags;
+        const int nxt = disk.desc[i].next;
         free_desc(i);
         if (flag & VRING_DESC_F_NEXT)
             i = nxt;
@@ -207,7 +207,7 @@ alloc3_desc(int *idx) {
 }
 
 void virtio_disk_rw(struct buf *b, const int write) {
-    uint64 sector = b->blockno * (BSIZE / 512);
+    const uint64 sector = b->blockno * (BSIZE / 512);
 
     disk.vdisk_lock.lock();
 
@@ -301,7 +301,7 @@ void virtio_disk_intr() {
 
     while (disk.used_idx != disk.used->idx) {
         __sync_synchronize();
-        int id = disk.used->ring[disk.used_idx % NUM].id;
+        const int id = disk.used->ring[disk.used_idx % NUM].id;
 
         if (disk.info[id].status != 0)
             panic("virtio_disk_intr status");

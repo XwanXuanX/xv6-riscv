@@ -153,7 +153,7 @@ bool mlfq_rm(struct mlfq *m, const int lvl, struct proc *p) {
     }
 
     m->lock.lock();
-    bool ok = mlfq_rm_locked(m, lvl, p);
+    const bool ok = mlfq_rm_locked(m, lvl, p);
     m->lock.unlock();
 
     return ok;

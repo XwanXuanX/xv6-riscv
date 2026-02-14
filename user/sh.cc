@@ -177,7 +177,7 @@ void panic(const char *s) {
 
 int fork1(void) {
 
-    int pid = fork();
+    const int pid = fork();
     if (pid == -1)
         panic("fork");
     return pid;
@@ -346,7 +346,7 @@ parseredirs(struct cmd *cmd, char **ps, char *es) {
     char *q, *eq;
 
     while (peek(ps, es, "<>")) {
-        int tok = gettoken(ps, es, nullptr, nullptr);
+        const int tok = gettoken(ps, es, nullptr, nullptr);
         if (gettoken(ps, es, &q, &eq) != 'a')
             panic("missing file for redirection");
         switch (tok) {

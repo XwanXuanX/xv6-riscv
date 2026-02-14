@@ -1,3 +1,7 @@
+#pragma once
+
+#include "param.h"
+
 namespace xv6 {
 
 // Saved registers for kernel context switches.

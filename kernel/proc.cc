@@ -46,11 +46,11 @@ spinlock wait_lock;
 // guard page.
 void proc_mapstacks(const pagetable_t kpgtbl) {
 
-    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
+    for (const struct proc *p = proc; p < &proc[NPROC]; p++) {
         char *pa = reinterpret_cast<char *>(kalloc());
         if (pa == nullptr)
             panic("kalloc");
-        uint64 va = KSTACK((int)(p - proc));
+        const uint64 va = KSTACK((int)(p - proc));
         kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
     }
 }
@@ -71,7 +71,7 @@ void procinit(void) {
 // to prevent race with process being moved
 // to a different CPU.
 int cpuid() {
-    int id = r_tp();
+    const int id = r_tp();
     return id;
 }
 
@@ -79,7 +79,7 @@ int cpuid() {
 // Interrupts must be disabled.
 struct cpu *
 mycpu(void) {
-    int id = cpuid();
+    const int id = cpuid();
     struct cpu *c = &cpus[id];
     return c;
 }
@@ -88,7 +88,7 @@ mycpu(void) {
 struct proc *
 myproc(void) {
     push_off();
-    struct cpu *c = mycpu();
+    const struct cpu *c = mycpu();
     struct proc *p = c->proc;
     pop_off();
     return p;
@@ -97,7 +97,7 @@ myproc(void) {
 int allocpid() {
 
     pid_lock.lock();
-    int pid = nextpid;
+    const int pid = nextpid;
     nextpid = nextpid + 1;
     pid_lock.unlock();
 
@@ -208,7 +208,7 @@ pagetable_t
 proc_pagetable(struct proc *p) {
 
     // An empty page table.
-    pagetable_t pagetable = uvmcreate();
+    const pagetable_t pagetable = uvmcreate();
     if (pagetable == nullptr)
         return nullptr;
 
@@ -323,7 +323,7 @@ int kfork(void) {
 
     safestrcpy(np->name, p->name, sizeof(p->name));
 
-    int pid = np->pid;
+    const int pid = np->pid;
 
     np->lock.unlock();
 
@@ -433,7 +433,7 @@ int kwait(const uint64 addr) {
                 havekids = 1;
                 if (pp->state == ZOMBIE) {
                     // Found one.
-                    int pid = pp->pid;
+                    const int pid = pp->pid;
                     if (addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
                                              sizeof(pp->xstate)) < 0) {
                         pp->lock.unlock();
@@ -703,7 +703,7 @@ void sched(void) {
     if (intr_get())
         panic("sched interruptible");
 
-    int intena = mycpu()->intena;
+    const int intena = mycpu()->intena;
     // I will switch to scheduler for now...
     swtch(&p->context, &mycpu()->context);
     // Scheduler doing its stuff... Scheduler done
@@ -774,8 +774,8 @@ void forkret(void) {
 
     // return to user space, mimicing usertrap()'s return.
     prepare_return();
-    uint64 satp = MAKE_SATP(p->pagetable);
-    uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
+    const uint64 satp = MAKE_SATP(p->pagetable);
+    const uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
     ((void (*)(uint64))trampoline_userret)(satp);
 }
 
@@ -893,7 +893,7 @@ void setkilled(struct proc *p) {
 int killed(struct proc *p) {
 
     p->lock.lock();
-    int k = p->killed;
+    const int k = p->killed;
     p->lock.unlock();
     return k;
 }
@@ -902,7 +902,7 @@ int killed(struct proc *p) {
 // depending on usr_dst.
 // Returns 0 on success, -1 on error.
 int either_copyout(const int user_dst, const uint64 dst, void *src, const uint64 len) {
-    struct proc *p = myproc();
+    const struct proc *p = myproc();
     if (user_dst) {
         return copyout(p->pagetable, dst, reinterpret_cast<char *>(src), len);
     } else {
@@ -915,7 +915,7 @@ int either_copyout(const int user_dst, const uint64 dst, void *src, const uint64
 // depending on usr_src.
 // Returns 0 on success, -1 on error.
 int either_copyin(void *dst, const int user_src, const uint64 src, const uint64 len) {
-    struct proc *p = myproc();
+    const struct proc *p = myproc();
     if (user_src) {
         return copyin(p->pagetable, reinterpret_cast<char *>(dst), src, len);
     } else {
@@ -931,7 +931,7 @@ static void mlfq_dump_nolock(void) {
     for (int lvl = 0; lvl < NLEVELS; lvl++) {
         printf("  L%d:", lvl);
         int cnt = 0;
-        struct proc *p = mlq.q[lvl].head;
+        const struct proc *p = mlq.q[lvl].head;
 
         // Print at most 30 entries per level to avoid flooding.
         while (p && cnt < 30) {

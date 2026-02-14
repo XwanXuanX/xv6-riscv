@@ -140,7 +140,7 @@ void uartintr() {
 
     // read and process incoming characters, if any.
     while (1) {
-        int c = uartgetc();
+        const int c = uartgetc();
         if (c == -1)
             break;
         consoleintr(c);

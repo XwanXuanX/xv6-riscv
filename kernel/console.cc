@@ -78,7 +78,7 @@ int consolewrite(const int user_src, const uint64 src, const int n) {
 int consoleread(const int user_dst, uint64 dst, int n) {
     char cbuf;
 
-    int target = n;
+    const int target = n;
     cons.lock.lock();
     while (n > 0) {
         // wait until interrupt handler has put some
@@ -91,7 +91,7 @@ int consoleread(const int user_dst, uint64 dst, int n) {
             sleep(&cons.r, &cons.lock);
         }
 
-        int c = cons.buf[cons.r++ % INPUT_BUF_SIZE];
+        const int c = cons.buf[cons.r++ % INPUT_BUF_SIZE];
 
         if (c == C('D')) { // end-of-file
             if (n < target) {

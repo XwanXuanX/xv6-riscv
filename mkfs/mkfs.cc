@@ -113,7 +113,7 @@ int main(const int argc, char *argv[]) {
     memmove(buf, &sb, sizeof(sb));
     wsect(1, buf);
 
-    uint rootino = ialloc(T_DIR);
+    const uint rootino = ialloc(T_DIR);
     assert(rootino == ROOTINO);
 
     bzero(&de, sizeof(de));
@@ -148,7 +148,7 @@ int main(const int argc, char *argv[]) {
 
         assert(strlen(shortname) <= DIRSIZ);
 
-        uint inum = ialloc(T_FILE);
+        const uint inum = ialloc(T_FILE);
 
         bzero(&de, sizeof(de));
         de.inum = xshort(inum);
@@ -183,7 +183,7 @@ void wsect(const uint sec, void *buf) {
 void winode(const uint inum, struct dinode *ip) {
     char buf[BSIZE];
 
-    uint bn = IBLOCK(inum, sb);
+    const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf);
     struct dinode *dip = ((struct dinode *)buf) + (inum % IPB);
     *dip = *ip;
@@ -193,9 +193,9 @@ void winode(const uint inum, struct dinode *ip) {
 void rinode(const uint inum, struct dinode *ip) {
     char buf[BSIZE];
 
-    uint bn = IBLOCK(inum, sb);
+    const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf);
-    struct dinode *dip = ((struct dinode *)buf) + (inum % IPB);
+    const struct dinode *dip = ((struct dinode *)buf) + (inum % IPB);
     *ip = *dip;
 }
 
@@ -207,7 +207,7 @@ void rsect(const uint sec, void *buf) {
 }
 
 uint ialloc(const ushort type) {
-    uint inum = freeinode++;
+    const uint inum = freeinode++;
     struct dinode din;
 
     bzero(&din, sizeof(din));
@@ -234,7 +234,7 @@ void balloc(const int used) {
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 void iappend(const uint inum, void *xp, int n) {
-    char *p = (char *)xp;
+    const char *p = (char *)xp;
     struct dinode din;
     char buf[BSIZE];
     uint indirect[NINDIRECT];
@@ -244,7 +244,7 @@ void iappend(const uint inum, void *xp, int n) {
     uint off = xint(din.size);
     // printf("append inum %d at off %d sz %d\n", inum, off, n);
     while (n > 0) {
-        uint fbn = off / BSIZE;
+        const uint fbn = off / BSIZE;
         assert(fbn < MAXFILE);
         if (fbn < NDIRECT) {
             if (xint(din.addrs[fbn]) == 0) {
@@ -262,7 +262,7 @@ void iappend(const uint inum, void *xp, int n) {
             }
             x = xint(indirect[fbn - NDIRECT]);
         }
-        uint n1 = min(n, (fbn + 1) * BSIZE - off);
+        const uint n1 = min(n, (fbn + 1) * BSIZE - off);
         rsect(x, buf);
         bcopy(p, buf + off - (fbn * BSIZE), n1);
         wsect(x, buf);

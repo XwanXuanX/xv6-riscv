@@ -1,3 +1,8 @@
+#pragma once
+
+#include "types.h"
+#include "riscv.h"
+
 namespace xv6 {
 
 struct buf;
@@ -6,7 +11,7 @@ struct file;
 struct inode;
 struct pipe;
 struct proc;
-struct spinlock;
+class spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;

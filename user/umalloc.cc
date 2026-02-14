@@ -57,7 +57,7 @@ void *
 malloc(const uint nbytes) {
     Header *prevp;
 
-    uint nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
+    const uint nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
     if ((prevp = freep) == nullptr) {
         base.s.ptr = freep = prevp = &base;
         base.s.size = 0;

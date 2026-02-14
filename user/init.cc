@@ -18,7 +18,7 @@ int main(void) {
 
     for (;;) {
         printf("init: starting sh\n");
-        int pid = fork();
+        const int pid = fork();
         if (pid < 0) {
             printf("init: fork failed\n");
             exit(1);
@@ -32,7 +32,7 @@ int main(void) {
         for (;;) {
             // this call to wait() returns if the shell exits,
             // or if a parentless process exits.
-            int wpid = wait((int *)nullptr);
+            const int wpid = wait((int *)nullptr);
             if (wpid == pid) {
                 // the shell exited; restart it.
                 break;

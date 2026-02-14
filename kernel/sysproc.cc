@@ -40,7 +40,7 @@ sys_sbrk() {
 
     argint(0, &n);
     argint(1, &t);
-    uint64 addr = myproc()->sz;
+    const uint64 addr = myproc()->sz;
 
     if (t == SBRK_EAGER || n < 0) {
         if (growproc(n) < 0) {
@@ -67,7 +67,7 @@ sys_pause() {
     if (n < 0)
         n = 0;
     tickslock.lock();
-    uint ticks0 = ticks;
+    const uint ticks0 = ticks;
     while (ticks - ticks0 < static_cast<uint>(n)) {
         if (killed(myproc())) {
             tickslock.unlock();
@@ -93,7 +93,7 @@ uint64
 sys_uptime() {
 
     tickslock.lock();
-    uint xticks = ticks;
+    const uint xticks = ticks;
     tickslock.unlock();
     return xticks;
 }

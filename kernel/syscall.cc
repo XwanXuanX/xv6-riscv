@@ -26,7 +26,7 @@ int fetchstr(const uint64 addr, char *buf, const int max) {
 
 static uint64
 argraw(const int n) {
-    struct proc *p = myproc();
+    const struct proc *p = myproc();
     switch (n) {
     case 0:
         return p->trapframe->a0;
@@ -119,7 +119,7 @@ static uint64 (*syscalls[])(void) = {
 void syscall() {
     struct proc *p = myproc();
 
-    uint64 num = p->trapframe->a7;
+    const uint64 num = p->trapframe->a7;
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
         // Use num to lookup the system call function for num, call it,
         // and store its return value in p->trapframe->a0

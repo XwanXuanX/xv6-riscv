@@ -24,7 +24,7 @@ namespace impl {
 // release(&A);   // pop_off()
 
 void push_off() {
-    int old = intr_get();
+    const int old = intr_get();
 
     // disable interrupts to prevent an involuntary context
     // switch while using mycpu().
@@ -126,7 +126,7 @@ void spinlock::unlock() {
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
 bool spinlock::holding() {
-    int r = (locked && cpu == mycpu());
+    const int r = (locked && cpu == mycpu());
     return r;
 }
 

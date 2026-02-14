@@ -152,7 +152,7 @@ loadseg(const pagetable_t pagetable, const uint64 va, struct inode *ip, const ui
     uint n;
 
     for (uint i = 0; i < sz; i += PGSIZE) {
-        uint64 pa = walkaddr(pagetable, va + i);
+        const uint64 pa = walkaddr(pagetable, va + i);
         if (pa == 0)
             panic("loadseg: address should exist");
         if (sz - i < PGSIZE)

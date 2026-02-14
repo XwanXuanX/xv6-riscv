@@ -66,7 +66,7 @@ int printf(const char *fmt, ...) {
             continue;
         }
         i++;
-        int c0 = fmt[i + 0] & 0xff;
+        const int c0 = fmt[i + 0] & 0xff;
         int c1 = c2 = 0;
         if (c0)
             c1 = fmt[i + 1] & 0xff;

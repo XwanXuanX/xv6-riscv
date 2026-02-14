@@ -65,7 +65,7 @@ balloc(const uint dev) {
     for (uint b = 0; b < sb.size; b += BPB) {
         bp = bread(dev, BBLOCK(b, sb));
         for (uint bi = 0; bi < BPB && b + bi < sb.size; bi++) {
-            uint m = 1 << (bi % 8);
+            const uint m = 1 << (bi % 8);
             if ((bp->data[bi / 8] & m) == 0) { // Is block free?
                 bp->data[bi / 8] |= m;         // Mark block in use.
                 log_write(bp);
@@ -85,8 +85,8 @@ static void
 bfree(const int dev, const uint b) {
 
     struct buf *bp = bread(dev, BBLOCK(b, sb));
-    int bi = b % BPB;
-    int m = 1 << (bi % 8);
+    const int bi = b % BPB;
+    const int m = 1 << (bi % 8);
     if ((bp->data[bi / 8] & m) == 0)
         panic("freeing free block");
     bp->data[bi / 8] &= ~m;
@@ -276,7 +276,7 @@ void ilock(struct inode *ip) {
 
     if (ip->valid == 0) {
         struct buf *bp = bread(ip->dev, IBLOCK(ip->inum, sb));
-        struct dinode *dip = (struct dinode *)bp->data + ip->inum % IPB;
+        const struct dinode *dip = (struct dinode *)bp->data + ip->inum % IPB;
         ip->type = dip->type;
         ip->major = dip->major;
         ip->minor = dip->minor;
@@ -418,7 +418,7 @@ void itrunc(struct inode *ip) {
 
     if (ip->addrs[NDIRECT]) {
         struct buf *bp = bread(ip->dev, ip->addrs[NDIRECT]);
-        uint *a = (uint *)bp->data;
+        const uint *a = (uint *)bp->data;
         for (uint j = 0; j < NINDIRECT; j++) {
             if (a[j])
                 bfree(ip->dev, a[j]);
@@ -455,7 +455,7 @@ uint readi(struct inode *ip, const int user_dst, uint64 dst, uint off, uint n) {
         n = ip->size - off;
 
     for (tot = 0; tot < n; tot += m, off += m, dst += m) {
-        uint addr = bmap(ip, off / BSIZE);
+        const uint addr = bmap(ip, off / BSIZE);
         if (addr == 0)
             break;
         struct buf *bp = bread(ip->dev, addr);
@@ -486,7 +486,7 @@ int writei(struct inode *ip, const int user_src, uint64 src, uint off, const uin
         return -1;
 
     for (tot = 0; tot < n; tot += m, off += m, src += m) {
-        uint addr = bmap(ip, off / BSIZE);
+        const uint addr = bmap(ip, off / BSIZE);
         if (addr == 0)
             break;
         struct buf *bp = bread(ip->dev, addr);
@@ -534,7 +534,7 @@ dirlookup(struct inode *dp, const char *name, uint *poff) {
             // entry matches path element
             if (poff)
                 *poff = off;
-            uint inum = de.inum;
+            const uint inum = de.inum;
             return iget(dp->dev, inum);
         }
     }
@@ -595,7 +595,7 @@ skipelem(const char *path, char *name) {
     const char *s = path;
     while (*path != '/' && *path != 0)
         path++;
-    int len = path - s;
+    const int len = path - s;
     if (len >= DIRSIZ)
         memmove(name, s, DIRSIZ);
     else {

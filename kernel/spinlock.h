@@ -1,5 +1,7 @@
 #pragma once
 
+#include "types.h"
+
 namespace xv6 {
 
 // Mutual exclusion lock.

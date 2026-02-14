@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef __ASSEMBLER__
 
 namespace xv6 {
@@ -266,7 +268,7 @@ intr_off() {
 // are device interrupts enabled?
 static inline int
 intr_get() {
-    uint64 x = r_sstatus();
+    const uint64 x = r_sstatus();
     return (x & SSTATUS_SIE) != 0;
 }
 

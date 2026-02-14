@@ -120,7 +120,7 @@ usertrap() {
     prepare_return();
 
     // the user page table to switch to, for trampoline.S
-    uint64 satp = MAKE_SATP(p->pagetable);
+    const uint64 satp = MAKE_SATP(p->pagetable);
 
     // return to trampoline.S; satp value in a0.
     return satp;
@@ -130,7 +130,7 @@ usertrap() {
 // set up trapframe and control registers for a return to user space
 //
 void prepare_return() {
-    struct proc *p = myproc();
+    const struct proc *p = myproc();
 
     // we're about to switch the destination of traps from
     // kerneltrap() to usertrap(). because a trap from kernel
@@ -138,7 +138,7 @@ void prepare_return() {
     intr_off();
 
     // send syscalls, interrupts, and exceptions to uservec in trampoline.S
-    uint64 trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
+    const uint64 trampoline_uservec = TRAMPOLINE + (uservec - trampoline);
     w_stvec(trampoline_uservec);
 
     // set up trapframe values that uservec will need when
@@ -168,9 +168,9 @@ void prepare_return() {
 // NOTE: This function must have C linkage because it's called from assembly (kernelvec.S)
 extern "C" void kerneltrap() {
     int which_dev = 0;
-    uint64 sepc = xv6::r_sepc();
-    uint64 sstatus = xv6::r_sstatus();
-    uint64 scause = xv6::r_scause();
+    const uint64 sepc = xv6::r_sepc();
+    const uint64 sstatus = xv6::r_sstatus();
+    const uint64 scause = xv6::r_scause();
 
     if ((sstatus & SSTATUS_SPP) == 0)
         xv6::panic("kerneltrap: not from supervisor mode");
@@ -278,13 +278,13 @@ void clockintr() {
 // 1 if other device,
 // 0 if not recognized.
 int devintr() {
-    uint64 scause = r_scause();
+    const uint64 scause = r_scause();
 
     if (scause == 0x8000000000000009L) {
         // this is a supervisor external interrupt, via PLIC.
 
         // irq indicates which device interrupted.
-        int irq = plic_claim();
+        const int irq = plic_claim();
 
         if (irq == UART0_IRQ) {
             uartintr();
