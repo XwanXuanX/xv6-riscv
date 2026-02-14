@@ -10,7 +10,7 @@ using namespace xv6;
 //
 // wrapper so that it's OK if main() does not call exit().
 //
-void start(int argc, char **argv) {
+extern "C" void start(int argc, char **argv) {
     int r;
     extern int main(int argc, char **argv);
     r = main(argc, argv);
