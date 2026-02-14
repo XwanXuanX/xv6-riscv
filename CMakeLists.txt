@@ -98,7 +98,17 @@ set(KERNEL_SOURCES
     kernel/mlfq.cc
 )
 
-# Kernel object files
+# Create an OBJECT library for CLion code navigation and completion
+# This doesn't produce an actual library, just compiles the sources for IDE support
+add_library(kernel_ide OBJECT EXCLUDE_FROM_ALL ${KERNEL_SOURCES})
+
+target_compile_options(kernel_ide PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:${COMMON_FLAGS}>
+    $<$<COMPILE_LANGUAGE:CXX>:${CXX_FLAGS}>
+    $<$<COMPILE_LANGUAGE:ASM>:-march=rv64gc -g>
+)
+
+# Kernel object files for actual build
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/kernel)
 
 set(KERNEL_OBJECTS)
