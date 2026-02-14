@@ -15,7 +15,7 @@
 
 #include "types.h"
 #include "param.h"
-#include "spinlock.hh"
+#include "spinlock.h"
 #include "sleeplock.h"
 #include "riscv.h"
 #include "defs.h"

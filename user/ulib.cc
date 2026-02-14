@@ -3,7 +3,7 @@
 #include "kernel/fcntl.h"
 #include "kernel/riscv.h"
 #include "kernel/vm.h"
-#include "user/user.hh"
+#include "user/user.h"
 
 using namespace xv6;
 

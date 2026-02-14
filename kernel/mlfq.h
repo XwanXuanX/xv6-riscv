@@ -2,7 +2,7 @@
 #define KERNEL_MLFQ_H
 
 #include "param.h"
-#include "spinlock.hh"
+#include "spinlock.h"
 
 namespace xv6 {
 

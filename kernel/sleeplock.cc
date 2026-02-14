@@ -5,7 +5,7 @@
 #include "defs.h"
 #include "param.h"
 #include "memlayout.h"
-#include "spinlock.hh"
+#include "spinlock.h"
 #include "proc.h"
 #include "sleeplock.h"
 

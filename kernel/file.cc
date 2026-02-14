@@ -7,7 +7,7 @@
 #include "defs.h"
 #include "param.h"
 #include "fs.h"
-#include "spinlock.hh"
+#include "spinlock.h"
 #include "sleeplock.h"
 #include "file.h"
 #include "stat.h"
