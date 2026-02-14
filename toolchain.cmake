@@ -16,7 +16,13 @@ if(NOT RISCV_GCC)
 endif()
 
 if(NOT RISCV_GCC)
-    message(FATAL_ERROR "Could not find RISC-V GCC toolchain")
+    message(FATAL_ERROR
+        "Could not find a RISC-V GCC cross-compiler.\n"
+        "Searched for: riscv64-unknown-elf-gcc, riscv64-elf-gcc, riscv64-none-elf-gcc, "
+        "riscv64-linux-gnu-gcc, riscv64-unknown-linux-gnu-gcc.\n"
+        "Please install an appropriate RISC-V GCC toolchain and ensure the compiler is in your PATH, "
+        "or rerun CMake with -DRISCV_GCC=/full/path/to/riscv64-unknown-elf-gcc (or equivalent)."
+    )
 endif()
 
 get_filename_component(RISCV_TOOLCHAIN_BIN_DIR ${RISCV_GCC} DIRECTORY)
