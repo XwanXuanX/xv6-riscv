@@ -4,11 +4,13 @@
 #include "kernel/fcntl.h"
 
 // Parsed command representation
-#define EXEC 1
-#define REDIR 2
-#define PIPE 3
-#define LIST 4
-#define BACK 5
+enum {
+EXEC = 1,
+REDIR = 2,
+PIPE = 3,
+LIST = 4,
+BACK = 5
+};
 
 #define MAXARGS 10
 
