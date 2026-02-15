@@ -40,7 +40,7 @@ static struct disk {
     // there are NUM used ring entries.
     virtq_used *used;
 
-    // our own book-keeping.
+    // our own bookkeeping.
     std::array<char, NUM> free; // is a descriptor free?
     uint16 used_idx;            // we've looked this far in used[2..NUM].
 
@@ -136,12 +136,12 @@ void virtio_disk_init() {
     *R(VIRTIO_MMIO_QUEUE_NUM) = NUM;
 
     // write physical addresses.
-    *R(VIRTIO_MMIO_QUEUE_DESC_LOW) = (uint64)disk.desc;
-    *R(VIRTIO_MMIO_QUEUE_DESC_HIGH) = (uint64)disk.desc >> 32;
-    *R(VIRTIO_MMIO_DRIVER_DESC_LOW) = (uint64)disk.avail;
-    *R(VIRTIO_MMIO_DRIVER_DESC_HIGH) = (uint64)disk.avail >> 32;
-    *R(VIRTIO_MMIO_DEVICE_DESC_LOW) = (uint64)disk.used;
-    *R(VIRTIO_MMIO_DEVICE_DESC_HIGH) = (uint64)disk.used >> 32;
+    *R(VIRTIO_MMIO_QUEUE_DESC_LOW) = reinterpret_cast<uint64>(disk.desc);
+    *R(VIRTIO_MMIO_QUEUE_DESC_HIGH) = reinterpret_cast<uint64>(disk.desc) >> 32;
+    *R(VIRTIO_MMIO_DRIVER_DESC_LOW) = reinterpret_cast<uint64>(disk.avail);
+    *R(VIRTIO_MMIO_DRIVER_DESC_HIGH) = reinterpret_cast<uint64>(disk.avail) >> 32;
+    *R(VIRTIO_MMIO_DEVICE_DESC_LOW) = reinterpret_cast<uint64>(disk.used);
+    *R(VIRTIO_MMIO_DEVICE_DESC_HIGH) = reinterpret_cast<uint64>(disk.used) >> 32;
 
     // queue is ready.
     *R(VIRTIO_MMIO_QUEUE_READY) = 0x1;
@@ -245,12 +245,12 @@ void virtio_disk_rw(buf *b, const int write) {
     buf0->reserved = 0;
     buf0->sector = sector;
 
-    disk.desc[idx[0]].addr = (uint64)buf0;
+    disk.desc[idx[0]].addr = reinterpret_cast<uint64>(buf0);
     disk.desc[idx[0]].len = sizeof(virtio_blk_req);
     disk.desc[idx[0]].flags = VRING_DESC_F_NEXT;
     disk.desc[idx[0]].next = idx[1];
 
-    disk.desc[idx[1]].addr = (uint64)b->data.data();
+    disk.desc[idx[1]].addr = reinterpret_cast<uint64>(b->data.data());
     disk.desc[idx[1]].len = BSIZE;
     if (write) {
         disk.desc[idx[1]].flags = 0; // device reads b->data
@@ -261,7 +261,7 @@ void virtio_disk_rw(buf *b, const int write) {
     disk.desc[idx[1]].next = idx[2];
 
     disk.info[idx[0]].status = 0xff; // device writes 0 on success
-    disk.desc[idx[2]].addr = (uint64)&disk.info[idx[0]].status;
+    disk.desc[idx[2]].addr = reinterpret_cast<uint64>(&disk.info[idx[0]].status);
     disk.desc[idx[2]].len = 1;
     disk.desc[idx[2]].flags = VRING_DESC_F_WRITE; // device writes the status
     disk.desc[idx[2]].next = 0;
@@ -311,7 +311,7 @@ void virtio_disk_intr() {
 
     while (disk.used_idx != disk.used->idx) {
         __sync_synchronize();
-        const int id = disk.used->ring[disk.used_idx % NUM].id;
+        const uint32 id = disk.used->ring[disk.used_idx % NUM].id;
 
         if (disk.info[id].status != 0) {
             panic("virtio_disk_intr status");
