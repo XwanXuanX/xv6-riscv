@@ -14,7 +14,7 @@
 
 int main() {
     int i;
-    constexpr std::string_view path = "stressfs0";
+    std::array<char, 10> path = {"stressfs0"};
     std::array<char, 512> data{};
 
     printf("stressfs starting\n");
@@ -28,8 +28,7 @@ int main() {
 
     printf("write %d\n", i);
 
-    const auto p = const_cast<char *>(path.data());
-    p[8] += i;
+    path[8] += i;
     int fd = open(path.data(), O_CREATE | O_RDWR);
     for (i = 0; i < 20; i++) {
         //    printf(fd, "%d\n", i);

@@ -64,7 +64,7 @@ int consolewrite(const int user_src, const uint64 src, const int n) {
         if (either_copyin(buf.data(), user_src, src + i, nn) == -1) {
             break;
         }
-        uartwrite(buf);
+        uartwrite(std::span<char>(buf.data(), nn));
         i += nn;
     }
 

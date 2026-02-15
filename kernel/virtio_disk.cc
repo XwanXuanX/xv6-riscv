@@ -47,11 +47,11 @@ static struct disk {
     // track info about in-flight operations,
     // for use when completion interrupt arrives.
     // indexed by first descriptor index of chain.
-    struct _info {
+    struct op_info {
         buf *b;
         char status;
     };
-    std::array<_info, NUM> info;
+    std::array<op_info, NUM> info;
 
     // disk command headers.
     // one-for-one with descriptors, for convenience.
