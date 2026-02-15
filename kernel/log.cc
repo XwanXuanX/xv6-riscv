@@ -85,7 +85,7 @@ static void install_trans(const int recovering) {
 // Read the log header from disk into the in-memory log header
 static void read_head() {
     buf *buf = bread(logger.dev, logger.start);
-    const logheader *lh = (struct logheader *)buf->data.data();
+    const logheader *lh = reinterpret_cast<logheader *>(buf->data.data());
     logger.lh.n = lh->n;
     for (int i = 0; i < logger.lh.n; i++) {
         logger.lh.block[i] = lh->block[i];
@@ -98,7 +98,7 @@ static void read_head() {
 // current transaction commits.
 static void write_head() {
     buf *buf = bread(logger.dev, logger.start);
-    const auto hb = (struct logheader *)buf->data.data();
+    const auto hb = reinterpret_cast<logheader *>(buf->data.data());
     hb->n = logger.lh.n;
     for (int i = 0; i < logger.lh.n; i++) {
         hb->block[i] = logger.lh.block[i];

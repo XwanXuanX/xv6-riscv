@@ -2,7 +2,7 @@
 // formatted console output -- printf, panic.
 //
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include "types.h"
 #include "spinlock.h"

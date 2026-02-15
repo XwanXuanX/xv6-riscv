@@ -29,16 +29,18 @@ pagetable_t kvmmake() {
     // PLIC
     kvmmap(kpgtbl, PLIC, PLIC, 0x4000000, PTE_R | PTE_W);
 
+    const auto cetext = reinterpret_cast<uint64>(etext);
+
     // map kernel text executable and read-only.
-    kvmmap(kpgtbl, KERNBASE, KERNBASE, (uint64)etext - KERNBASE, PTE_R | PTE_X);
+    kvmmap(kpgtbl, KERNBASE, KERNBASE, cetext - KERNBASE, PTE_R | PTE_X);
 
     // map kernel data and the physical RAM we'll make use of.
-    kvmmap(kpgtbl, (uint64)etext, (uint64)etext, PHYSTOP - (uint64)etext,
+    kvmmap(kpgtbl, cetext, cetext, PHYSTOP - cetext,
            PTE_R | PTE_W);
 
     // map the trampoline for trap entry/exit to
     // the highest virtual address in the kernel.
-    kvmmap(kpgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+    kvmmap(kpgtbl, TRAMPOLINE, reinterpret_cast<uint64>(trampoline), PGSIZE, PTE_R | PTE_X);
 
     // allocate and map a kernel stack for each process.
     proc_mapstacks(kpgtbl);
@@ -439,13 +441,13 @@ uint64 vmfault(const pagetable_t pagetable, uint64 va) {
     if (ismapped(pagetable, va)) {
         return 0;
     }
-    const uint64 mem = (uint64)kalloc();
+    const auto mem = reinterpret_cast<uint64>(kalloc());
     if (mem == 0) {
         return 0;
     }
-    memset((void *)mem, 0, PGSIZE);
+    memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
     if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
-        kfree((void *)mem);
+        kfree(reinterpret_cast<void *>(mem));
         return 0;
     }
     return mem;
