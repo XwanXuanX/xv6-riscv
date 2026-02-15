@@ -16,12 +16,12 @@ extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
 
 struct run {
-    struct run *next;
+    run *next;
 };
 
 struct {
     spinlock lock;
-    struct run *freelist;
+    run *freelist;
 } kmem;
 
 void kinit() {
@@ -31,7 +31,7 @@ void kinit() {
 
 void freerange(void *pa_start, void *pa_end) {
     auto p = (char *)PGROUNDUP((uint64)pa_start);
-    for (; p + PGSIZE <= (char *)pa_end; p += PGSIZE)
+    for (; p + PGSIZE <= static_cast<char *>(pa_end); p += PGSIZE)
         kfree(p);
 }
 
@@ -41,13 +41,13 @@ void freerange(void *pa_start, void *pa_end) {
 // initializing the allocator; see kinit above.)
 void kfree(void *pa) {
 
-    if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP)
+    if (((uint64)pa % PGSIZE) != 0 || static_cast<char *>(pa) < end || (uint64)pa >= PHYSTOP)
         panic("kfree");
 
     // Fill with junk to catch dangling refs.
     memset(pa, 1, PGSIZE);
 
-    const auto r = (struct run *)pa;
+    const auto r = static_cast<struct run *>(pa);
 
     kmem.lock.lock();
     r->next = kmem.freelist;
@@ -62,7 +62,7 @@ void *
 kalloc(void) {
 
     kmem.lock.lock();
-    struct run *r = kmem.freelist;
+    run *r = kmem.freelist;
     if (r)
         kmem.freelist = r->next;
     kmem.lock.unlock();

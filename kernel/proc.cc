@@ -15,14 +15,14 @@ static void assert(const bool cond, const char *msg) {
     }
 }
 
-struct cpu cpus[NCPU];
+cpu cpus[NCPU];
 
-struct proc proc[NPROC];
+proc proc[NPROC];
 
 // The multi-level queue in MLFQ (contains lock)
 // Shared across ALL CPUs (allocated in data/BSS segment)
 // one single instance for the whole kernel
-struct mlfq mlq;
+mlfq mlq;
 
 struct proc *initproc;
 
@@ -50,7 +50,7 @@ void proc_mapstacks(const pagetable_t kpgtbl) {
         auto pa = reinterpret_cast<char *>(kalloc());
         if (pa == nullptr)
             panic("kalloc");
-        const uint64 va = KSTACK((int)(p - proc));
+        const uint64 va = KSTACK(static_cast<int>(p - proc));
         kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
     }
 }
@@ -63,7 +63,7 @@ void procinit(void) {
     for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         p->lock.init_lock("proc");
         p->state = UNUSED;
-        p->kstack = KSTACK((int)(p - proc));
+        p->kstack = KSTACK(static_cast<int>(p - proc));
     }
 }
 
@@ -77,10 +77,10 @@ int cpuid() {
 
 // Return this CPU's cpu struct.
 // Interrupts must be disabled.
-struct cpu *
+cpu *
 mycpu(void) {
     const int id = cpuid();
-    struct cpu *c = &cpus[id];
+    cpu *c = &cpus[id];
     return c;
 }
 
@@ -88,7 +88,7 @@ mycpu(void) {
 struct proc *
 myproc(void) {
     push_off();
-    const struct cpu *c = mycpu();
+    const cpu *c = mycpu();
     struct proc *p = c->proc;
     pop_off();
     return p;
@@ -135,7 +135,7 @@ found:
     p->state = USED;
 
     // Allocate a trapframe page.
-    if ((p->trapframe = (struct trapframe *)kalloc()) == nullptr) {
+    if ((p->trapf = static_cast<trapframe *>(kalloc())) == nullptr) {
         freeproc(p);
         p->lock.unlock();
         return nullptr;
@@ -164,9 +164,9 @@ found:
 
     // Set up new context to start executing at forkret,
     // which returns to user space.
-    memset(&p->context, 0, sizeof(p->context));
-    p->context.ra = (uint64)forkret;
-    p->context.sp = p->kstack + PGSIZE;
+    memset(&p->ctx, 0, sizeof(p->ctx));
+    p->ctx.ra = (uint64)forkret;
+    p->ctx.sp = p->kstack + PGSIZE;
 
     //
     // Remember! The process lock is still being held!
@@ -180,9 +180,9 @@ found:
 // p->lock must be held.
 static void
 freeproc(struct proc *p) {
-    if (p->trapframe)
-        kfree((void *)p->trapframe);
-    p->trapframe = nullptr;
+    if (p->trapf)
+        kfree((void *)p->trapf);
+    p->trapf = nullptr;
     if (p->pagetable)
         proc_freepagetable(p->pagetable, p->sz);
     p->pagetable = nullptr;
@@ -225,7 +225,7 @@ proc_pagetable(struct proc *p) {
     // map the trapframe page just below the trampoline page, for
     // trampoline.S.
     if (mappages(pagetable, TRAPFRAME, PGSIZE,
-                 (uint64)(p->trapframe), PTE_R | PTE_W) < 0) {
+                 (uint64)(p->trapf), PTE_R | PTE_W) < 0) {
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
         uvmfree(pagetable, 0);
         return nullptr;
@@ -310,10 +310,10 @@ int kfork(void) {
     np->sz = p->sz;
 
     // copy saved user registers.
-    *(np->trapframe) = *(p->trapframe);
+    *(np->trapf) = *(p->trapf);
 
     // Cause fork to return 0 in the child.
-    np->trapframe->a0 = 0;
+    np->trapf->a0 = 0;
 
     // increment reference counts on open file descriptors.
     for (int i = 0; i < NOFILE; i++)
@@ -378,7 +378,7 @@ void kexit(const int status) {
     // Close all open files.
     for (int fd = 0; fd < NOFILE; fd++) {
         if (p->ofile[fd]) {
-            struct file *f = p->ofile[fd];
+            file *f = p->ofile[fd];
             fileclose(f);
             p->ofile[fd] = nullptr;
         }
@@ -473,7 +473,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
     // the iterator
     struct proc *p;
     // current CPU's status, including `c->proc`, the CPU's currently running process
-    struct cpu *c = mycpu();
+    cpu *c = mycpu();
 
     // in initialization, the CPU is not running anything
     c->proc = nullptr;
@@ -540,7 +540,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
                 //      so this is the timeline:
                 //          1. scheduler finds a runnable process
                 //          2. save its context, loads the process's context
-                swtch(&c->context, &p->context);
+                swtch(&c->ctx, &p->ctx);
                 //          3. the process starts to run
                 //          4. the process calls `swtch()` to save its context and load the scheduler's context
                 //          5. finally we are out of `swtch()`, and we just ran something
@@ -576,7 +576,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
 
 __attribute__((unused)) static int first_non_empty(void) {
     for (int i = 0; i < NLEVELS; ++i) {
-        const struct rqueue *rq = &mlq.q[i];
+        const rqueue *rq = &mlq.q[i];
         // We should do some validation to ensure queue integrity
         if ((rq->head && !rq->tail) || (!rq->head && rq->tail)) {
             panic("inconsistent head and tail");
@@ -589,7 +589,7 @@ __attribute__((unused)) static int first_non_empty(void) {
 }
 
 __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedback_q(void) {
-    struct cpu *c = mycpu();
+    cpu *c = mycpu();
 
     c->proc = nullptr;
     for (;;) {
@@ -609,7 +609,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         }
 
         // get the first non-empty queue
-        struct rqueue *const rq = &mlq.q[first_non_null];
+        rqueue *const rq = &mlq.q[first_non_null];
         // the queue must contain at least one thing (this is the possible race that we are preventing)
         assert(rq->head && rq->tail, "empty ready queue (possible races)");
         // the queue is the "ready queue", meaning every process in it is in READY/RUNNABLE state
@@ -658,7 +658,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
         p->need_yield = 0;
 
         // context switch!
-        swtch(&c->context, &p->context);
+        swtch(&c->ctx, &p->ctx);
 
         // process p is done running
         c->proc = nullptr;
@@ -705,7 +705,7 @@ void sched(void) {
 
     const int intena = mycpu()->intena;
     // I will switch to scheduler for now...
-    swtch(&p->context, &mycpu()->context);
+    swtch(&p->ctx, &mycpu()->ctx);
     // Scheduler doing its stuff... Scheduler done
     // I'm the process again!
     mycpu()->intena = intena;
@@ -766,8 +766,8 @@ void forkret(void) {
 
         // We can invoke kexec() now that file system is initialized.
         // Put the return value (argc) of kexec into a0.
-        p->trapframe->a0 = kexec("/init", (const char *[]){"/init", nullptr});
-        if (p->trapframe->a0 == static_cast<uint64>(-1)) {
+        p->trapf->a0 = kexec("/init", (const char *[]){"/init", nullptr});
+        if (p->trapf->a0 == static_cast<uint64>(-1)) {
             panic("exec");
         }
     }

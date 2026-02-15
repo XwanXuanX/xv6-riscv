@@ -13,7 +13,7 @@ uint ticks;
 
 extern char trampoline[], uservec[];
 
-extern struct mlfq mlq;
+extern mlfq mlq;
 
 // in kernelvec.S, calls kerneltrap().
 void kernelvec();
@@ -62,10 +62,10 @@ usertrap() {
     // since we're now in the kernel.
     w_stvec((uint64)kernelvec); // DOC: kernelvec
 
-    struct proc *p = myproc();
+    proc *p = myproc();
 
     // save user program counter.
-    p->trapframe->epc = r_sepc();
+    p->trapf->epc = r_sepc();
 
     if (r_scause() == 8) {
         // system call
@@ -75,7 +75,7 @@ usertrap() {
 
         // sepc points to the ecall instruction,
         // but we want to return to the next instruction.
-        p->trapframe->epc += 4;
+        p->trapf->epc += 4;
 
         // an interrupt will change sepc, scause, and sstatus,
         // so enable only now that we're done with those registers.
@@ -130,7 +130,7 @@ usertrap() {
 // set up trapframe and control registers for a return to user space
 //
 void prepare_return() {
-    const struct proc *p = myproc();
+    const proc *p = myproc();
 
     // we're about to switch the destination of traps from
     // kerneltrap() to usertrap(). because a trap from kernel
@@ -143,10 +143,10 @@ void prepare_return() {
 
     // set up trapframe values that uservec will need when
     // the process next traps into the kernel.
-    p->trapframe->kernel_satp = r_satp();         // kernel page table
-    p->trapframe->kernel_sp = p->kstack + PGSIZE; // process's kernel stack
-    p->trapframe->kernel_trap = (uint64)usertrap;
-    p->trapframe->kernel_hartid = r_tp(); // hartid for cpuid()
+    p->trapf->kernel_satp = r_satp();         // kernel page table
+    p->trapf->kernel_sp = p->kstack + PGSIZE; // process's kernel stack
+    p->trapf->kernel_trap = (uint64)usertrap;
+    p->trapf->kernel_hartid = r_tp(); // hartid for cpuid()
 
     // set up the registers that trampoline.S's sret will use
     // to get to user space.
@@ -158,7 +158,7 @@ void prepare_return() {
     w_sstatus(x);
 
     // set S Exception Program Counter to the saved user pc.
-    w_sepc(p->trapframe->epc);
+    w_sepc(p->trapf->epc);
 }
 
 } // namespace xv6
@@ -185,7 +185,7 @@ extern "C" void kerneltrap() {
 
     // give up the CPU if this is a timer interrupt.
     if (which_dev == 2 && xv6::myproc() != nullptr) {
-        struct xv6::proc *p = xv6::myproc();
+        xv6::proc *p = xv6::myproc();
         if (!p)
             xv6::panic("p nullptr");
         int do_yield = 0;
@@ -234,7 +234,7 @@ void clockintr() {
     }
 
     // per-CPU/process accounting
-    struct proc *const p = myproc();
+    proc *const p = myproc();
     // make sure it's a user process (kernel process is nullptr)
     if (p) {
         p->lock.lock();

@@ -7,6 +7,8 @@
 
 namespace xv6 {
 
+struct pipe;
+
 enum file_type {
     FD_NONE,
     FD_PIPE,
@@ -14,27 +16,12 @@ enum file_type {
     FD_DEVICE
 };
 
-struct file {
-    enum file_type type;
-    int ref; // reference count
-    char readable;
-    char writable;
-    struct pipe *pipe; // FD_PIPE
-    struct inode *ip;  // FD_INODE and FD_DEVICE
-    uint off;          // FD_INODE
-    short major;       // FD_DEVICE
-};
-
-#define major(dev) ((dev) >> 16 & 0xFFFF)
-#define minor(dev) ((dev) & 0xFFFF)
-#define mkdev(m, n) ((uint)((m) << 16 | (n)))
-
 // in-memory copy of an inode
 struct inode {
     uint dev;              // Device number
     uint inum;             // Inode number
     int ref;               // Reference count
-    struct sleeplock lock; // protects everything below here
+    sleeplock lock; // protects everything below here
     int valid;             // inode has been read from disk?
 
     short type; // copy of disk inode
@@ -45,13 +32,28 @@ struct inode {
     uint addrs[NDIRECT + 1];
 };
 
+struct file {
+    file_type type;
+    int ref; // reference count
+    char readable;
+    char writable;
+    pipe *pip; // FD_PIPE
+    inode *ip;  // FD_INODE and FD_DEVICE
+    uint off;          // FD_INODE
+    short major;       // FD_DEVICE
+};
+
+#define major(dev) ((dev) >> 16 & 0xFFFF)
+#define minor(dev) ((dev) & 0xFFFF)
+#define mkdev(m, n) ((uint)((m) << 16 | (n)))
+
 // map major device number to device functions.
 struct devsw {
     int (*read)(int, uint64, int);
     int (*write)(int, uint64, int);
 };
 
-extern struct devsw devsw[];
+extern devsw devsw[];
 
 #define CONSOLE 1
 

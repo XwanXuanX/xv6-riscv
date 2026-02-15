@@ -43,15 +43,15 @@ struct log {
     int outstanding; // how many FS sys calls are executing.
     int committing;  // in commit(), please wait.
     int dev;
-    struct logheader lh;
+    logheader lh;
 };
-struct log log;
+log log;
 
 static void recover_from_log(void);
 static void commit();
 
-void initlog(const int dev, struct superblock *sb) {
-    if (sizeof(struct logheader) >= BSIZE)
+void initlog(const int dev, superblock *sb) {
+    if (sizeof(logheader) >= BSIZE)
         panic("initlog: too big logheader");
 
     log.lock.init_lock("log");
@@ -68,8 +68,8 @@ install_trans(const int recovering) {
         if (recovering) {
             printf("recovering tail %d dst %d\n", tail, log.lh.block[tail]);
         }
-        struct buf *lbuf = bread(log.dev, log.start + tail + 1); // read log block
-        struct buf *dbuf = bread(log.dev, log.lh.block[tail]);   // read dst
+        buf *lbuf = bread(log.dev, log.start + tail + 1); // read log block
+        buf *dbuf = bread(log.dev, log.lh.block[tail]);   // read dst
         memmove(dbuf->data, lbuf->data, BSIZE);                  // copy block to dst
         bwrite(dbuf);                                            // write dst to disk
         if (recovering == 0)
@@ -82,8 +82,8 @@ install_trans(const int recovering) {
 // Read the log header from disk into the in-memory log header
 static void
 read_head(void) {
-    struct buf *buf = bread(log.dev, log.start);
-    const struct logheader *lh = (struct logheader *)(buf->data);
+    buf *buf = bread(log.dev, log.start);
+    const logheader *lh = (struct logheader *)(buf->data);
     log.lh.n = lh->n;
     for (int i = 0; i < log.lh.n; i++) {
         log.lh.block[i] = lh->block[i];
@@ -96,7 +96,7 @@ read_head(void) {
 // current transaction commits.
 static void
 write_head(void) {
-    struct buf *buf = bread(log.dev, log.start);
+    buf *buf = bread(log.dev, log.start);
     const auto hb = (struct logheader *)(buf->data);
     hb->n = log.lh.n;
     for (int i = 0; i < log.lh.n; i++) {
@@ -167,8 +167,8 @@ static void
 write_log(void) {
 
     for (int tail = 0; tail < log.lh.n; tail++) {
-        struct buf *to = bread(log.dev, log.start + tail + 1); // log block
-        struct buf *from = bread(log.dev, log.lh.block[tail]); // cache block
+        buf *to = bread(log.dev, log.start + tail + 1); // log block
+        buf *from = bread(log.dev, log.lh.block[tail]); // cache block
         memmove(to->data, from->data, BSIZE);
         bwrite(to); // write the log
         brelse(from);
@@ -196,7 +196,7 @@ commit() {
 //   modify bp->data[]
 //   log_write(bp)
 //   brelse(bp)
-void log_write(struct buf *b) {
+void log_write(buf *b) {
     int i;
 
     log.lock.lock();

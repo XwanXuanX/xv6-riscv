@@ -16,19 +16,18 @@ namespace xv6 {
 struct devsw devsw[NDEV];
 struct {
     spinlock lock;
-    struct file file[NFILE];
+    file files[NFILE];
 } ftable;
 
-void fileinit(void) {
+void fileinit() {
     ftable.lock.init_lock("ftable");
 }
 
 // Allocate a file structure.
-struct file *
-filealloc(void) {
-
+file *
+filealloc() {
     ftable.lock.lock();
-    for (struct file *f = ftable.file; f < ftable.file + NFILE; f++) {
+    for (file *f = ftable.files; f < ftable.files + NFILE; f++) {
         if (f->ref == 0) {
             f->ref = 1;
             ftable.lock.unlock();
@@ -40,8 +39,8 @@ filealloc(void) {
 }
 
 // Increment ref count for file f.
-struct file *
-filedup(struct file *f) {
+file *
+filedup(file *f) {
     ftable.lock.lock();
     if (f->ref < 1)
         panic("filedup");
@@ -51,8 +50,7 @@ filedup(struct file *f) {
 }
 
 // Close file f.  (Decrement ref count, close when reaches 0.)
-void fileclose(struct file *f) {
-
+void fileclose(file *f) {
     ftable.lock.lock();
     if (f->ref < 1)
         panic("fileclose");
@@ -60,13 +58,13 @@ void fileclose(struct file *f) {
         ftable.lock.unlock();
         return;
     }
-    const struct file ff = *f;
+    const file ff = *f;
     f->ref = 0;
     f->type = FD_NONE;
     ftable.lock.unlock();
 
     if (ff.type == FD_PIPE) {
-        pipeclose(ff.pipe, ff.writable);
+        pipeclose(ff.pip, ff.writable);
     } else if (ff.type == FD_INODE || ff.type == FD_DEVICE) {
         begin_op();
         iput(ff.ip);
@@ -76,9 +74,9 @@ void fileclose(struct file *f) {
 
 // Get metadata about file f.
 // addr is a user virtual address, pointing to a struct stat.
-int filestat(struct file *f, const uint64 addr) {
-    const struct proc *p = myproc();
-    struct stat st;
+int filestat(file *f, const uint64 addr) {
+    const proc *p = myproc();
+    stat st{};
 
     if (f->type == FD_INODE || f->type == FD_DEVICE) {
         ilock(f->ip);
@@ -93,14 +91,14 @@ int filestat(struct file *f, const uint64 addr) {
 
 // Read from file f.
 // addr is a user virtual address.
-int fileread(struct file *f, const uint64 addr, const int n) {
+int fileread(file *f, const uint64 addr, const int n) {
     int r = 0;
 
     if (f->readable == 0)
         return -1;
 
     if (f->type == FD_PIPE) {
-        r = piperead(f->pipe, addr, n);
+        r = piperead(f->pip, addr, n);
     } else if (f->type == FD_DEVICE) {
         if (f->major < 0 || f->major >= NDEV || !devsw[f->major].read)
             return -1;
@@ -119,14 +117,14 @@ int fileread(struct file *f, const uint64 addr, const int n) {
 
 // Write to file f.
 // addr is a user virtual address.
-int filewrite(struct file *f, const uint64 addr, const int n) {
+int filewrite(file *f, const uint64 addr, const int n) {
     int r, ret = 0;
 
     if (f->writable == 0)
         return -1;
 
     if (f->type == FD_PIPE) {
-        ret = pipewrite(f->pipe, addr, n);
+        ret = pipewrite(f->pip, addr, n);
     } else if (f->type == FD_DEVICE) {
         if (f->major < 0 || f->major >= NDEV || !devsw[f->major].write)
             return -1;

@@ -34,15 +34,15 @@ int nmeta;                // Number of meta blocks (boot, sb, nlog, inode, bitma
 int nblocks;              // Number of data blocks
 
 int fsfd;
-struct superblock sb;
+superblock sb;
 char zeroes[BSIZE];
 uint freeinode = 1;
 uint freeblock;
 
 void balloc(int);
 void wsect(uint, void *);
-void winode(uint, struct dinode *);
-void rinode(uint inum, struct dinode *ip);
+void winode(uint, dinode *);
+void rinode(uint inum, dinode *ip);
 void rsect(uint sec, void *buf);
 uint ialloc(ushort type);
 void iappend(uint inum, void *p, int n);
@@ -70,9 +70,9 @@ uint xint(const uint x) {
 
 int main(const int argc, char *argv[]) {
     int i, cc, fd;
-    struct dirent de;
+    dirent de;
     char buf[BSIZE];
-    struct dinode din;
+    dinode din;
 
     static_assert(sizeof(int) == 4, "Integers must be 4 bytes!");
 
@@ -81,8 +81,8 @@ int main(const int argc, char *argv[]) {
         exit(1);
     }
 
-    assert((BSIZE % sizeof(struct dinode)) == 0);
-    assert((BSIZE % sizeof(struct dirent)) == 0);
+    assert((BSIZE % sizeof(dinode)) == 0);
+    assert((BSIZE % sizeof(dirent)) == 0);
 
     fsfd = open(argv[1], O_RDWR | O_CREAT | O_TRUNC, 0666);
     if (fsfd < 0)
@@ -180,22 +180,22 @@ void wsect(const uint sec, void *buf) {
         die("write");
 }
 
-void winode(const uint inum, struct dinode *ip) {
+void winode(const uint inum, dinode *ip) {
     char buf[BSIZE];
 
     const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf);
-    struct dinode *dip = ((struct dinode *)buf) + (inum % IPB);
+    dinode *dip = ((struct dinode *)buf) + (inum % IPB);
     *dip = *ip;
     wsect(bn, buf);
 }
 
-void rinode(const uint inum, struct dinode *ip) {
+void rinode(const uint inum, dinode *ip) {
     char buf[BSIZE];
 
     const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf);
-    const struct dinode *dip = ((struct dinode *)buf) + (inum % IPB);
+    const dinode *dip = ((struct dinode *)buf) + (inum % IPB);
     *ip = *dip;
 }
 
@@ -208,7 +208,7 @@ void rsect(const uint sec, void *buf) {
 
 uint ialloc(const ushort type) {
     const uint inum = freeinode++;
-    struct dinode din;
+    dinode din;
 
     bzero(&din, sizeof(din));
     din.type = xshort(type);
@@ -234,8 +234,8 @@ void balloc(const int used) {
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 void iappend(const uint inum, void *xp, int n) {
-    const char *p = (char *)xp;
-    struct dinode din;
+    const char *p = static_cast<char *>(xp);
+    dinode din;
     char buf[BSIZE];
     uint indirect[NINDIRECT];
     uint x;

@@ -46,7 +46,7 @@ int exec(const char *, const char **);
 int open(const char *, int);
 int mknod(const char *, short, short);
 int unlink(const char *);
-int fstat(int fd, struct stat *);
+int fstat(int fd, stat *);
 int link(const char *, const char *);
 int mkdir(const char *);
 int chdir(const char *);
@@ -57,7 +57,7 @@ int pause(int);
 int uptime(void);
 
 // ulib.c
-int stat(const char *, struct stat *);
+int stat(const char *, stat *);
 char *strcpy(char *, const char *);
 void *memmove(void *, const void *, int);
 char *strchr(const char *, char c);

@@ -7,7 +7,7 @@
 
 namespace xv6 {
 
-static int loadseg(pde_t *, uint64, struct inode *, uint, uint);
+static int loadseg(pde_t *, uint64, inode *, uint, uint);
 
 // map ELF permissions to PTE permission bits.
 int flags2perm(const int flags) {
@@ -27,11 +27,11 @@ int kexec(const char *path, const char **argv) {
     int i, off;
     uint64 argc, sz = 0, sp, ustack[MAXARG], stackbase;
     uint64 sz1, oldsz;
-    struct elfhdr elf{};
-    struct inode *ip;
-    struct proghdr ph{};
+    elfhdr elf{};
+    inode *ip;
+    proghdr ph{};
     pagetable_t pagetable = nullptr, oldpagetable;
-    struct proc *p = myproc();
+    proc *p = myproc();
 
     begin_op();
 
@@ -115,7 +115,7 @@ int kexec(const char *path, const char **argv) {
     // a0 and a1 contain arguments to user main(argc, argv)
     // argc is returned via the system call return
     // value, which goes in a0.
-    p->trapframe->a1 = sp;
+    p->trapf->a1 = sp;
 
     // Save program name for debugging.
     for (last = s = path; *s; s++)
@@ -127,8 +127,8 @@ int kexec(const char *path, const char **argv) {
     oldpagetable = p->pagetable;
     p->pagetable = pagetable;
     p->sz = sz;
-    p->trapframe->epc = elf.entry; // initial program counter = ulib.c:start()
-    p->trapframe->sp = sp;         // initial stack pointer
+    p->trapf->epc = elf.entry; // initial program counter = ulib.c:start()
+    p->trapf->sp = sp;         // initial stack pointer
     proc_freepagetable(oldpagetable, oldsz);
 
     return argc; // this ends up in a0, the first argument to main(argc, argv)
@@ -148,7 +148,7 @@ bad:
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
 static int
-loadseg(const pagetable_t pagetable, const uint64 va, struct inode *ip, const uint offset, const uint sz) {
+loadseg(const pagetable_t pagetable, const uint64 va, inode *ip, const uint offset, const uint sz) {
     uint n;
 
     for (uint i = 0; i < sz; i += PGSIZE) {

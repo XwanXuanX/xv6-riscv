@@ -7,7 +7,7 @@ namespace xv6 {
 
 // Fetch the uint64 at addr from the current process.
 int fetchaddr(const uint64 addr, uint64 *ip) {
-    const struct proc *p = myproc();
+    const proc *p = myproc();
     if (addr >= p->sz || addr + sizeof(uint64) > p->sz) // both tests needed, in case of overflow
         return -1;
     if (copyin(p->pagetable, (char *)ip, addr, sizeof(*ip)) != 0)
@@ -18,7 +18,7 @@ int fetchaddr(const uint64 addr, uint64 *ip) {
 // Fetch the nul-terminated string at addr from the current process.
 // Returns length of string, not including nul, or -1 for error.
 int fetchstr(const uint64 addr, char *buf, const int max) {
-    const struct proc *p = myproc();
+    const proc *p = myproc();
     if (copyinstr(p->pagetable, buf, addr, max) < 0)
         return -1;
     return strlen(buf);
@@ -26,20 +26,20 @@ int fetchstr(const uint64 addr, char *buf, const int max) {
 
 static uint64
 argraw(const int n) {
-    const struct proc *p = myproc();
+    const proc *p = myproc();
     switch (n) {
     case 0:
-        return p->trapframe->a0;
+        return p->trapf->a0;
     case 1:
-        return p->trapframe->a1;
+        return p->trapf->a1;
     case 2:
-        return p->trapframe->a2;
+        return p->trapf->a2;
     case 3:
-        return p->trapframe->a3;
+        return p->trapf->a3;
     case 4:
-        return p->trapframe->a4;
+        return p->trapf->a4;
     case 5:
-        return p->trapframe->a5;
+        return p->trapf->a5;
     }
     panic("argraw");
     return -1;
@@ -117,17 +117,17 @@ static uint64 (*syscalls[])(void) = {
 };
 
 void syscall() {
-    struct proc *p = myproc();
+    proc *p = myproc();
 
-    const uint64 num = p->trapframe->a7;
+    const uint64 num = p->trapf->a7;
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
         // Use num to lookup the system call function for num, call it,
         // and store its return value in p->trapframe->a0
-        p->trapframe->a0 = syscalls[num]();
+        p->trapf->a0 = syscalls[num]();
     } else {
         printf("%d %s: unknown sys call %ld\n",
                p->pid, p->name, num);
-        p->trapframe->a0 = -1;
+        p->trapf->a0 = -1;
     }
 }
 

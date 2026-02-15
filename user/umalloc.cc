@@ -8,13 +8,13 @@ typedef long Align;
 
 union header {
     struct {
-        union header *ptr;
+        header *ptr;
         uint size;
     } s;
     Align x;
 };
 
-typedef union header Header;
+typedef header Header;
 
 static Header base;
 static Header *freep;
@@ -22,7 +22,7 @@ static Header *freep;
 void free(void *ap) {
     Header *p;
 
-    Header *bp = (Header *)ap - 1;
+    Header *bp = static_cast<Header *>(ap) - 1;
     for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
         if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
             break;

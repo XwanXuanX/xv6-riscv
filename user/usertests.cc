@@ -552,7 +552,7 @@ void writebig(const char *s) {
         exit(1);
     }
 
-    for (i = 0; i < (int)MAXFILE; i++) {
+    for (i = 0; i < static_cast<int>(MAXFILE); i++) {
         ((int *)buf)[0] = i;
         if (write(fd, buf, BSIZE) != BSIZE) {
             printf("%s: error: write big file failed i=%d\n", s, i);
@@ -728,7 +728,7 @@ void pipe1(const char *s) {
             }
             total += n;
             cc = cc * 2;
-            if (cc > (int)sizeof(buf))
+            if (cc > static_cast<int>(sizeof(buf)))
                 cc = sizeof(buf);
         }
         if (total != N * SZ) {
@@ -997,11 +997,11 @@ void mem(const char *s) {
     if ((pid = fork()) == 0) {
         void *m1 = nullptr;
         while ((m2 = malloc(10001)) != nullptr) {
-            *(char **)m2 = reinterpret_cast<char *>(m1);
+            *static_cast<char **>(m2) = reinterpret_cast<char *>(m1);
             m1 = m2;
         }
         while (m1) {
-            m2 = *(char **)m1;
+            m2 = *static_cast<char **>(m1);
             free(m1);
             m1 = m2;
         }
@@ -1065,7 +1065,7 @@ void sharedfd(const char *s) {
     }
     int nc = np = 0;
     while ((n = read(fd, buf, sizeof(buf))) > 0) {
-        for (i = 0; i < (int)sizeof(buf); i++) {
+        for (i = 0; i < static_cast<int>(sizeof(buf)); i++) {
             if (buf[i] == 'c')
                 nc++;
             if (buf[i] == 'p')
@@ -1365,7 +1365,7 @@ void concreate(const char *s) {
             continue;
         if (de.name[0] == 'C' && de.name[2] == '\0') {
             i = de.name[1] - '0';
-            if (i < 0 || i >= (int)sizeof(fa)) {
+            if (i < 0 || i >= static_cast<int>(sizeof(fa))) {
                 printf("%s: concreate weird file %s\n", s, de.name);
                 exit(1);
             }
@@ -2065,7 +2065,7 @@ void sbrkfail(const char *s) {
         printf("%s: pipe() failed\n", s);
         exit(1);
     }
-    for (i = 0; i < (int)(sizeof(pids) / sizeof(pids[0])); i++) {
+    for (i = 0; i < static_cast<int>(sizeof(pids) / sizeof(pids[0])); i++) {
         if ((pids[i] = fork()) == 0) {
             // allocate a lot of memory
             if (sbrk(BIG - (uint64)sbrk(0)) == (char *)SBRK_ERROR)
@@ -2089,7 +2089,7 @@ void sbrkfail(const char *s) {
     // if those failed allocations freed up the pages they did allocate,
     // we'll be able to allocate here
     const char *c = sbrk(PGSIZE);
-    for (i = 0; i < (int)(sizeof(pids) / sizeof(pids[0])); i++) {
+    for (i = 0; i < static_cast<int>(sizeof(pids) / sizeof(pids[0])); i++) {
         if (pids[i] == -1)
             continue;
         kill(pids[i]);
@@ -2148,7 +2148,7 @@ void sbrkarg(const char *s) {
 void validatetest(const char *s) {
 
     const int hi = 1100 * 1024;
-    for (uint64 p = 0; p <= (uint)hi; p += PGSIZE) {
+    for (uint64 p = 0; p <= static_cast<uint>(hi); p += PGSIZE) {
         // try to crash the kernel by passing in a bad string pointer
         if (link("nosuchfile", (char *)p) != -1) {
             printf("%s: link should not succeed\n", s);
@@ -2161,7 +2161,7 @@ void validatetest(const char *s) {
 char uninit[10000];
 void bsstest(const char *s) {
 
-    for (int i = 0; i < (int)sizeof(uninit); i++) {
+    for (int i = 0; i < static_cast<int>(sizeof(uninit)); i++) {
         if (uninit[i] != '\0') {
             printf("%s: bss test failed\n", s);
             exit(1);
@@ -2325,8 +2325,8 @@ auto big = (void *)0xeaeb0b5b00002f5e;
 void pgbug(const char *s) {
     char *argv[1];
     argv[0] = nullptr;
-    exec((char *)big, (const char **)argv);
-    pipe((int *)big);
+    exec(static_cast<char *>(big), (const char **)argv);
+    pipe(static_cast<int *>(big));
 
     exit(0);
 }
@@ -2523,7 +2523,7 @@ void lazy_copy(const char *s) {
         0x4000000000,
         0x8000000000,
     };
-    for (int i = 0; i < int(sizeof(bad) / sizeof(bad[0])); i++) {
+    for (int i = 0; i < static_cast<int>(sizeof(bad) / sizeof(bad[0])); i++) {
         int fd = open("README", 0);
         if (fd < 0) {
             printf("cannot open README\n");
@@ -2583,13 +2583,13 @@ void lazy_sbrk(const char *s) {
     }
 
     p = sbrk(1);
-    if ((uint64)p != (uint64)-1) {
+    if ((uint64)p != static_cast<uint64>(-1)) {
         printf("sbrk(1) returned %p, expected error\n", p);
         exit(1);
     }
 
     p = sbrklazy(1);
-    if ((uint64)p != (uint64)-1) {
+    if ((uint64)p != static_cast<uint64>(-1)) {
         printf("sbrklazy(1) returned %p, expected error\n", p);
         exit(1);
     }
@@ -2854,7 +2854,7 @@ void diskfull(const char *s) {
             done = 1;
             break;
         }
-        for (int i = 0; i < (int)MAXFILE; i++) {
+        for (int i = 0; i < static_cast<int>(MAXFILE); i++) {
             char buf[BSIZE];
             if (write(fd, buf, BSIZE) != BSIZE) {
                 done = 1;
@@ -2940,7 +2940,7 @@ void outofinodes(const char *s) {
     }
 }
 
-struct test slowtests[] = {
+test slowtests[] = {
     {bigdir, "bigdir"},
     {manywrites, "manywrites"},
     {badwrite, "badwrite"},
@@ -2979,9 +2979,9 @@ int run(void f(const char *), const char *s) {
     }
 }
 
-int runtests(struct test *tests, char *justone, const int continuous) {
+int runtests(test *tests, char *justone, const int continuous) {
     int ntests = 0;
-    for (const struct test *t = tests; t->s != nullptr; t++) {
+    for (const test *t = tests; t->s != nullptr; t++) {
         if ((justone == nullptr) || strcmp(t->s, justone) == 0) {
             ntests++;
             if (!run(t->f, t->s)) {

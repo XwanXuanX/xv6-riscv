@@ -199,7 +199,7 @@ void go(const int which_child) {
                 exit(1);
             }
             if (st.size != 1) {
-                printf("grind: fstat reports wrong size %d\n", (int)st.size);
+                printf("grind: fstat reports wrong size %d\n", static_cast<int>(st.size));
                 exit(1);
             }
             if (st.ino > 200) {

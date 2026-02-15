@@ -7,11 +7,11 @@
 
 namespace xv6 {
 
-void initsleeplock(struct sleeplock *lk, const char *name) {
+void initsleeplock(sleeplock *lk, const char *name) {
     lk->lk.init_lock("sleep lock");
 }
 
-void acquiresleep(struct sleeplock *lk) {
+void acquiresleep(sleeplock *lk) {
     lk->lk.lock();
     while (lk->locked) {
         sleep(lk, &lk->lk);
@@ -21,7 +21,7 @@ void acquiresleep(struct sleeplock *lk) {
     lk->lk.unlock();
 }
 
-void releasesleep(struct sleeplock *lk) {
+void releasesleep(sleeplock *lk) {
     lk->lk.lock();
     lk->locked = 0;
     lk->pid = 0;
@@ -29,7 +29,7 @@ void releasesleep(struct sleeplock *lk) {
     lk->lk.unlock();
 }
 
-int holdingsleep(struct sleeplock *lk) {
+int holdingsleep(sleeplock *lk) {
 
     lk->lk.lock();
     const int r = lk->locked && (lk->pid == myproc()->pid);

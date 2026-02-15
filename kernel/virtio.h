@@ -77,7 +77,7 @@ struct virtq_used_elem {
 struct virtq_used {
     uint16 flags; // always zero
     uint16 idx;   // device increments when it adds a ring[] entry
-    struct virtq_used_elem ring[NUM];
+    virtq_used_elem ring[NUM];
 };
 
 // these are specific to virtio block devices, e.g. disks,

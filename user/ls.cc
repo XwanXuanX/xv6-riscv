@@ -25,7 +25,7 @@ fmtname(const char *path) {
 void ls(const char *path) {
     char buf[512], *p;
     int fd;
-    struct xv6::dirent de;
+    xv6::dirent de;
     struct stat st;
 
     if ((fd = open(path, O_RDONLY)) < 0) {
@@ -42,7 +42,7 @@ void ls(const char *path) {
     switch (st.type) {
     case T_DEVICE:
     case T_FILE:
-        printf("%s %d %d %d\n", fmtname(path), st.type, st.ino, (int)st.size);
+        printf("%s %d %d %d\n", fmtname(path), st.type, st.ino, static_cast<int>(st.size));
         break;
 
     case T_DIR:
@@ -62,7 +62,7 @@ void ls(const char *path) {
                 printf("ls: cannot stat %s\n", buf);
                 continue;
             }
-            printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, (int)st.size);
+            printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, static_cast<int>(st.size));
         }
         break;
     }

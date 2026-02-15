@@ -25,18 +25,18 @@ static struct disk {
     // disk operations. there are NUM descriptors.
     // most commands consist of a "chain" (a linked list) of a couple of
     // these descriptors.
-    struct virtq_desc *desc;
+    virtq_desc *desc;
 
     // a ring in which the driver writes descriptor numbers
     // that the driver would like the device to process.  it only
     // includes the head descriptor of each chain. the ring has
     // NUM elements.
-    struct virtq_avail *avail;
+    virtq_avail *avail;
 
     // a ring in which the device writes descriptor numbers that
     // the device has finished processing (just the head of each chain).
     // there are NUM used ring entries.
-    struct virtq_used *used;
+    virtq_used *used;
 
     // our own book-keeping.
     char free[NUM];  // is a descriptor free?
@@ -46,13 +46,13 @@ static struct disk {
     // for use when completion interrupt arrives.
     // indexed by first descriptor index of chain.
     struct {
-        struct buf *b;
+        buf *b;
         char status;
     } info[NUM];
 
     // disk command headers.
     // one-for-one with descriptors, for convenience.
-    struct virtio_blk_req ops[NUM];
+    virtio_blk_req ops[NUM];
 
     spinlock vdisk_lock;
 
@@ -206,7 +206,7 @@ alloc3_desc(int *idx) {
     return 0;
 }
 
-void virtio_disk_rw(struct buf *b, const int write) {
+void virtio_disk_rw(buf *b, const int write) {
     const uint64 sector = b->blockno * (BSIZE / 512);
 
     disk.vdisk_lock.lock();
@@ -227,7 +227,7 @@ void virtio_disk_rw(struct buf *b, const int write) {
     // format the three descriptors.
     // qemu's virtio-blk.c reads them.
 
-    struct virtio_blk_req *buf0 = &disk.ops[idx[0]];
+    virtio_blk_req *buf0 = &disk.ops[idx[0]];
 
     if (write)
         buf0->type = VIRTIO_BLK_T_OUT; // write the disk
@@ -237,7 +237,7 @@ void virtio_disk_rw(struct buf *b, const int write) {
     buf0->sector = sector;
 
     disk.desc[idx[0]].addr = (uint64)buf0;
-    disk.desc[idx[0]].len = sizeof(struct virtio_blk_req);
+    disk.desc[idx[0]].len = sizeof(virtio_blk_req);
     disk.desc[idx[0]].flags = VRING_DESC_F_NEXT;
     disk.desc[idx[0]].next = idx[1];
 
@@ -306,7 +306,7 @@ void virtio_disk_intr() {
         if (disk.info[id].status != 0)
             panic("virtio_disk_intr status");
 
-        struct buf *b = disk.info[id].b;
+        buf *b = disk.info[id].b;
         b->disk = 0; // disk is done with buf
         wakeup(b);
 

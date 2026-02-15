@@ -17,13 +17,12 @@ struct pipe {
     int writeopen; // write fd is still open
 };
 
-int pipealloc(struct file **f0, struct file **f1) {
-
-    struct pipe *pi = nullptr;
+int pipealloc(file **f0, file **f1) {
+    pipe *pi = nullptr;
     *f0 = *f1 = nullptr;
     if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr)
         goto bad;
-    if ((pi = (struct pipe *)kalloc()) == nullptr)
+    if ((pi = static_cast<pipe *>(kalloc())) == nullptr)
         goto bad;
     pi->readopen = 1;
     pi->writeopen = 1;
@@ -33,11 +32,11 @@ int pipealloc(struct file **f0, struct file **f1) {
     (*f0)->type = FD_PIPE;
     (*f0)->readable = 1;
     (*f0)->writable = 0;
-    (*f0)->pipe = pi;
+    (*f0)->pip = pi;
     (*f1)->type = FD_PIPE;
     (*f1)->readable = 0;
     (*f1)->writable = 1;
-    (*f1)->pipe = pi;
+    (*f1)->pip = pi;
     return 0;
 
 bad:
@@ -50,7 +49,7 @@ bad:
     return -1;
 }
 
-void pipeclose(struct pipe *pi, const int writable) {
+void pipeclose(pipe *pi, const int writable) {
     pi->lock.lock();
     if (writable) {
         pi->writeopen = 0;
@@ -66,9 +65,9 @@ void pipeclose(struct pipe *pi, const int writable) {
         pi->lock.unlock();
 }
 
-int pipewrite(struct pipe *pi, const uint64 addr, const int n) {
+int pipewrite(pipe *pi, const uint64 addr, const int n) {
     int i = 0;
-    struct proc *pr = myproc();
+    proc *pr = myproc();
 
     pi->lock.lock();
     while (i < n) {
@@ -93,9 +92,9 @@ int pipewrite(struct pipe *pi, const uint64 addr, const int n) {
     return i;
 }
 
-int piperead(struct pipe *pi, const uint64 addr, const int n) {
+int piperead(pipe *pi, const uint64 addr, const int n) {
     int i;
-    struct proc *pr = myproc();
+    proc *pr = myproc();
     char ch;
 
     pi->lock.lock();

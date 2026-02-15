@@ -19,7 +19,7 @@ extern char trampoline[]; // trampoline.S
 pagetable_t
 kvmmake(void) {
 
-    const auto kpgtbl = (pagetable_t)kalloc();
+    const auto kpgtbl = static_cast<pagetable_t>(kalloc());
     memset(kpgtbl, 0, PGSIZE);
 
     // uart registers
@@ -94,7 +94,7 @@ walk(pagetable_t pagetable, const uint64 va, const int alloc) {
         if (*pte & PTE_V) {
             pagetable = (pagetable_t)PTE2PA(*pte);
         } else {
-            if (!alloc || (pagetable = (pde_t *)kalloc()) == nullptr)
+            if (!alloc || (pagetable = static_cast<pde_t *>(kalloc())) == nullptr)
                 return nullptr;
             memset(pagetable, 0, PGSIZE);
             *pte = PA2PTE(pagetable) | PTE_V;
@@ -160,7 +160,7 @@ int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size, ui
 // returns 0 if out of memory.
 pagetable_t
 uvmcreate() {
-    const auto pagetable = (pagetable_t)kalloc();
+    const auto pagetable = static_cast<pagetable_t>(kalloc());
     if (pagetable == nullptr)
         return nullptr;
     memset(pagetable, 0, PGSIZE);
@@ -406,7 +406,7 @@ int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) 
 // out of physical memory, and physical address if successful.
 uint64
 vmfault(const pagetable_t pagetable, uint64 va, int read) {
-    const struct proc *p = myproc();
+    const proc *p = myproc();
 
     if (va >= p->sz)
         return 0;

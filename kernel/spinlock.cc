@@ -37,7 +37,7 @@ void push_off() {
 }
 
 void pop_off() {
-    struct cpu *c = mycpu();
+    cpu *c = mycpu();
     if (intr_get()) {
         panic("pop_off - interruptible");
     }

@@ -27,7 +27,7 @@ strcpy(char *s, const char *t) {
 int strcmp(const char *p, const char *q) {
     while (*p && *p == *q)
         p++, q++;
-    return (uchar)*p - (uchar)*q;
+    return static_cast<uchar>(*p) - static_cast<uchar>(*q);
 }
 
 uint strlen(const char *s) {
@@ -40,7 +40,7 @@ uint strlen(const char *s) {
 
 void *
 memset(void *dst, const int c, const uint n) {
-    const auto cdst = (char *)dst;
+    const auto cdst = static_cast<char *>(dst);
     for (uint i = 0; i < n; i++) {
         cdst[i] = c;
     }
@@ -93,7 +93,7 @@ int atoi(const char *s) {
 void *
 memmove(void *vdst, const void *vsrc, int n) {
 
-    auto dst = (char *)vdst;
+    auto dst = static_cast<char *>(vdst);
     const char *src = (char *)vsrc;
     if (src > dst) {
         while (n-- > 0)
