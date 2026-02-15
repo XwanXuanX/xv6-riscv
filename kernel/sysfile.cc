@@ -163,7 +163,7 @@ bad:
 // Is the directory dp empty except for "." and ".." ?
 static int
 isdirempty(inode *dp) {
-    dirent de;
+    dirent de{};
 
     for (uint off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
         if (readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
@@ -177,7 +177,7 @@ isdirempty(inode *dp) {
 uint64
 sys_unlink() {
     inode *ip, *dp;
-    dirent de;
+    dirent de{};
     char name[DIRSIZ] = {}, path[MAXPATH] = {};
     uint off;
 
@@ -335,10 +335,10 @@ sys_open() {
     }
 
     if (ip->type == T_DEVICE) {
-        f->type = FD_DEVICE;
+        f->type = fd_device;
         f->major = ip->major;
     } else {
-        f->type = FD_INODE;
+        f->type = fd_inode;
         f->off = 0;
     }
     f->ip = ip;
@@ -437,7 +437,7 @@ sys_exec() {
             argv[i] = nullptr;
             break;
         }
-        argv[i] = reinterpret_cast<char *>(kalloc());
+        argv[i] = static_cast<char *>(kalloc());
         if (argv[i] == nullptr)
             goto bad;
         if (fetchstr(uarg, (char *)argv[i], PGSIZE) < 0)

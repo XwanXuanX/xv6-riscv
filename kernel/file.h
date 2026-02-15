@@ -10,10 +10,10 @@ namespace xv6 {
 struct pipe;
 
 enum file_type {
-    FD_NONE,
-    FD_PIPE,
-    FD_INODE,
-    FD_DEVICE
+    fd_none,
+    fd_pipe,
+    fd_inode,
+    fd_device
 };
 
 // in-memory copy of an inode
@@ -43,9 +43,9 @@ struct file {
     short major; // FD_DEVICE
 };
 
-#define major(dev) ((dev) >> 16 & 0xFFFF)
-#define minor(dev) ((dev) & 0xFFFF)
-#define mkdev(m, n) ((uint)((m) << 16 | (n)))
+#define MAJOR(dev) ((dev) >> 16 & 0xFFFF)
+#define MINOR(dev) ((dev) & 0xFFFF)
+#define MKDEV(m, n) ((uint)((m) << 16 | (n)))
 
 // map major device number to device functions.
 struct devsw {

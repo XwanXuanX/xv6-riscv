@@ -29,11 +29,11 @@ int pipealloc(file **f0, file **f1) {
     pi->nwrite = 0;
     pi->nread = 0;
     pi->lock.init_lock("pipe");
-    (*f0)->type = FD_PIPE;
+    (*f0)->type = fd_pipe;
     (*f0)->readable = 1;
     (*f0)->writable = 0;
     (*f0)->pip = pi;
-    (*f1)->type = FD_PIPE;
+    (*f1)->type = fd_pipe;
     (*f1)->readable = 0;
     (*f1)->writable = 1;
     (*f1)->pip = pi;

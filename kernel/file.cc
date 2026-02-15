@@ -60,12 +60,12 @@ void fileclose(file *f) {
     }
     const file ff = *f;
     f->ref = 0;
-    f->type = FD_NONE;
+    f->type = fd_none;
     ftable.lock.unlock();
 
-    if (ff.type == FD_PIPE) {
+    if (ff.type == fd_pipe) {
         pipeclose(ff.pip, ff.writable);
-    } else if (ff.type == FD_INODE || ff.type == FD_DEVICE) {
+    } else if (ff.type == fd_inode || ff.type == fd_device) {
         begin_op();
         iput(ff.ip);
         end_op();
@@ -78,7 +78,7 @@ int filestat(file *f, const uint64 addr) {
     const proc *p = myproc();
     stats st{};
 
-    if (f->type == FD_INODE || f->type == FD_DEVICE) {
+    if (f->type == fd_inode || f->type == fd_device) {
         ilock(f->ip);
         stati(f->ip, &st);
         iunlock(f->ip);
@@ -97,13 +97,13 @@ int fileread(file *f, const uint64 addr, const int n) {
     if (f->readable == 0)
         return -1;
 
-    if (f->type == FD_PIPE) {
+    if (f->type == fd_pipe) {
         r = piperead(f->pip, addr, n);
-    } else if (f->type == FD_DEVICE) {
+    } else if (f->type == fd_device) {
         if (f->major < 0 || f->major >= NDEV || !devsw[f->major].read)
             return -1;
         r = devsw[f->major].read(1, addr, n);
-    } else if (f->type == FD_INODE) {
+    } else if (f->type == fd_inode) {
         ilock(f->ip);
         if ((r = readi(f->ip, 1, addr, f->off, n)) > 0)
             f->off += r;
@@ -123,13 +123,13 @@ int filewrite(file *f, const uint64 addr, const int n) {
     if (f->writable == 0)
         return -1;
 
-    if (f->type == FD_PIPE) {
+    if (f->type == fd_pipe) {
         ret = pipewrite(f->pip, addr, n);
-    } else if (f->type == FD_DEVICE) {
+    } else if (f->type == fd_device) {
         if (f->major < 0 || f->major >= NDEV || !devsw[f->major].write)
             return -1;
         ret = devsw[f->major].write(1, addr, n);
-    } else if (f->type == FD_INODE) {
+    } else if (f->type == fd_inode) {
         // write a few blocks at a time to avoid exceeding
         // the maximum log transaction size, including
         // i-node, indirect block, allocation blocks,
