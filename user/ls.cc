@@ -76,7 +76,7 @@ void ls(const char *path) {
     close(fd);
 }
 
-int main(const int argc, std::span<char *> argv) {
+int main(const int argc, const std::span<char *> argv) {
     if (argc < 2) {
         ls(".");
         exit(0);

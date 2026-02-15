@@ -52,7 +52,7 @@ static void recover_from_log();
 static void commit();
 
 void initlog(const int dev, const superblock *sb) {
-    if (sizeof(logheader) >= BSIZE) {
+    if constexpr (sizeof(logheader) >= BSIZE) {
         panic("initlog: too big logheader");
     }
 

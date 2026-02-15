@@ -47,7 +47,7 @@ proc *mlfq_deq(mlfq *m, int lvl);
 //  3. periodical priority boost
 // There could be cases where the remove target does not exist in the queue
 //  - return a bool to indicate if the removal is successful
-bool mlfq_rm(mlfq *m, int lvl, proc *p);
+bool mlfq_rm(mlfq *m, int lvl, const proc *p);
 
 //
 // Unsafe APIs (assume locked, used in bulk operation)

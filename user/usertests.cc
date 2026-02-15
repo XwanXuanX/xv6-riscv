@@ -77,7 +77,7 @@ void copyout(const char *) {
     constexpr uint64 addrs[] = {0LL,          0x80000000LL, 0x3fffffe000,
                                 0x3ffffff000, 0x4000000000, 0xffffffffffffffff};
 
-    for (unsigned long addr : addrs) {
+    for (const unsigned long addr : addrs) {
         const int fd = open("README.md", 0);
         if (fd < 0) {
             printf("open(README.md) failed\n");
@@ -117,7 +117,7 @@ void copyinstr1(const char *) {
     constexpr uint64 addrs[] = {0x80000000LL, 0x3fffffe000, 0x3ffffff000,
                                 0x4000000000, 0xffffffffffffffff};
 
-    for (unsigned long addr : addrs) {
+    for (const unsigned long addr : addrs) {
         const int fd = open((char *)addr, O_CREATE | O_WRONLY);
         if (fd >= 0) {
             printf("open(%p) returned %d, not -1\n", (void *)addr, fd);
@@ -2043,7 +2043,7 @@ void kernmem(const char *s) {
 // user code should not be able to write to addresses above MAXVA.
 void MAXVAplus(const char *s) {
     volatile uint64 a = MAXVA;
-    for (; a != 0;) {
+    while (a != 0) {
         const int pid = fork();
         if (pid < 0) {
             printf("%s: fork failed\n", s);
@@ -2077,7 +2077,7 @@ void sbrkfail(const char *s) {
         printf("%s: pipe() failed\n", s);
         exit(1);
     }
-    for (i = 0; i < static_cast<int>(sizeof(pids) / sizeof(pids[0])); i++) {
+    for (i = 0; i < static_cast<int>(std::size(pids)); i++) {
         if ((pids[i] = fork()) == 0) {
             // allocate a lot of memory
             if (sbrk(BIG - (uint64)sbrk(0)) == SBRK_ERROR) {
@@ -2104,7 +2104,7 @@ void sbrkfail(const char *s) {
     // if those failed allocations freed up the pages they did allocate,
     // we'll be able to allocate here
     const char *c = sbrk(PGSIZE);
-    for (i = 0; i < static_cast<int>(sizeof(pids) / sizeof(pids[0])); i++) {
+    for (i = 0; i < static_cast<int>(std::size(pids)); i++) {
         if (pids[i] == -1) {
             continue;
         }
@@ -2321,10 +2321,10 @@ void nowrite(const char *s) {
                                 0x4000000000,
                                 0xffffffffffffffff};
 
-    for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
+    for (uint ai = 0; ai < std::size(addrs); ai++) {
         const int pid = fork();
         if (pid == 0) {
-            volatile int *addr = (int *)addrs[ai];
+            volatile int *addr = reinterpret_cast<int *>(addrs[ai]);
             *addr = 10;
             printf("%s: write to %p did not fail!\n", s, addr);
             exit(0);
@@ -2547,7 +2547,7 @@ void lazy_copy(const char *) {
         0x3fffffc000, 0x3fffffd000, 0x3fffffe000,
         0x3ffffff000, 0x4000000000, 0x8000000000,
     };
-    for (int i = 0; i < static_cast<int>(sizeof(bad) / sizeof(bad[0])); i++) {
+    for (int i = 0; i < static_cast<int>(std::size(bad)); i++) {
         int fd = open("README.md", 0);
         if (fd < 0) {
             printf("cannot open README.md\n");
@@ -3038,7 +3038,7 @@ int countfree() {
     return n;
 }
 
-int drivetests(const int quick, const int continuous, char *justone) {
+int drivetests(const int quick, const int continuous, const char *justone) {
     do {
         printf("usertests starting\n");
         const int free0 = countfree();

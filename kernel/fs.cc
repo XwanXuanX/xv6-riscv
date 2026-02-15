@@ -208,7 +208,7 @@ void iupdate(const inode *ip) {
     dip->minor = ip->minor;
     dip->nlink = ip->nlink;
     dip->size = ip->size;
-    memmove(dip->addrs.data(), ip->addrs, sizeof(ip->addrs));
+    memmove(dip->addrs.data(), ip->addrs.data(), sizeof(ip->addrs));
     log_write(bp);
     brelse(bp);
 }
@@ -276,7 +276,7 @@ void ilock(inode *ip) {
         ip->minor = dip->minor;
         ip->nlink = dip->nlink;
         ip->size = dip->size;
-        memmove(ip->addrs, dip->addrs.data(), sizeof(ip->addrs));
+        memmove(ip->addrs.data(), dip->addrs.data(), sizeof(ip->addrs));
         brelse(bp);
         ip->valid = 1;
         if (ip->type == 0) {

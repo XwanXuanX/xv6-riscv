@@ -20,7 +20,7 @@ void cat(const int fd) {
     }
 }
 
-int main(const int argc, std::span<char *> argv) {
+int main(const int argc, const std::span<char *> argv) {
     int fd;
 
     if (argc <= 1) {

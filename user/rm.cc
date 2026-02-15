@@ -1,7 +1,7 @@
 #include "user/user.h"
 #include <span>
 
-int main(const int argc, std::span<char *> argv) {
+int main(const int argc, const std::span<char *> argv) {
     if (argc < 2) {
         fprintf(2, "Usage: rm files...\n");
         exit(1);

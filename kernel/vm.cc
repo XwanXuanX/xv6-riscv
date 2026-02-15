@@ -91,14 +91,14 @@ pte_t *walk(pagetable_t pagetable, const uint64 va, const int alloc) {
     for (int level = 2; level > 0; level--) {
         pte_t *pte = &pagetable[PX(level, va)];
         if (*pte & PTE_V) {
-            pagetable = (pagetable_t)PTE2PA(*pte);
+            pagetable = (pagetable_t)PTE2_PA(*pte);
         } else {
             if (!alloc ||
                 (pagetable = static_cast<pde_t *>(kalloc())) == nullptr) {
                 return nullptr;
             }
             memset(pagetable, 0, PGSIZE);
-            *pte = PA2PTE(pagetable) | PTE_V;
+            *pte = PA2_PTE(pagetable) | PTE_V;
         }
     }
     return &pagetable[PX(0, va)];
@@ -122,7 +122,7 @@ uint64 walkaddr(const pagetable_t pagetable, const uint64 va) {
     if ((*pte & PTE_U) == 0) {
         return 0;
     }
-    const uint64 pa = PTE2PA(*pte);
+    const uint64 pa = PTE2_PA(*pte);
     return pa;
 }
 
@@ -156,7 +156,7 @@ int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size,
         if (*pte & PTE_V) {
             panic("mappages: remap");
         }
-        *pte = PA2PTE(pa) | perm | PTE_V;
+        *pte = PA2_PTE(pa) | perm | PTE_V;
         if (a == last) {
             break;
         }
@@ -197,7 +197,7 @@ void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages,
             continue;
         }
         if (do_free) {
-            const uint64 pa = PTE2PA(*pte);
+            const uint64 pa = PTE2_PA(*pte);
             kfree((void *)pa);
         }
         *pte = 0;
@@ -256,7 +256,7 @@ void freewalk(const pagetable_t pagetable) {
         const pte_t pte = pagetable[i];
         if (pte & PTE_V && (pte & (PTE_R | PTE_W | PTE_X)) == 0) {
             // this PTE points to a lower-level page table.
-            const uint64 child = PTE2PA(pte);
+            const uint64 child = PTE2_PA(pte);
             freewalk((pagetable_t)child);
             pagetable[i] = 0;
         } else if (pte & PTE_V) {
@@ -294,7 +294,7 @@ int uvmcopy(const pagetable_t old, const pagetable_t nw, const uint64 sz) {
         if ((*pte & PTE_V) == 0) {
             continue; // physical page hasn't been allocated
         }
-        pa = PTE2PA(*pte);
+        pa = PTE2_PA(*pte);
         flags = PTE_FLAGS(*pte);
         if ((mem = static_cast<char *>(kalloc())) == nullptr) {
             goto err;

@@ -25,7 +25,7 @@ struct inode {
     short minor;
     short nlink;
     uint size;
-    uint addrs[NDIRECT + 1];
+    std::array<uint, NDIRECT + 1> addrs;
 };
 
 struct file {

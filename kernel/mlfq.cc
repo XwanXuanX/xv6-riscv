@@ -144,7 +144,7 @@ bool mlfq_rm_locked(mlfq *m, const int lvl, const proc *p) {
     return false;
 }
 
-bool mlfq_rm(mlfq *m, const int lvl, proc *p) {
+bool mlfq_rm(mlfq *m, const int lvl, const proc *p) {
     if (!m || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }

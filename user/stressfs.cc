@@ -28,7 +28,7 @@ int main() {
 
     printf("write %d\n", i);
 
-    auto p = const_cast<char *>(path.data());
+    const auto p = const_cast<char *>(path.data());
     p[8] += i;
     int fd = open(path.data(), O_CREATE | O_RDWR);
     for (i = 0; i < 20; i++) {
