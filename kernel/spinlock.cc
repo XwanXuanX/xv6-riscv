@@ -15,12 +15,13 @@ namespace impl {
 
 // Why do we need "reference counting"?
 // Because lock acquisition can be nested.
-// You can only reenable interrupts when ALL lock acquisition is released, for example:
-// acquire(&A);   // push_off() -> interrupts off
-// acquire(&B);   // push_off() again
+// You can only reenable interrupts when ALL lock acquisition is released, for
+// example: acquire(&A);   // push_off() -> interrupts off acquire(&B);   //
+// push_off() again
 // ...            // do something
 // release(&B);   // pop_off()
-//                // if we turn on interrupts here, then we are facing the same issue of having a deadlock as above!
+//                // if we turn on interrupts here, then we are facing the same
+//                issue of having a deadlock as above!
 // release(&A);   // pop_off()
 
 void push_off() {
@@ -37,7 +38,7 @@ void push_off() {
 }
 
 void pop_off() {
-    struct cpu *c = mycpu();
+    cpu *c = mycpu();
     if (intr_get()) {
         panic("pop_off - interruptible");
     }
@@ -53,9 +54,9 @@ void pop_off() {
 } // namespace impl
 
 void spinlock::init_lock(const char *name) {
-    this->name = name;
-    locked = 0;
-    cpu = nullptr;
+    this->name_ = name;
+    locked_ = 0;
+    cpu_ = nullptr;
 }
 
 // Acquire the lock.
@@ -68,8 +69,10 @@ void spinlock::lock() {
     //      * interrupts are enabled
     //      * timer/device interrupts fires
     //      * interrupt handler runs on the same CPU
-    //      * handler tries to acq lock -> spins forever, since lock is already acq by the same CPU
-    //      * but the CPU cannot return to the code to release it, because it's stuck in the handler
+    //      * handler tries to acq lock -> spins forever, since lock is already
+    //      acq by the same CPU
+    //      * but the CPU cannot return to the code to release it, because it's
+    //      stuck in the handler
     //      * the deadlock!
     impl::push_off();
 
@@ -82,7 +85,7 @@ void spinlock::lock() {
     //   a5 = 1
     //   s1 = &lk->locked
     //   amoswap.w.aq a5, a5, (s1)
-    while (__sync_lock_test_and_set(&locked, 1) != 0)
+    while (__sync_lock_test_and_set(&locked_, 1) != 0)
         ;
 
     // Tell the C compiler and the processor to not move loads or stores
@@ -92,7 +95,7 @@ void spinlock::lock() {
     __sync_synchronize();
 
     // Record info about lock acquisition for holding() and debugging.
-    cpu = mycpu();
+    cpu_ = mycpu();
 }
 
 // Release the lock.
@@ -101,7 +104,7 @@ void spinlock::unlock() {
         panic("release");
     }
 
-    cpu = nullptr;
+    cpu_ = nullptr;
 
     // Tell the C compiler and the CPU to not move loads or stores
     // past this point, to ensure that all the stores in the critical
@@ -118,25 +121,21 @@ void spinlock::unlock() {
     // On RISC-V, sync_lock_release turns into an atomic swap:
     //   s1 = &lk->locked
     //   amoswap.w zero, zero, (s1)
-    __sync_lock_release(&locked);
+    __sync_lock_release(&locked_);
 
     impl::pop_off();
 }
 
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
-bool spinlock::holding() {
-    const int r = (locked && cpu == mycpu());
+bool spinlock::holding() const {
+    const int r = locked_ && cpu_ == mycpu();
     return r;
 }
 
 // Export push_off and pop_off to the xv6 namespace
-void push_off() {
-    impl::push_off();
-}
+void push_off() { impl::push_off(); }
 
-void pop_off() {
-    impl::pop_off();
-}
+void pop_off() { impl::pop_off(); }
 
 } // namespace xv6

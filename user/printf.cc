@@ -5,10 +5,7 @@
 
 static char digits[] = "0123456789ABCDEF";
 
-static void
-putc(const int fd, const char c) {
-    write(fd, &c, 1);
-}
+static void putc(const int fd, const char c) { write(fd, &c, 1); }
 
 static void
 printint(const int fd, const long long xx, const int base, const int sgn) {
@@ -27,19 +24,21 @@ printint(const int fd, const long long xx, const int base, const int sgn) {
     do {
         buf[i++] = digits[x % base];
     } while ((x /= base) != 0);
-    if (neg)
+    if (neg) {
         buf[i++] = '-';
+    }
 
-    while (--i >= 0)
+    while (--i >= 0) {
         putc(fd, buf[i]);
+    }
 }
 
-static void
-printptr(const int fd, uint64 x) {
+static void printptr(const int fd, uint64 x) {
     putc(fd, '0');
     putc(fd, 'x');
-    for (uint i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
+    for (uint i = 0; i < sizeof(uint64) * 2; i++, x <<= 4) {
         putc(fd, digits[x >> (sizeof(uint64) * 8 - 4)]);
+    }
 }
 
 // Print to the given fd. Only understands %d, %x, %p, %c, %s.
@@ -58,10 +57,12 @@ void vprintf(const int fd, const char *fmt, const va_list ap) {
             }
         } else if (state == '%') {
             int c1 = c2 = 0;
-            if (c0)
+            if (c0) {
                 c1 = fmt[i + 1] & 0xff;
-            if (c1)
+            }
+            if (c1) {
                 c2 = fmt[i + 2] & 0xff;
+            }
             if (c0 == 'd') {
                 printint(fd, va_arg(ap, int), 10, 1);
             } else if (c0 == 'l' && c1 == 'd') {
@@ -91,10 +92,12 @@ void vprintf(const int fd, const char *fmt, const va_list ap) {
             } else if (c0 == 'c') {
                 putc(fd, va_arg(ap, uint32));
             } else if (c0 == 's') {
-                if ((s = va_arg(ap, char *)) == nullptr)
+                if ((s = va_arg(ap, char *)) == nullptr) {
                     s = "(null)";
-                for (; *s; s++)
+                }
+                for (; *s; s++) {
                     putc(fd, *s);
+                }
             } else if (c0 == '%') {
                 putc(fd, '%');
             } else {

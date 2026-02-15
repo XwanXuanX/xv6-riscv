@@ -4,78 +4,83 @@
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
 
-typedef long Align;
+using align = long;
 
 union header {
     struct {
-        union header *ptr;
+        header *ptr;
         uint size;
     } s;
-    Align x;
+    align x;
 };
 
-typedef union header Header;
+using header = header;
 
-static Header base;
-static Header *freep;
+static header base;
+static header *freep;
 
 void free(void *ap) {
-    Header *p;
+    header *p;
 
-    Header *bp = (Header *)ap - 1;
-    for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
-        if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+    header *bp = static_cast<header *>(ap) - 1;
+    for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr) {
+        if (p >= p->s.ptr && (bp > p || bp < p->s.ptr)) {
             break;
+        }
+    }
     if (bp + bp->s.size == p->s.ptr) {
         bp->s.size += p->s.ptr->s.size;
         bp->s.ptr = p->s.ptr->s.ptr;
-    } else
+    } else {
         bp->s.ptr = p->s.ptr;
+    }
     if (p + p->s.size == bp) {
         p->s.size += bp->s.size;
         p->s.ptr = bp->s.ptr;
-    } else
+    } else {
         p->s.ptr = bp;
+    }
     freep = p;
 }
 
-static Header *
-morecore(uint nu) {
-
-    if (nu < 4096)
+static header *morecore(uint nu) {
+    if (nu < 4096) {
         nu = 4096;
-    char *p = sbrk(nu * sizeof(Header));
-    if (p == SBRK_ERROR)
+    }
+    char *p = sbrk(nu * sizeof(header));
+    if (p == SBRK_ERROR) {
         return nullptr;
-    Header *hp = (Header *)p;
+    }
+    const auto hp = reinterpret_cast<header *>(p);
     hp->s.size = nu;
-    free((void *)(hp + 1));
+    free(hp + 1);
     return freep;
 }
 
-void *
-malloc(const uint nbytes) {
-    Header *prevp;
+void *malloc(const uint nbytes) {
+    header *prevp;
 
-    const uint nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
+    const uint nunits = (nbytes + sizeof(header) - 1) / sizeof(header) + 1;
     if ((prevp = freep) == nullptr) {
         base.s.ptr = freep = prevp = &base;
         base.s.size = 0;
     }
-    for (Header *p = prevp->s.ptr;; prevp = p, p = p->s.ptr) {
+    for (header *p = prevp->s.ptr;; prevp = p, p = p->s.ptr) {
         if (p->s.size >= nunits) {
-            if (p->s.size == nunits)
+            if (p->s.size == nunits) {
                 prevp->s.ptr = p->s.ptr;
-            else {
+            } else {
                 p->s.size -= nunits;
                 p += p->s.size;
                 p->s.size = nunits;
             }
             freep = prevp;
-            return (void *)(p + 1);
+            return p + 1;
         }
-        if (p == freep)
-            if ((p = morecore(nunits)) == nullptr)
+        if (p == freep) {
+            if ((p = morecore(nunits)) == nullptr) {
                 return nullptr;
+            }
+        }
     }
 }

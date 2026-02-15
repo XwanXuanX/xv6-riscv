@@ -1,4 +1,4 @@
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
 
@@ -11,8 +11,8 @@ char buf[BUFSZ];
 int main(int argc, char **argv) {
     int fd = 0;
     char *s = argv[0];
-    struct stat st;
-    const char *ff = "file0";
+    stats st;
+    const auto ff = "file0";
 
     if ((fd = open(ff, O_CREATE | O_WRONLY)) < 0) {
         printf("%s: open failed\n", s);
@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
     }
     printf("wait for kill and reclaim %d\n", st.ino);
     // sit around until killed
-    for (;;)
+    for (;;) {
         pause(1000);
+    }
 }

@@ -1,33 +1,29 @@
 #pragma once
 
+#include "kernel/stats.h"
 #include "kernel/types.h"
 
 #define SBRK_ERROR ((char *)-1)
 
-#ifdef __cplusplus
-namespace xv6 {
-struct stat;
-}
-using xv6::stat;
-#else
-struct stat;
-#endif
+using stats = xv6::stats;
 
 /**
  * Using <extern "C"> is crucial!
  *
- * This is due to C++'s compiler "mangle" C++ function names, while C compiler does not.
- * For example, if I call a system call from a C++ file and compiler with C++ compiler
- * (such as `printf`), the C++ compiler will assume that `printf` is a C++ function and
- * will mangle the name to something like `sajhfgbkadjsrghbk_printf()`, which will reside
- * in the compiled object file.
+ * This is due to C++'s compiler "mangle" C++ function names, while C compiler
+ * does not. For example, if I call a system call from a C++ file and compiler
+ * with C++ compiler (such as `printf`), the C++ compiler will assume that
+ * `printf` is a C++ function and will mangle the name to something like
+ * `sajhfgbkadjsrghbk_printf()`, which will reside in the compiled object file.
  *
- * Then the linker will try to find the definition of that mangled name, which obviously
- * doesn't exists, and thus causing the linker error: `undefined reference to `printf(char const*, ...)'`
+ * Then the linker will try to find the definition of that mangled name, which
+ * obviously doesn't exists, and thus causing the linker error: `undefined
+ * reference to `printf(char const*, ...)'`
  *
- * The solution to this problem is explicitly tell the C++ compiler to NOT mangle names of C functions,
- * such as the function calls, using `extern` keyword.
- * If the file being compiled is using C++ compiler, then extern "C" block will kick in.
+ * The solution to this problem is explicitly tell the C++ compiler to NOT
+ * mangle names of C functions, such as the function calls, using `extern`
+ * keyword. If the file being compiled is using C++ compiler, then extern "C"
+ * block will kick in.
  */
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +42,7 @@ int exec(const char *, const char **);
 int open(const char *, int);
 int mknod(const char *, short, short);
 int unlink(const char *);
-int fstat(int fd, struct stat *);
+int fstat(int fd, stats *);
 int link(const char *, const char *);
 int mkdir(const char *);
 int chdir(const char *);
@@ -57,7 +53,7 @@ int pause(int);
 int uptime(void);
 
 // ulib.c
-int stat(const char *, struct stat *);
+int stat(const char *, stats *);
 char *strcpy(char *, const char *);
 void *memmove(void *, const void *, int);
 char *strchr(const char *, char c);

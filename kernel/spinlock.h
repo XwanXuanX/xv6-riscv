@@ -19,14 +19,14 @@ class spinlock {
     void unlock();
 
     // Is anyone holding the lock
-    bool holding();
+    bool holding() const;
 
   private:
-    uint locked; // Is the lock held?
+    uint locked_; // Is the lock held?
 
     // For debugging:
-    const char *name; // Name of lock.
-    struct cpu *cpu;  // The cpu holding the lock.
+    const char *name_; // Name of lock.
+    struct cpu *cpu_;  // The cpu holding the lock.
 };
 
 } // namespace xv6

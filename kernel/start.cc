@@ -22,7 +22,7 @@ extern "C" void start() {
 
     // set M Exception Program Counter to main, for mret.
     // requires gcc -mcmodel=medany
-    w_mepc((uint64)xv6::main);
+    w_mepc(reinterpret_cast<uint64>(main));
 
     // disable paging for now.
     w_satp(0);
@@ -54,7 +54,7 @@ void timerinit() {
     w_mie(r_mie() | MIE_STIE);
 
     // enable the sstc extension (i.e. stimecmp).
-    w_menvcfg(r_menvcfg() | (1L << 63));
+    w_menvcfg(r_menvcfg() | 1L << 63);
 
     // allow supervisor to use stimecmp and time.
     w_mcounteren(r_mcounteren() | 2);

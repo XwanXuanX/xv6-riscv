@@ -11,5 +11,17 @@ IncludeBlocks: Preserve
 IndentPPDirectives: None
 
 # Keep long macro/asm lines intact as much as possible.
-ColumnLimit: 0
+ColumnLimit: 80
+
+# Remove blank lines at the start of blocks (including function bodies)
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Always insert braces
+InsertBraces: true
+
+AlwaysBreakAfterReturnType: None
+BreakBeforeBraces: Attach
+PenaltyReturnTypeOnItsOwnLine: 0
+
+AllowShortFunctionsOnASingleLine: All
 ---

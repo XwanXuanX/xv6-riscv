@@ -5,7 +5,7 @@ namespace xv6 {
 
 volatile static int started = 0;
 
-extern struct mlfq mlq;
+extern mlfq mlq;
 
 // start() jumps here in supervisor mode on all CPUs.
 void main() {

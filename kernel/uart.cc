@@ -96,8 +96,9 @@ void uartwrite(char buf[], const int n) {
 // to echo characters. it spins waiting for the uart's
 // output register to be empty.
 void uartputc_sync(const int c) {
-    if (panicking == 0)
+    if (panicking == 0) {
         push_off();
+    }
 
     if (panicked) {
         for (;;)
@@ -109,8 +110,9 @@ void uartputc_sync(const int c) {
         ;
     WriteReg(THR, c);
 
-    if (panicking == 0)
+    if (panicking == 0) {
         pop_off();
+    }
 }
 
 // try to read one input character from the UART.
@@ -119,9 +121,8 @@ int uartgetc() {
     if (ReadReg(LSR) & LSR_RX_READY) {
         // input data is ready.
         return ReadReg(RHR);
-    } else {
-        return -1;
     }
+    return -1;
 }
 
 // handle a uart interrupt, raised because input has
@@ -139,10 +140,11 @@ void uartintr() {
     tx_lock.unlock();
 
     // read and process incoming characters, if any.
-    while (1) {
+    while (true) {
         const int c = uartgetc();
-        if (c == -1)
+        if (c == -1) {
             break;
+        }
         consoleintr(c);
     }
 }

@@ -5,6 +5,7 @@
 
 namespace xv6 {
 
+struct cpu;
 struct buf;
 struct context;
 struct file;
@@ -13,7 +14,7 @@ struct pipe;
 struct proc;
 class spinlock;
 struct sleeplock;
-struct stat;
+struct stats;
 struct superblock;
 
 // number of elements in fixed-size array
@@ -27,7 +28,7 @@ extern char trampoline[];
 extern char userret[];
 extern char uservec[];
 void kernelvec();
-void swtch(struct context *, struct context *);
+void swtch(context *, context *);
 void start();
 void main();
 void kerneltrap();
@@ -36,18 +37,26 @@ void kerneltrap();
 // /**
 //  * Using <extern "C"> is crucial!
 //  *
-//  * This is due to C++'s compiler "mangle" C++ function names, while C compiler does not.
-//  * For example, if I call a system call from a C++ file and compiler with C++ compiler
-//  * (such as `printf`), the C++ compiler will assume that `printf` is a C++ function and
-//  * will mangle the name to something like `sajhfgbkadjsrghbk_printf()`, which will reside
+//  * This is due to C++'s compiler "mangle" C++ function names, while C
+//  compiler does not.
+//  * For example, if I call a system call from a C++ file and compiler with C++
+//  compiler
+//  * (such as `printf`), the C++ compiler will assume that `printf` is a C++
+//  function and
+//  * will mangle the name to something like `sajhfgbkadjsrghbk_printf()`, which
+//  will reside
 //  * in the compiled object file.
 //  *
-//  * Then the linker will try to find the definition of that mangled name, which obviously
-//  * doesn't exists, and thus causing the linker error: `undefined reference to `printf(char const*, ...)'`
+//  * Then the linker will try to find the definition of that mangled name,
+//  which obviously
+//  * doesn't exists, and thus causing the linker error: `undefined reference to
+//  `printf(char const*, ...)'`
 //  *
-//  * The solution to this problem is explicitly tell the C++ compiler to NOT mangle names of C functions,
+//  * The solution to this problem is explicitly tell the C++ compiler to NOT
+//  mangle names of C functions,
 //  * such as the function calls, using `extern` keyword.
-//  * If the file being compiled is using C++ compiler, then extern "C" block will kick in.
+//  * If the file being compiled is using C++ compiler, then extern "C" block
+//  will kick in.
 //  */
 // #ifdef __cplusplus
 // extern "C" {
@@ -55,11 +64,11 @@ void kerneltrap();
 
 // bio.c
 void binit();
-struct buf *bread(uint, uint);
-void brelse(struct buf *);
-void bwrite(struct buf *);
-void bpin(struct buf *);
-void bunpin(struct buf *);
+buf *bread(uint, uint);
+void brelse(buf *);
+void bwrite(buf *);
+void bpin(buf *);
+void bunpin(buf *);
 
 // console.c
 void consoleinit();
@@ -70,33 +79,33 @@ void consputc(int);
 int kexec(const char *, const char **);
 
 // file.c
-struct file *filealloc();
-void fileclose(struct file *);
-struct file *filedup(struct file *);
+file *filealloc();
+void fileclose(file *);
+file *filedup(file *);
 void fileinit();
-int fileread(struct file *, uint64, int n);
-int filestat(struct file *, uint64 addr);
-int filewrite(struct file *, uint64, int n);
+int fileread(file *, uint64, int n);
+int filestat(file *, uint64 addr);
+int filewrite(file *, uint64, int n);
 
 // fs.c
 void fsinit(int);
-int dirlink(struct inode *, const char *, uint);
-struct inode *dirlookup(struct inode *, const char *, uint *);
-struct inode *ialloc(uint, short);
-struct inode *idup(struct inode *);
+int dirlink(inode *, const char *, uint);
+inode *dirlookup(inode *, const char *, uint *);
+inode *ialloc(uint, short);
+inode *idup(inode *);
 void iinit();
-void ilock(struct inode *);
-void iput(struct inode *);
-void iunlock(struct inode *);
-void iunlockput(struct inode *);
-void iupdate(struct inode *);
+void ilock(inode *);
+void iput(inode *);
+void iunlock(inode *);
+void iunlockput(inode *);
+void iupdate(inode *);
 int namecmp(const char *, const char *);
-struct inode *namei(const char *);
-struct inode *nameiparent(char *, char *);
-uint readi(struct inode *, int, uint64, uint, uint);
-void stati(struct inode *, struct stat *);
-int writei(struct inode *, int, uint64, uint, uint);
-void itrunc(struct inode *);
+inode *namei(const char *);
+inode *nameiparent(char *, char *);
+uint readi(inode *, int, uint64, uint, uint);
+void stati(inode *, stats *);
+int writei(inode *, int, uint64, uint, uint);
+void itrunc(inode *);
 void ireclaim(int);
 
 // kalloc.c
@@ -105,16 +114,16 @@ void kfree(void *);
 void kinit();
 
 // log.c
-void initlog(int, struct superblock *);
-void log_write(struct buf *);
+void initlog(int, superblock *);
+void log_write(buf *);
 void begin_op();
 void end_op();
 
 // pipe.c
-int pipealloc(struct file **, struct file **);
-void pipeclose(struct pipe *, int);
-int piperead(struct pipe *, uint64, int);
-int pipewrite(struct pipe *, uint64, int);
+int pipealloc(file **, file **);
+void pipeclose(pipe *, int);
+int piperead(pipe *, uint64, int);
+int pipewrite(pipe *, uint64, int);
 
 // printf.c
 int printf(const char *, ...) __attribute__((format(printf, 1, 2)));
@@ -127,17 +136,17 @@ void kexit(int);
 int kfork();
 int growproc(int);
 void proc_mapstacks(pagetable_t);
-pagetable_t proc_pagetable(struct proc *);
+pagetable_t proc_pagetable(proc *);
 void proc_freepagetable(pagetable_t, uint64);
 int kkill(int);
-int killed(struct proc *);
-void setkilled(struct proc *);
-struct cpu *mycpu();
-struct proc *myproc();
+int killed(proc *);
+void setkilled(proc *);
+cpu *mycpu();
+proc *myproc();
 void procinit();
 void scheduler() __attribute__((noreturn));
 void sched();
-void sleep(void *, struct spinlock *);
+void sleep(void *, spinlock *);
 void userinit();
 int kwait(uint64);
 void wakeup(void *);
@@ -149,18 +158,18 @@ void procdump();
 // swtch.S - already declared above in extern "C"
 
 // spinlock.c
-void acquire(struct spinlock *);
-int holding(struct spinlock *);
-void initlock(struct spinlock *, const char *);
-void release(struct spinlock *);
+void acquire(spinlock *);
+int holding(spinlock *);
+void initlock(spinlock *, const char *);
+void release(spinlock *);
 void push_off();
 void pop_off();
 
 // sleeplock.c
-void acquiresleep(struct sleeplock *);
-void releasesleep(struct sleeplock *);
-int holdingsleep(struct sleeplock *);
-void initsleeplock(struct sleeplock *, const char *);
+void acquiresleep(sleeplock *);
+void releasesleep(sleeplock *);
+int holdingsleep(sleeplock *);
+void initsleeplock(sleeplock *, const char *);
 
 // string.c
 int memcmp(const void *, const void *, uint);
@@ -183,7 +192,7 @@ void syscall();
 extern uint ticks;
 void trapinit();
 void trapinithart();
-extern struct spinlock tickslock;
+extern spinlock tickslock;
 void prepare_return();
 
 // uart.c
@@ -221,7 +230,7 @@ void plic_complete(int);
 
 // virtio_disk.c
 void virtio_disk_init();
-void virtio_disk_rw(struct buf *, int);
+void virtio_disk_rw(buf *, int);
 void virtio_disk_intr();
 
 // #ifdef __cplusplus

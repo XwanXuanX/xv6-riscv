@@ -5,21 +5,21 @@
 
 #define N 1000
 
-void print(const char *s) {
-    write(1, s, strlen(s));
-}
+void print(const char *s) { write(1, s, strlen(s)); }
 
-void forktest(void) {
+void forktest() {
     int n;
 
     print("fork test\n");
 
     for (n = 0; n < N; n++) {
         const int pid = fork();
-        if (pid < 0)
+        if (pid < 0) {
             break;
-        if (pid == 0)
+        }
+        if (pid == 0) {
             exit(0);
+        }
     }
 
     if (n == N) {
@@ -42,7 +42,7 @@ void forktest(void) {
     print("fork test OK\n");
 }
 
-int main(void) {
+int main() {
     forktest();
     exit(0);
 }

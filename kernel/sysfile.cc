@@ -8,7 +8,7 @@
 #include "riscv.h"
 #include "defs.h"
 #include "param.h"
-#include "stat.h"
+#include "stats.h"
 #include "proc.h"
 #include "fs.h"
 #include "file.h"
@@ -18,26 +18,27 @@ namespace xv6 {
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
-static int
-argfd(const int n, int *pfd, struct file **pf) {
+static int argfd(const int n, int *pfd, file **pf) {
     int fd;
-    struct file *f;
+    file *f;
 
     argint(n, &fd);
-    if (fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == nullptr)
+    if (fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == nullptr) {
         return -1;
-    if (pfd)
+    }
+    if (pfd) {
         *pfd = fd;
-    if (pf)
+    }
+    if (pf) {
         *pf = f;
+    }
     return 0;
 }
 
 // Allocate a file descriptor for the given file.
 // Takes over file reference from caller on success.
-static int
-fdalloc(struct file *f) {
-    struct proc *p = myproc();
+static int fdalloc(file *f) {
+    proc *p = myproc();
 
     for (int fd = 0; fd < NOFILE; fd++) {
         if (p->ofile[fd] == nullptr) {
@@ -48,77 +49,78 @@ fdalloc(struct file *f) {
     return -1;
 }
 
-uint64
-sys_dup() {
-    struct file *f;
+uint64 sys_dup() {
+    file *f;
     int fd;
 
-    if (argfd(0, nullptr, &f) < 0)
+    if (argfd(0, nullptr, &f) < 0) {
         return -1;
-    if ((fd = fdalloc(f)) < 0)
+    }
+    if ((fd = fdalloc(f)) < 0) {
         return -1;
+    }
     filedup(f);
     return fd;
 }
 
-uint64
-sys_read(void) {
-    struct file *f;
+uint64 sys_read() {
+    file *f;
     int n;
     uint64 p;
 
     argaddr(1, &p);
     argint(2, &n);
-    if (argfd(0, nullptr, &f) < 0)
+    if (argfd(0, nullptr, &f) < 0) {
         return -1;
+    }
     return fileread(f, p, n);
 }
 
-uint64
-sys_write(void) {
-    struct file *f;
+uint64 sys_write() {
+    file *f;
     int n;
     uint64 p;
 
     argaddr(1, &p);
     argint(2, &n);
-    if (argfd(0, nullptr, &f) < 0)
+    if (argfd(0, nullptr, &f) < 0) {
         return -1;
+    }
 
     return filewrite(f, p, n);
 }
 
-uint64
-sys_close(void) {
+uint64 sys_close() {
     int fd;
-    struct file *f;
+    file *f;
 
-    if (argfd(0, &fd, &f) < 0)
+    if (argfd(0, &fd, &f) < 0) {
         return -1;
+    }
     myproc()->ofile[fd] = nullptr;
     fileclose(f);
     return 0;
 }
 
-uint64
-sys_fstat(void) {
-    struct file *f;
+uint64 sys_fstat() {
+    file *f;
     uint64 st; // user pointer to struct stat
 
     argaddr(1, &st);
-    if (argfd(0, nullptr, &f) < 0)
+    if (argfd(0, nullptr, &f) < 0) {
         return -1;
+    }
     return filestat(f, st);
 }
 
 // Create the path new as a link to the same inode as old.
-uint64
-sys_link(void) {
-    char name[DIRSIZ] = {0}, nw[MAXPATH] = {0}, old[MAXPATH] = {0};
-    struct inode *dp, *ip;
+uint64 sys_link() {
+    char name[DIRSIZ] = {}, nw[MAXPATH] = {}, old[MAXPATH] = {};
+    inode *dp, *ip;
 
-    if (argstr(0, old, MAXPATH) < 0 || argstr(1, nw, MAXPATH) < 0)
+    if (argstr(0, old, MAXPATH) < 0 || argstr(1, nw, MAXPATH) < 0) {
         return -1;
+    }
 
     begin_op();
     if ((ip = namei(old)) == nullptr) {
@@ -137,8 +139,9 @@ sys_link(void) {
     iupdate(ip);
     iunlock(ip);
 
-    if ((dp = nameiparent(nw, name)) == nullptr)
+    if ((dp = nameiparent(nw, name)) == nullptr) {
         goto bad;
+    }
     ilock(dp);
     if (dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
         iunlockput(dp);
@@ -161,28 +164,29 @@ bad:
 }
 
 // Is the directory dp empty except for "." and ".." ?
-static int
-isdirempty(struct inode *dp) {
-    struct dirent de;
+static int isdirempty(inode *dp) {
+    dirent de{};
 
     for (uint off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
-        if (readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+        if (readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de)) {
             panic("isdirempty: readi");
-        if (de.inum != 0)
+        }
+        if (de.inum != 0) {
             return 0;
+        }
     }
     return 1;
 }
 
-uint64
-sys_unlink(void) {
-    struct inode *ip, *dp;
-    struct dirent de;
-    char name[DIRSIZ] = {0}, path[MAXPATH] = {0};
+uint64 sys_unlink() {
+    inode *ip, *dp;
+    dirent de{};
+    char name[DIRSIZ] = {}, path[MAXPATH] = {};
     uint off;
 
-    if (argstr(0, path, MAXPATH) < 0)
+    if (argstr(0, path, MAXPATH) < 0) {
         return -1;
+    }
 
     begin_op();
     if ((dp = nameiparent(path, name)) == nullptr) {
@@ -193,23 +197,27 @@ sys_unlink(void) {
     ilock(dp);
 
     // Cannot unlink "." or "..".
-    if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0)
+    if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0) {
         goto bad;
+    }
 
-    if ((ip = dirlookup(dp, name, &off)) == nullptr)
+    if ((ip = dirlookup(dp, name, &off)) == nullptr) {
         goto bad;
+    }
     ilock(ip);
 
-    if (ip->nlink < 1)
+    if (ip->nlink < 1) {
         panic("unlink: nlink < 1");
+    }
     if (ip->type == T_DIR && !isdirempty(ip)) {
         iunlockput(ip);
         goto bad;
     }
 
     memset(&de, 0, sizeof(de));
-    if (writei(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+    if (writei(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de)) {
         panic("unlink: writei");
+    }
     if (ip->type == T_DIR) {
         dp->nlink--;
         iupdate(dp);
@@ -230,21 +238,23 @@ bad:
     return -1;
 }
 
-static struct inode *
+static inode *
 create(char *path, const short type, const short major, const short minor) {
-    struct inode *ip, *dp;
-    char name[DIRSIZ] = {0};
+    inode *ip, *dp;
+    char name[DIRSIZ] = {};
 
-    if ((dp = nameiparent(path, name)) == nullptr)
+    if ((dp = nameiparent(path, name)) == nullptr) {
         return nullptr;
+    }
 
     ilock(dp);
 
     if ((ip = dirlookup(dp, name, nullptr)) != nullptr) {
         iunlockput(dp);
         ilock(ip);
-        if (type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE))
+        if (type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE)) {
             return ip;
+        }
         iunlockput(ip);
         return nullptr;
     }
@@ -262,12 +272,14 @@ create(char *path, const short type, const short major, const short minor) {
 
     if (type == T_DIR) { // Create . and .. entries.
         // No ip->nlink++ for ".": avoid cyclic ref count.
-        if (dirlink(ip, ".", ip->inum) < 0 || dirlink(ip, "..", dp->inum) < 0)
+        if (dirlink(ip, ".", ip->inum) < 0 || dirlink(ip, "..", dp->inum) < 0) {
             goto fail;
+        }
     }
 
-    if (dirlink(dp, name, ip->inum) < 0)
+    if (dirlink(dp, name, ip->inum) < 0) {
         goto fail;
+    }
 
     if (type == T_DIR) {
         // now that success is guaranteed:
@@ -288,17 +300,16 @@ fail:
     return nullptr;
 }
 
-uint64
-sys_open(void) {
+uint64 sys_open() {
     char path[MAXPATH];
     int fd, omode;
-    struct file *f;
-    struct inode *ip;
-    int n;
+    file *f;
+    inode *ip;
 
     argint(1, &omode);
-    if ((n = argstr(0, path, MAXPATH)) < 0)
+    if (argstr(0, path, MAXPATH) < 0) {
         return -1;
+    }
 
     begin_op();
 
@@ -328,25 +339,26 @@ sys_open(void) {
     }
 
     if ((f = filealloc()) == nullptr || (fd = fdalloc(f)) < 0) {
-        if (f)
+        if (f) {
             fileclose(f);
+        }
         iunlockput(ip);
         end_op();
         return -1;
     }
 
     if (ip->type == T_DEVICE) {
-        f->type = FD_DEVICE;
+        f->type = fd_device;
         f->major = ip->major;
     } else {
-        f->type = FD_INODE;
+        f->type = fd_inode;
         f->off = 0;
     }
     f->ip = ip;
     f->readable = !(omode & O_WRONLY);
-    f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+    f->writable = omode & O_WRONLY || omode & O_RDWR;
 
-    if ((omode & O_TRUNC) && ip->type == T_FILE) {
+    if (omode & O_TRUNC && ip->type == T_FILE) {
         itrunc(ip);
     }
 
@@ -356,13 +368,13 @@ sys_open(void) {
     return fd;
 }
 
-uint64
-sys_mkdir(void) {
+uint64 sys_mkdir() {
     char path[MAXPATH];
-    struct inode *ip;
+    inode *ip;
 
     begin_op();
-    if (argstr(0, path, MAXPATH) < 0 || (ip = create(path, T_DIR, 0, 0)) == nullptr) {
+    if (argstr(0, path, MAXPATH) < 0 ||
+        (ip = create(path, T_DIR, 0, 0)) == nullptr) {
         end_op();
         return -1;
     }
@@ -371,16 +383,15 @@ sys_mkdir(void) {
     return 0;
 }
 
-uint64
-sys_mknod(void) {
-    struct inode *ip;
+uint64 sys_mknod() {
+    inode *ip;
     char path[MAXPATH];
     int major, minor;
 
     begin_op();
     argint(1, &major);
     argint(2, &minor);
-    if ((argstr(0, path, MAXPATH)) < 0 ||
+    if (argstr(0, path, MAXPATH) < 0 ||
         (ip = create(path, T_DEVICE, major, minor)) == nullptr) {
         end_op();
         return -1;
@@ -390,11 +401,10 @@ sys_mknod(void) {
     return 0;
 }
 
-uint64
-sys_chdir(void) {
+uint64 sys_chdir() {
     char path[MAXPATH];
-    struct inode *ip;
-    struct proc *p = myproc();
+    inode *ip;
+    proc *p = myproc();
 
     begin_op();
     if (argstr(0, path, MAXPATH) < 0 || (ip = namei(path)) == nullptr) {
@@ -414,8 +424,7 @@ sys_chdir(void) {
     return 0;
 }
 
-uint64
-sys_exec(void) {
+uint64 sys_exec() {
     char path[MAXPATH];
     const char *argv[MAXARG];
     uint i;
@@ -431,53 +440,59 @@ sys_exec(void) {
         if (i >= NELEM(argv)) {
             goto bad;
         }
-        if (fetchaddr(uargv + sizeof(uint64) * i, (uint64 *)&uarg) < 0) {
+        if (fetchaddr(uargv + sizeof(uint64) * i, &uarg) < 0) {
             goto bad;
         }
         if (uarg == 0) {
             argv[i] = nullptr;
             break;
         }
-        argv[i] = reinterpret_cast<char *>(kalloc());
-        if (argv[i] == nullptr)
+        argv[i] = static_cast<char *>(kalloc());
+        if (argv[i] == nullptr) {
             goto bad;
-        if (fetchstr(uarg, (char *)argv[i], PGSIZE) < 0)
+        }
+        if (fetchstr(uarg, (char *)argv[i], PGSIZE) < 0) {
             goto bad;
+        }
     }
 
     ret = kexec(path, argv);
 
-    for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++)
-        kfree((void *)(argv[i]));
+    for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++) {
+        kfree((void *)argv[i]);
+    }
 
     return ret;
 
 bad:
-    for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++)
-        kfree((void *)(argv[i]));
+    for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++) {
+        kfree((void *)argv[i]);
+    }
     return -1;
 }
 
-uint64
-sys_pipe(void) {
+uint64 sys_pipe() {
     uint64 fdarray; // user pointer to array of two integers
-    struct file *rf, *wf;
+    file *rf, *wf;
     int fd1;
-    struct proc *p = myproc();
+    proc *p = myproc();
 
     argaddr(0, &fdarray);
-    if (pipealloc(&rf, &wf) < 0)
+    if (pipealloc(&rf, &wf) < 0) {
         return -1;
+    }
     int fd0 = -1;
     if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
-        if (fd0 >= 0)
+        if (fd0 >= 0) {
             p->ofile[fd0] = nullptr;
+        }
         fileclose(rf);
         fileclose(wf);
         return -1;
     }
     if (copyout(p->pagetable, fdarray, (char *)&fd0, sizeof(fd0)) < 0 ||
-        copyout(p->pagetable, fdarray + sizeof(fd0), (char *)&fd1, sizeof(fd1)) < 0) {
+        copyout(p->pagetable, fdarray + sizeof(fd0), (char *)&fd1,
+                sizeof(fd1)) < 0) {
         p->ofile[fd0] = nullptr;
         p->ofile[fd1] = nullptr;
         fileclose(rf);

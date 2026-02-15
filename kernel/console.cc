@@ -58,10 +58,12 @@ int consolewrite(const int user_src, const uint64 src, const int n) {
 
     while (i < n) {
         int nn = sizeof(buf);
-        if (nn > n - i)
+        if (nn > n - i) {
             nn = n - i;
-        if (either_copyin(buf, user_src, src + i, nn) == -1)
+        }
+        if (either_copyin(buf, user_src, src + i, nn) == -1) {
             break;
+        }
         uartwrite(buf, nn);
         i += nn;
     }
@@ -104,8 +106,9 @@ int consoleread(const int user_dst, uint64 dst, int n) {
 
         // copy the input byte to the user-space buffer.
         cbuf = c;
-        if (either_copyout(user_dst, dst, &cbuf, 1) == -1)
+        if (either_copyout(user_dst, dst, &cbuf, 1) == -1) {
             break;
+        }
 
         dst++;
         --n;
@@ -150,7 +153,7 @@ void consoleintr(int c) {
         break;
     default:
         if (c != 0 && cons.e - cons.r < INPUT_BUF_SIZE) {
-            c = (c == '\r') ? '\n' : c;
+            c = c == '\r' ? '\n' : c;
 
             // echo back to the user.
             consputc(c);

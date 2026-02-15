@@ -23,22 +23,21 @@ namespace xv6 {
 
 struct {
     spinlock lock;
-    struct buf buf[NBUF];
+    buf buffer[NBUF];
 
     // Linked list of all buffers, through prev/next.
     // Sorted by how recently the buffer was used.
     // head.next is most recent, head.prev is least.
-    struct buf head;
+    buf head;
 } bcache;
 
 void binit() {
-
     bcache.lock.init_lock("bcache");
 
     // Create linked list of buffers
     bcache.head.prev = &bcache.head;
     bcache.head.next = &bcache.head;
-    for (struct buf *b = bcache.buf; b < bcache.buf + NBUF; b++) {
+    for (buf *b = bcache.buffer; b < bcache.buffer + NBUF; b++) {
         b->next = bcache.head.next;
         b->prev = &bcache.head;
         initsleeplock(&b->lock, "buffer");
@@ -50,9 +49,8 @@ void binit() {
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
-static struct buf *
-bget(const uint dev, const uint blockno) {
-    struct buf *b;
+static buf *bget(const uint dev, const uint blockno) {
+    buf *b;
 
     bcache.lock.lock();
 
@@ -83,10 +81,8 @@ bget(const uint dev, const uint blockno) {
 }
 
 // Return a locked buf with the contents of the indicated block.
-struct buf *
-bread(const uint dev, const uint blockno) {
-
-    struct buf *b = bget(dev, blockno);
+buf *bread(const uint dev, const uint blockno) {
+    buf *b = bget(dev, blockno);
     if (!b->valid) {
         virtio_disk_rw(b, 0);
         b->valid = 1;
@@ -95,17 +91,19 @@ bread(const uint dev, const uint blockno) {
 }
 
 // Write b's contents to disk.  Must be locked.
-void bwrite(struct buf *b) {
-    if (!holdingsleep(&b->lock))
+void bwrite(buf *b) {
+    if (!holdingsleep(&b->lock)) {
         panic("bwrite");
+    }
     virtio_disk_rw(b, 1);
 }
 
 // Release a locked buffer.
 // Move to the head of the most-recently-used list.
-void brelse(struct buf *b) {
-    if (!holdingsleep(&b->lock))
+void brelse(buf *b) {
+    if (!holdingsleep(&b->lock)) {
         panic("brelse");
+    }
 
     releasesleep(&b->lock);
 
@@ -124,13 +122,13 @@ void brelse(struct buf *b) {
     bcache.lock.unlock();
 }
 
-void bpin(struct buf *b) {
+void bpin(buf *b) {
     bcache.lock.lock();
     b->refcnt++;
     bcache.lock.unlock();
 }
 
-void bunpin(struct buf *b) {
+void bunpin(buf *b) {
     bcache.lock.lock();
     b->refcnt--;
     bcache.lock.unlock();

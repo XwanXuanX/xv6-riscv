@@ -17,40 +17,44 @@ struct pipe {
     int writeopen; // write fd is still open
 };
 
-int pipealloc(struct file **f0, struct file **f1) {
-
-    struct pipe *pi = nullptr;
+int pipealloc(file **f0, file **f1) {
+    pipe *pi = nullptr;
     *f0 = *f1 = nullptr;
-    if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr)
+    if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr) {
         goto bad;
-    if ((pi = (struct pipe *)kalloc()) == nullptr)
+    }
+    if ((pi = static_cast<pipe *>(kalloc())) == nullptr) {
         goto bad;
+    }
     pi->readopen = 1;
     pi->writeopen = 1;
     pi->nwrite = 0;
     pi->nread = 0;
     pi->lock.init_lock("pipe");
-    (*f0)->type = FD_PIPE;
+    (*f0)->type = fd_pipe;
     (*f0)->readable = 1;
     (*f0)->writable = 0;
-    (*f0)->pipe = pi;
-    (*f1)->type = FD_PIPE;
+    (*f0)->pip = pi;
+    (*f1)->type = fd_pipe;
     (*f1)->readable = 0;
     (*f1)->writable = 1;
-    (*f1)->pipe = pi;
+    (*f1)->pip = pi;
     return 0;
 
 bad:
-    if (pi)
-        kfree((char *)pi);
-    if (*f0)
+    if (pi) {
+        kfree(pi);
+    }
+    if (*f0) {
         fileclose(*f0);
-    if (*f1)
+    }
+    if (*f1) {
         fileclose(*f1);
+    }
     return -1;
 }
 
-void pipeclose(struct pipe *pi, const int writable) {
+void pipeclose(pipe *pi, const int writable) {
     pi->lock.lock();
     if (writable) {
         pi->writeopen = 0;
@@ -61,14 +65,15 @@ void pipeclose(struct pipe *pi, const int writable) {
     }
     if (pi->readopen == 0 && pi->writeopen == 0) {
         pi->lock.unlock();
-        kfree((char *)pi);
-    } else
+        kfree(pi);
+    } else {
         pi->lock.unlock();
+    }
 }
 
-int pipewrite(struct pipe *pi, const uint64 addr, const int n) {
+int pipewrite(pipe *pi, const uint64 addr, const int n) {
     int i = 0;
-    struct proc *pr = myproc();
+    proc *pr = myproc();
 
     pi->lock.lock();
     while (i < n) {
@@ -81,8 +86,9 @@ int pipewrite(struct pipe *pi, const uint64 addr, const int n) {
             sleep(&pi->nwrite, &pi->lock);
         } else {
             char ch;
-            if (copyin(pr->pagetable, &ch, addr + i, 1) == -1)
+            if (copyin(pr->pagetable, &ch, addr + i, 1) == -1) {
                 break;
+            }
             pi->data[pi->nwrite++ % PIPESIZE] = ch;
             i++;
         }
@@ -93,9 +99,9 @@ int pipewrite(struct pipe *pi, const uint64 addr, const int n) {
     return i;
 }
 
-int piperead(struct pipe *pi, const uint64 addr, const int n) {
+int piperead(pipe *pi, const uint64 addr, const int n) {
     int i;
-    struct proc *pr = myproc();
+    proc *pr = myproc();
     char ch;
 
     pi->lock.lock();
@@ -107,12 +113,14 @@ int piperead(struct pipe *pi, const uint64 addr, const int n) {
         sleep(&pi->nread, &pi->lock); // DOC: piperead-sleep
     }
     for (i = 0; i < n; i++) { // DOC: piperead-copy
-        if (pi->nread == pi->nwrite)
+        if (pi->nread == pi->nwrite) {
             break;
+        }
         ch = pi->data[pi->nread % PIPESIZE];
         if (copyout(pr->pagetable, addr + i, &ch, 1) == -1) {
-            if (i == 0)
+            if (i == 0) {
                 i = -1;
+            }
             break;
         }
         pi->nread++;

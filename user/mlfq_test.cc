@@ -1,6 +1,6 @@
 #include "user/user.h"
 
-int main(void) {
+int main() {
     // Create 9 children + parent = 10 CPU-bound processes total.
     for (int i = 0; i < 9; i++) {
         const int pid = fork();

@@ -20,34 +20,36 @@ static struct {
 
 static char digits[] = "0123456789abcdef";
 
-static void
-printint(const long long xx, const int base, int sign) {
+static void printint(const long long xx, const int base, int sign) {
     char buf[20];
     unsigned long long x;
 
-    if (sign && (sign = (xx < 0)))
+    if (sign && (sign = xx < 0)) {
         x = -xx;
-    else
+    } else {
         x = xx;
+    }
 
     int i = 0;
     do {
         buf[i++] = digits[x % base];
     } while ((x /= base) != 0);
 
-    if (sign)
+    if (sign) {
         buf[i++] = '-';
+    }
 
-    while (--i >= 0)
+    while (--i >= 0) {
         consputc(buf[i]);
+    }
 }
 
-static void
-printptr(uint64 x) {
+static void printptr(uint64 x) {
     consputc('0');
     consputc('x');
-    for (uint i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
+    for (uint i = 0; i < sizeof(uint64) * 2; i++, x <<= 4) {
         consputc(digits[x >> (sizeof(uint64) * 8 - 4)]);
+    }
 }
 
 // Print to the console.
@@ -56,8 +58,9 @@ int printf(const char *fmt, ...) {
     int cx, c2;
     const char *s;
 
-    if (panicking == 0)
+    if (panicking == 0) {
         pr.lock.lock();
+    }
 
     va_start(ap, fmt);
     for (int i = 0; (cx = fmt[i] & 0xff) != 0; i++) {
@@ -68,10 +71,12 @@ int printf(const char *fmt, ...) {
         i++;
         const int c0 = fmt[i + 0] & 0xff;
         int c1 = c2 = 0;
-        if (c0)
+        if (c0) {
             c1 = fmt[i + 1] & 0xff;
-        if (c1)
+        }
+        if (c1) {
             c2 = fmt[i + 2] & 0xff;
+        }
         if (c0 == 'd') {
             printint(va_arg(ap, int), 10, 1);
         } else if (c0 == 'l' && c1 == 'd') {
@@ -101,10 +106,12 @@ int printf(const char *fmt, ...) {
         } else if (c0 == 'c') {
             consputc(va_arg(ap, uint));
         } else if (c0 == 's') {
-            if ((s = va_arg(ap, char *)) == nullptr)
+            if ((s = va_arg(ap, char *)) == nullptr) {
                 s = "(null)";
-            for (; *s; s++)
+            }
+            for (; *s; s++) {
                 consputc(*s);
+            }
         } else if (c0 == '%') {
             consputc('%');
         } else if (c0 == 0) {
@@ -117,8 +124,9 @@ int printf(const char *fmt, ...) {
     }
     va_end(ap);
 
-    if (panicking == 0)
+    if (panicking == 0) {
         pr.lock.unlock();
+    }
 
     return 0;
 }
@@ -132,8 +140,6 @@ void panic(const char *s) {
         ;
 }
 
-void printfinit(void) {
-    pr.lock.init_lock("pr");
-}
+void printfinit() { pr.lock.init_lock("pr"); }
 
 } // namespace xv6

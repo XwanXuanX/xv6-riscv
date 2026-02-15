@@ -1,10 +1,9 @@
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "user/user.h"
 #include "kernel/fs.h"
 #include "kernel/fcntl.h"
 
-const char *
-fmtname(const char *path) {
+const char *fmtname(const char *path) {
     static char buf[DIRSIZ + 1];
     const char *p;
 
@@ -14,9 +13,10 @@ fmtname(const char *path) {
     p++;
 
     // Return blank-padded name.
-    if (strlen(p) >= DIRSIZ)
+    if (strlen(p) >= DIRSIZ) {
         return p;
-    memmove(buf, p, strlen(p));
+    }
+    memmove(buf, p, static_cast<int>(strlen(p)));
     memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
     buf[sizeof(buf) - 1] = '\0';
     return buf;
@@ -25,8 +25,8 @@ fmtname(const char *path) {
 void ls(const char *path) {
     char buf[512], *p;
     int fd;
-    struct xv6::dirent de;
-    struct stat st;
+    xv6::dirent de{};
+    stats st{};
 
     if ((fd = open(path, O_RDONLY)) < 0) {
         fprintf(2, "ls: cannot open %s\n", path);
@@ -42,7 +42,8 @@ void ls(const char *path) {
     switch (st.type) {
     case T_DEVICE:
     case T_FILE:
-        printf("%s %d %d %d\n", fmtname(path), st.type, st.ino, (int)st.size);
+        printf("%s %d %d %d\n", fmtname(path), st.type, st.ino,
+               static_cast<int>(st.size));
         break;
 
     case T_DIR:
@@ -54,28 +55,31 @@ void ls(const char *path) {
         p = buf + strlen(buf);
         *p++ = '/';
         while (read(fd, &de, sizeof(de)) == sizeof(de)) {
-            if (de.inum == 0)
+            if (de.inum == 0) {
                 continue;
+            }
             memmove(p, de.name, DIRSIZ);
             p[DIRSIZ] = 0;
             if (stat(buf, &st) < 0) {
                 printf("ls: cannot stat %s\n", buf);
                 continue;
             }
-            printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, (int)st.size);
+            printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino,
+                   static_cast<int>(st.size));
         }
         break;
+    default:;
     }
     close(fd);
 }
 
 int main(const int argc, char *argv[]) {
-
     if (argc < 2) {
         ls(".");
         exit(0);
     }
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++) {
         ls(argv[i]);
+    }
     exit(0);
 }

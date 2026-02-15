@@ -16,22 +16,18 @@
  *      hw.hi();
  * Because of 2 things:
  * 1. Zero-overhead class: This class is so simple that doesn't need C++ runtime
- * 2. Static execution: Since the class doesn't make calls to `new` or `std::string` or `std::cout`,
- *                      the linker doesn't even try to link with libstdc++, which obviously doesn't exist
+ * 2. Static execution: Since the class doesn't make calls to `new` or
+ * `std::string` or `std::cout`, the linker doesn't even try to link with
+ * libstdc++, which obviously doesn't exist
  */
 class HelloWorld {
   public:
-    static void hi() {
-        printf("Hello from C++ xv6!\n");
-    }
+    static void hi() { printf("Hello from C++ xv6!\n"); }
 };
 
 namespace std::details {
 
-enum class S {
-    Y,
-    N
-};
+enum class S { Y, N };
 
 }
 
@@ -45,12 +41,10 @@ inline void assert(const bool cond, const char *msg = nullptr) {
         exit(-1);
     }
 }
-inline void always_assert(const char *msg = nullptr) {
-    assert(false, msg);
-}
+inline void always_assert(const char *msg = nullptr) { assert(false, msg); }
 
 using nullopt_t = const details::S;
-constexpr nullopt_t nullopt = details::S::N;
+constexpr auto nullopt = details::S::N;
 
 template <typename T>
     requires is_default_constructible_v<T>
@@ -60,7 +54,8 @@ struct optional final {
     optional(const nullopt_t /* arg unused */) : t(), s(nullopt_t::N) {}
 
     bool has_value() const noexcept { return s == nullopt_t::Y; }
-    // Be careful! This function panics if it doesn't contain a value! So check before call!
+    // Be careful! This function panics if it doesn't contain a value! So check
+    // before call!
     const T &get() const {
         if (!has_value()) {
             always_assert("NO VALUE FROM std::optional!\n");
@@ -87,12 +82,13 @@ class string_view final {
 
 /**
  * Now I can use all the compile-time power that C++ brings, such as templates!
- * Since templates are resolved at compile-time, they don't need any runtime support.
+ * Since templates are resolved at compile-time, they don't need any runtime
+ * support.
  *
- * For example, this function checks if two objects are equal by introspecting their types
+ * For example, this function checks if two objects are equal by introspecting
+ * their types
  */
-template <typename T>
-auto eq(const T &a, const T &b) -> std::optional<bool> {
+template <typename T> std::optional<bool> eq(const T &a, const T &b) {
     if constexpr (std::is_integral_v<T>) {
         return a == b;
     } else if constexpr (std::is_same_v<T, std::string_view>) {
@@ -102,7 +98,7 @@ auto eq(const T &a, const T &b) -> std::optional<bool> {
     }
 }
 
-int main(void) {
+int main() {
     // Test the eq() function
     {
         const auto r1 = eq(1, 2), r2 = eq(2, 2);
