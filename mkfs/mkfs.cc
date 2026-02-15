@@ -204,7 +204,7 @@ void rinode(const uint inum, dinode *ip) {
 
     const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf.data());
-    const dinode *dip = (struct dinode *)buf.data() + inum % IPB;
+    const auto dip = reinterpret_cast<dinode *>(buf.data()) + inum % IPB;
     *ip = *dip;
 }
 

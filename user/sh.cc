@@ -4,13 +4,7 @@
 #include "kernel/fcntl.h"
 
 // Parsed command representation
-enum {
-EXEC = 1,
-REDIR = 2,
-PIPE = 3,
-LIST = 4,
-BACK = 5
-};
+enum { EXEC = 1, REDIR = 2, PIPE = 3, LIST = 4, BACK = 5 };
 
 #define MAXARGS 10
 

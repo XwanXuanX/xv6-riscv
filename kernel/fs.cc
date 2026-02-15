@@ -663,6 +663,8 @@ inode *namei(const char *path) {
     return namex(path, 0, name);
 }
 
-inode *nameiparent(const char *path, char *name) { return namex(path, 1, name); }
+inode *nameiparent(const char *path, char *name) {
+    return namex(path, 1, name);
+}
 
 } // namespace xv6
