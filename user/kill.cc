@@ -1,7 +1,6 @@
 #include "user/user.h"
 
 int main(const int argc, char **argv) {
-
     if (argc < 2) {
         fprintf(2, "usage: kill pid...\n");
         exit(1);

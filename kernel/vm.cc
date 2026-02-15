@@ -18,7 +18,6 @@ extern char trampoline[]; // trampoline.S
 // Make a direct-map page table for the kernel.
 pagetable_t
 kvmmake(void) {
-
     const auto kpgtbl = static_cast<pagetable_t>(kalloc());
     memset(kpgtbl, 0, PGSIZE);
 
@@ -108,7 +107,6 @@ walk(pagetable_t pagetable, const uint64 va, const int alloc) {
 // Can only be used to look up user pages.
 uint64
 walkaddr(const pagetable_t pagetable, const uint64 va) {
-
     if (va >= MAXVA)
         return 0;
 
@@ -193,7 +191,6 @@ void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages,
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 uint64
 uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz, const int xperm) {
-
     if (newsz < oldsz)
         return oldsz;
 
@@ -294,7 +291,6 @@ err:
 // mark a PTE invalid for user access.
 // used by exec for the user stack guard page.
 void uvmclear(const pagetable_t pagetable, const uint64 va) {
-
     pte_t *pte = walk(pagetable, va, 0);
     if (pte == nullptr)
         panic("uvmclear");
@@ -305,7 +301,6 @@ void uvmclear(const pagetable_t pagetable, const uint64 va) {
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
 int copyout(const pagetable_t pagetable, uint64 dstva, const char *src, uint64 len) {
-
     while (len > 0) {
         const uint64 va0 = PGROUNDDOWN(dstva);
         if (va0 >= MAXVA)
@@ -339,7 +334,6 @@ int copyout(const pagetable_t pagetable, uint64 dstva, const char *src, uint64 l
 // Copy len bytes to dst from virtual address srcva in a given page table.
 // Return 0 on success, -1 on error.
 int copyin(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
-
     while (len > 0) {
         const uint64 va0 = PGROUNDDOWN(srcva);
         uint64 pa0 = walkaddr(pagetable, va0);

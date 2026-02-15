@@ -1,7 +1,6 @@
 #include "user/user.h"
 
 int main(const int argc, char *argv[]) {
-
     for (int i = 1; i < argc; i++) {
         write(1, argv[i], strlen(argv[i]));
         if (i + 1 < argc) {

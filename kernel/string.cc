@@ -12,7 +12,6 @@ memset(void *dst, const int c, const uint n) {
 }
 
 int memcmp(const void *v1, const void *v2, uint n) {
-
     auto s1 = static_cast<const uchar *>(v1);
     auto s2 = static_cast<const uchar *>(v2);
     while (n-- > 0) {
@@ -26,7 +25,6 @@ int memcmp(const void *v1, const void *v2, uint n) {
 
 void *
 memmove(void *dst, const void *src, uint n) {
-
     if (n == 0)
         return dst;
 
@@ -60,7 +58,6 @@ int strncmp(const char *p, const char *q, uint n) {
 
 char *
 strncpy(char *s, const char *t, int n) {
-
     char *os = s;
     while (n-- > 0 && (*s++ = *t++) != 0)
         ;
@@ -72,7 +69,6 @@ strncpy(char *s, const char *t, int n) {
 // Like strncpy but guaranteed to NUL-terminate.
 char *
 safestrcpy(char *s, const char *t, int n) {
-
     char *os = s;
     if (n <= 0)
         return os;

@@ -230,7 +230,6 @@ void copyinstr3(const char *s) {
 // See if the kernel refuses to read/write user memory that the
 // application doesn't have anymore, because it returned it.
 void rwsbrk(const char *s) {
-
     const uint64 a = (uint64)sbrk(8192);
 
     if (a == (uint64)SBRK_ERROR) {
@@ -490,7 +489,6 @@ void openiputtest(const char *s) {
 // simple file system tests
 
 void opentest(const char *s) {
-
     int fd = open("echo", 0);
     if (fd < 0) {
         printf("%s: open echo failed!\n", s);
@@ -825,7 +823,6 @@ void preempt(const char *s) {
 
 // try to find any races between exit and wait
 void exitwait(const char *s) {
-
     for (int i = 0; i < 100; i++) {
         const int pid = fork();
         if (pid < 0) {
@@ -1410,7 +1407,6 @@ void concreate(const char *s) {
 // another concurrent link/unlink/create test,
 // to look for deadlocks.
 void linkunlink(const char *s) {
-
     unlink("x");
     const int pid = fork();
     if (pid < 0) {
@@ -1437,7 +1433,6 @@ void linkunlink(const char *s) {
 }
 
 void subdir(const char *s) {
-
     unlink("ff");
     if (mkdir("dd") != 0) {
         printf("%s: mkdir dd failed\n", s);
@@ -1614,7 +1609,6 @@ void subdir(const char *s) {
 
 // test writes that are larger than the log.
 void bigwrite(const char *s) {
-
     unlink("bigwrite");
     for (int sz = 499; sz < (MAXOPBLOCKS + 2) * BSIZE; sz += 471) {
         const int fd = open("bigwrite", O_CREATE | O_RDWR);
@@ -1687,7 +1681,6 @@ void bigfile(const char *s) {
 }
 
 void fourteen(const char *s) {
-
     // DIRSIZ is 14.
 
     if (mkdir("12345678901234") != 0) {
@@ -1765,7 +1758,6 @@ void rmdot(const char *s) {
 }
 
 void dirfile(const char *s) {
-
     int fd = open("dirfile", O_CREATE);
     if (fd < 0) {
         printf("%s: create dirfile failed\n", s);
@@ -2004,7 +1996,6 @@ void sbrkmuch(const char *s) {
 
 // can we read the kernel's memory?
 void kernmem(const char *s) {
-
     for (auto a = (char *)KERNBASE; a < (char *)(KERNBASE + 2000000); a += 50000) {
         const int pid = fork();
         if (pid < 0) {
@@ -2139,7 +2130,6 @@ void sbrkarg(const char *s) {
 }
 
 void validatetest(const char *s) {
-
     const int hi = 1100 * 1024;
     for (uint64 p = 0; p <= static_cast<uint>(hi); p += PGSIZE) {
         // try to crash the kernel by passing in a bad string pointer
@@ -2153,7 +2143,6 @@ void validatetest(const char *s) {
 // does uninitialized data start out zero?
 char uninit[10000];
 void bsstest(const char *s) {
-
     for (int i = 0; i < static_cast<int>(sizeof(uninit)); i++) {
         if (uninit[i] != '\0') {
             printf("%s: bss test failed\n", s);

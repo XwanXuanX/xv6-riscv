@@ -176,7 +176,6 @@ void panic(const char *s) {
 }
 
 int fork1(void) {
-
     const int pid = fork();
     if (pid == -1)
         panic("fork");
@@ -206,7 +205,6 @@ cmd *redir_cmd(cmd *subcmd, char *file, char *efile, const int mode, const int f
 }
 
 cmd *pipe_cmd(cmd *left, cmd *right) {
-
     const auto cmd = static_cast<pipecmd *>(malloc(sizeof(pipecmd)));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = PIPE;
@@ -216,7 +214,6 @@ cmd *pipe_cmd(cmd *left, cmd *right) {
 }
 
 cmd *list_cmd(cmd *left, cmd *right) {
-
     const auto cmd = static_cast<listcmd *>(malloc(sizeof(listcmd)));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = LIST;
@@ -226,7 +223,6 @@ cmd *list_cmd(cmd *left, cmd *right) {
 }
 
 cmd *back_cmd(cmd *subcmd) {
-
     const auto cmd = static_cast<backcmd *>(malloc(sizeof(backcmd)));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = BACK;
@@ -240,7 +236,6 @@ char whitespace[] = " \t\r\n\v";
 char symbols[] = "<|>&;()";
 
 int gettoken(char **ps, const char *es, char **q, char **eq) {
-
     char *s = *ps;
     while (s < es && strchr(whitespace, *s))
         s++;
@@ -281,7 +276,6 @@ int gettoken(char **ps, const char *es, char **q, char **eq) {
 }
 
 int peek(char **ps, const char *es, const char *toks) {
-
     char *s = *ps;
     while (s < es && strchr(whitespace, *s))
         s++;
@@ -295,7 +289,6 @@ cmd *parseexec(char **, char *);
 cmd *nulterminate(cmd *);
 
 cmd *parsecmd(char *s) {
-
     char *es = s + strlen(s);
     cmd *cmd = parseline(&s, es);
     peek(&s, es, "");
@@ -308,7 +301,6 @@ cmd *parsecmd(char *s) {
 }
 
 cmd *parseline(char **ps, char *es) {
-
     cmd *cmd = parsepipe(ps, es);
     while (peek(ps, es, "&")) {
         gettoken(ps, es, nullptr, nullptr);
@@ -322,7 +314,6 @@ cmd *parseline(char **ps, char *es) {
 }
 
 cmd *parsepipe(char **ps, char *es) {
-
     cmd *cmd = parseexec(ps, es);
     if (peek(ps, es, "|")) {
         gettoken(ps, es, nullptr, nullptr);
@@ -354,7 +345,6 @@ cmd *parseredirs(cmd *cmd, char **ps, char *es) {
 }
 
 cmd *parseblock(char **ps, char *es) {
-
     if (!peek(ps, es, "("))
         panic("parseblock");
     gettoken(ps, es, nullptr, nullptr);

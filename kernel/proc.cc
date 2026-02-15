@@ -45,7 +45,6 @@ spinlock wait_lock;
 // Map it high in memory, followed by an invalid
 // guard page.
 void proc_mapstacks(const pagetable_t kpgtbl) {
-
     for (const struct proc *p = proc; p < &proc[NPROC]; p++) {
         auto pa = reinterpret_cast<char *>(kalloc());
         if (pa == nullptr)
@@ -57,7 +56,6 @@ void proc_mapstacks(const pagetable_t kpgtbl) {
 
 // initialize the proc table.
 void procinit(void) {
-
     pid_lock.init_lock("nextpid");
     wait_lock.init_lock("wait_lock");
     for (struct proc *p = proc; p < &proc[NPROC]; p++) {
@@ -94,7 +92,6 @@ myproc(void) {
 }
 
 int allocpid() {
-
     pid_lock.lock();
     const int pid = nextpid;
     nextpid = nextpid + 1;
@@ -204,7 +201,6 @@ freeproc(struct proc *p) {
 // but with trampoline and trapframe pages.
 pagetable_t
 proc_pagetable(struct proc *p) {
-
     // An empty page table.
     const pagetable_t pagetable = uvmcreate();
     if (pagetable == nullptr)
@@ -242,7 +238,6 @@ void proc_freepagetable(const pagetable_t pagetable, const uint64 sz) {
 
 // Set up first user process.
 void userinit(void) {
-
     struct proc *p = allocproc();
     // Process lock is still held
     initproc = p;
@@ -819,7 +814,6 @@ void sleep(void *chan, spinlock *lk) {
 // Wake up all processes sleeping on channel chan.
 // Caller should hold the condition lock.
 void wakeup(void *chan) {
-
     for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         if (p != myproc()) {
             p->lock.lock();
@@ -851,7 +845,6 @@ void wakeup(void *chan) {
 // The victim won't exit until it tries to return
 // to user space (see usertrap() in trap.c).
 int kkill(const int pid) {
-
     for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         p->lock.lock();
         if (p->pid == pid) {
@@ -889,7 +882,6 @@ void setkilled(struct proc *p) {
 }
 
 int killed(struct proc *p) {
-
     p->lock.lock();
     const int k = p->killed;
     p->lock.unlock();

@@ -17,7 +17,6 @@ extern "C" void start(const int argc, char **argv) {
 
 char *
 strcpy(char *s, const char *t) {
-
     char *os = s;
     while ((*s++ = *t++) != 0)
         ;
@@ -73,7 +72,6 @@ gets(char *buf, const int max) {
 }
 
 int stat(const char *n, xv6::stats *st) {
-
     const int fd = open(n, O_RDONLY);
     if (fd < 0)
         return -1;
@@ -83,7 +81,6 @@ int stat(const char *n, xv6::stats *st) {
 }
 
 int atoi(const char *s) {
-
     int n = 0;
     while ('0' <= *s && *s <= '9')
         n = n * 10 + *s++ - '0';
@@ -92,7 +89,6 @@ int atoi(const char *s) {
 
 void *
 memmove(void *vdst, const void *vsrc, int n) {
-
     auto dst = static_cast<char *>(vdst);
     const char *src = (char *)vsrc;
     if (src > dst) {

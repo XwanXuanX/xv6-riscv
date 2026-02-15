@@ -46,7 +46,6 @@ void fsinit(const int dev) {
 // Zero a block.
 static void
 bzero(const int dev, const int bno) {
-
     buf *bp = bread(dev, bno);
     memset(bp->data, 0, BSIZE);
     log_write(bp);
@@ -59,7 +58,6 @@ bzero(const int dev, const int bno) {
 // returns 0 if out of disk space.
 static uint
 balloc(const uint dev) {
-
     buf *bp = nullptr;
     for (uint b = 0; b < sb.size; b += BPB) {
         bp = bread(dev, BBLOCK(b, sb));
@@ -82,7 +80,6 @@ balloc(const uint dev) {
 // Free a disk block.
 static void
 bfree(const int dev, const uint b) {
-
     buf *bp = bread(dev, BBLOCK(b, sb));
     const int bi = b % BPB;
     const int m = 1 << (bi % 8);
@@ -184,7 +181,6 @@ static inode *iget(uint dev, uint inum);
 // or NULL if there is no free inode.
 inode *
 ialloc(const uint dev, const short type) {
-
     for (uint inum = 1; inum < sb.ninodes; inum++) {
         buf *bp = bread(dev, IBLOCK(inum, sb));
         dinode *dip = reinterpret_cast<struct dinode *>(bp->data) + inum % IPB;
@@ -206,7 +202,6 @@ ialloc(const uint dev, const short type) {
 // that lives on disk.
 // Caller must hold ip->lock.
 void iupdate(inode *ip) {
-
     buf *bp = bread(ip->dev, IBLOCK(ip->inum, sb));
     dinode *dip = (struct dinode *)bp->data + ip->inum % IPB;
     dip->type = ip->type;
@@ -267,7 +262,6 @@ idup(inode *ip) {
 // Lock the given inode.
 // Reads the inode from disk if necessary.
 void ilock(inode *ip) {
-
     if (ip == nullptr || ip->ref < 1)
         panic("ilock");
 
@@ -406,7 +400,6 @@ bmap(inode *ip, uint bn) {
 // Truncate inode (discard contents).
 // Caller must hold ip->lock.
 void itrunc(inode *ip) {
-
     for (uint i = 0; i < NDIRECT; i++) {
         if (ip->addrs[i]) {
             bfree(ip->dev, ip->addrs[i]);
@@ -585,7 +578,6 @@ int dirlink(inode *dp, const char *name, const uint inum) {
 //
 static const char *
 skipelem(const char *path, char *name) {
-
     while (*path == '/')
         path++;
     if (*path == 0)

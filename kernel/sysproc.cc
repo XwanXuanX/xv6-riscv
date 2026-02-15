@@ -91,7 +91,6 @@ sys_kill() {
 // since start.
 uint64
 sys_uptime() {
-
     tickslock.lock();
     const uint xticks = ticks;
     tickslock.unlock();

@@ -40,7 +40,6 @@ void freerange(void *pa_start, void *pa_end) {
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
 void kfree(void *pa) {
-
     if ((uint64)pa % PGSIZE != 0 || static_cast<char *>(pa) < end || (uint64)pa >= PHYSTOP)
         panic("kfree");
 
@@ -60,7 +59,6 @@ void kfree(void *pa) {
 // Returns 0 if the memory cannot be allocated.
 void *
 kalloc(void) {
-
     kmem.lock.lock();
     run *r = kmem.freelist;
     if (r)

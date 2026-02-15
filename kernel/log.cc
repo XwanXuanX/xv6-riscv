@@ -63,7 +63,6 @@ void initlog(const int dev, superblock *sb) {
 // Copy committed blocks from log to their home location
 static void
 install_trans(const int recovering) {
-
     for (int tail = 0; tail < log.lh.n; tail++) {
         if (recovering) {
             printf("recovering tail %d dst %d\n", tail, log.lh.block[tail]);
@@ -165,7 +164,6 @@ void end_op(void) {
 // Copy modified blocks from cache to log.
 static void
 write_log(void) {
-
     for (int tail = 0; tail < log.lh.n; tail++) {
         buf *to = bread(log.dev, log.start + tail + 1); // log block
         buf *from = bread(log.dev, log.lh.block[tail]); // cache block

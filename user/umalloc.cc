@@ -41,7 +41,6 @@ void free(void *ap) {
 
 static Header *
 morecore(uint nu) {
-
     if (nu < 4096)
         nu = 4096;
     char *p = sbrk(nu * sizeof(Header));
