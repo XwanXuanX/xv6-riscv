@@ -10,7 +10,7 @@ using namespace xv6;
 // wrapper so that it's OK if main() does not call exit().
 //
 extern "C" void start(const int argc, char **argv) {
-    extern int main(int argc, char **argv);
+    extern int main(int, char **);
     const int r = main(argc, argv);
     exit(r);
 }

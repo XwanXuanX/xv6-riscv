@@ -339,6 +339,7 @@ cmd *parseredirs(cmd *cmd, char **ps, char *es) {
         case '+': // >>
             cmd = redir_cmd(cmd, q, eq, O_WRONLY | O_CREATE, 1);
             break;
+        default:;
         }
     }
     return cmd;
@@ -426,6 +427,7 @@ cmd *nulterminate(cmd *cmd) {
         bcmd = (backcmd *)cmd;
         nulterminate(bcmd->command);
         break;
+    default:;
     }
     return cmd;
 }

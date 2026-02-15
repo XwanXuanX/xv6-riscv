@@ -134,7 +134,7 @@ int filewrite(file *f, const uint64 addr, const int n) {
         // the maximum log transaction size, including
         // i-node, indirect block, allocation blocks,
         // and 2 blocks of slop for non-aligned writes.
-        const int max = (MAXOPBLOCKS - 1 - 1 - 2) / 2 * BSIZE;
+        constexpr int max = (MAXOPBLOCKS - 1 - 1 - 2) / 2 * BSIZE;
         int i = 0;
         while (i < n) {
             int n1 = n - i;

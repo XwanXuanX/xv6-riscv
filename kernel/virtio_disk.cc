@@ -180,7 +180,7 @@ free_desc(const int i) {
 // free a chain of descriptors.
 static void
 free_chain(int i) {
-    while (1) {
+    while (true) {
         const int flag = disk.desc[i].flags;
         const int nxt = disk.desc[i].next;
         free_desc(i);
@@ -217,7 +217,7 @@ void virtio_disk_rw(buf *b, const int write) {
 
     // allocate the three descriptors.
     int idx[3];
-    while (1) {
+    while (true) {
         if (alloc3_desc(idx) == 0) {
             break;
         }

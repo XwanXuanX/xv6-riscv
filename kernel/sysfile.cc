@@ -294,10 +294,9 @@ sys_open() {
     int fd, omode;
     file *f;
     inode *ip;
-    int n;
 
     argint(1, &omode);
-    if ((n = argstr(0, path, MAXPATH)) < 0)
+    if (argstr(0, path, MAXPATH) < 0)
         return -1;
 
     begin_op();

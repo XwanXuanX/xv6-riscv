@@ -138,7 +138,7 @@ void uartintr() {
     tx_lock.unlock();
 
     // read and process incoming characters, if any.
-    while (1) {
+    while (true) {
         const int c = uartgetc();
         if (c == -1)
             break;

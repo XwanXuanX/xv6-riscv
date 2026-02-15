@@ -116,7 +116,7 @@ recover_from_log() {
 // called at the start of each FS system call.
 void begin_op() {
     log.lock.lock();
-    while (1) {
+    while (true) {
         if (log.committing) {
             sleep(&log, &log.lock);
         } else if (log.lh.n + (log.outstanding + 1) * MAXOPBLOCKS > LOGBLOCKS) {

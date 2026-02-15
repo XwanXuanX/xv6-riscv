@@ -65,6 +65,7 @@ void ls(const char *path) {
             printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, static_cast<int>(st.size));
         }
         break;
+    default:;
     }
     close(fd);
 }

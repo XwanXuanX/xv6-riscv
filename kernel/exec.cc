@@ -10,7 +10,7 @@ namespace xv6 {
 static int loadseg(pde_t *, uint64, inode *, uint, uint);
 
 // map ELF permissions to PTE permission bits.
-int flags2perm(const int flags) {
+int flags2_perm(const int flags) {
     int perm = 0;
     if (flags & 0x1)
         perm = PTE_X;
@@ -65,7 +65,7 @@ int kexec(const char *path, const char **argv) {
             goto bad;
         if (ph.vaddr % PGSIZE != 0)
             goto bad;
-        if ((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz, flags2perm(ph.flags))) == 0)
+        if ((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz, flags2_perm(ph.flags))) == 0)
             goto bad;
         sz = sz1;
         if (loadseg(pagetable, ph.vaddr, ip, ph.off, ph.filesz) < 0)

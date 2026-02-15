@@ -37,7 +37,7 @@ void copyin(const char *s) {
             printf("open(copyin1) failed\n");
             exit(1);
         }
-        int n = write(fd, (void *)addr, 8192);
+        int n = write(fd, reinterpret_cast<void *>(addr), 8192);
         if (n >= 0) {
             printf("write(fd, %p, 8192) returned %d, not -1\n", (void *)addr, n);
             exit(1);
@@ -69,12 +69,10 @@ void copyin(const char *s) {
 // what if you pass ridiculous pointers to system calls
 // that write user memory with copyout?
 void copyout(const char *s) {
-    const uint64 addrs[] = {0LL, 0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
-                            0xffffffffffffffff};
+    constexpr uint64 addrs[] = {0LL, 0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
+                                0xffffffffffffffff};
 
-    for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
-        const uint64 addr = addrs[ai];
-
+    for (unsigned long addr : addrs) {
         const int fd = open("README", 0);
         if (fd < 0) {
             printf("open(README) failed\n");
@@ -109,12 +107,10 @@ void copyout(const char *s) {
 
 // what if you pass ridiculous string pointers to system calls?
 void copyinstr1(const char *s) {
-    const uint64 addrs[] = {0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
-                            0xffffffffffffffff};
+    constexpr uint64 addrs[] = {0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
+                                0xffffffffffffffff};
 
-    for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
-        const uint64 addr = addrs[ai];
-
+    for (unsigned long addr : addrs) {
         const int fd = open((char *)addr, O_CREATE | O_WRONLY);
         if (fd >= 0) {
             printf("open(%p) returned %d, not -1\n", (void *)addr, fd);
@@ -188,7 +184,7 @@ void copyinstr2(const char *s) {
 // what if a string argument crosses over the end of last user page?
 void copyinstr3(const char *s) {
     sbrk(8192);
-    uint64 top = (uint64)sbrk(0);
+    auto top = reinterpret_cast<uint64>(sbrk(0));
     if (top % PGSIZE != 0) {
         sbrk(PGSIZE - top % PGSIZE);
     }
@@ -230,9 +226,9 @@ void copyinstr3(const char *s) {
 // See if the kernel refuses to read/write user memory that the
 // application doesn't have anymore, because it returned it.
 void rwsbrk(const char *s) {
-    const uint64 a = (uint64)sbrk(8192);
+    const auto a = reinterpret_cast<uint64>(sbrk(8192));
 
-    if (a == (uint64)SBRK_ERROR) {
+    if (a == reinterpret_cast<uint64>(SBRK_ERROR)) {
         printf("sbrk(rwsbrk) failed\n");
         exit(1);
     }
@@ -752,7 +748,7 @@ void killstatus(const char *s) {
             exit(1);
         }
         if (pid1 == 0) {
-            while (1) {
+            while (true) {
                 getpid();
             }
             exit(0);
@@ -941,7 +937,7 @@ void forkforkfork(const char *s) {
         exit(1);
     }
     if (pid == 0) {
-        while (1) {
+        while (true) {
             const int fd = open("stopforking", 0);
             if (fd >= 0) {
                 exit(0);
@@ -985,13 +981,11 @@ void reparent2(const char *s) {
 
 // allocate all mem, free it, and allocate again
 void mem(const char *s) {
-    void *m2;
-    int pid;
-
-    if ((pid = fork()) == 0) {
+    if (fork() == 0) {
+        void *m2;
         void *m1 = nullptr;
         while ((m2 = malloc(10001)) != nullptr) {
-            *static_cast<char **>(m2) = reinterpret_cast<char *>(m1);
+            *static_cast<char **>(m2) = static_cast<char *>(m1);
             m1 = m2;
         }
         while (m1) {
@@ -1022,7 +1016,7 @@ void mem(const char *s) {
 // two processes write to the same file descriptor
 // is the offset shared? does inode locking work?
 void sharedfd(const char *s) {
-    int i, n, np;
+    int i, np;
     enum { N = 1000,
            SZ = 10 };
     char buf[SZ];
@@ -1056,7 +1050,7 @@ void sharedfd(const char *s) {
         exit(1);
     }
     int nc = np = 0;
-    while ((n = read(fd, buf, sizeof(buf))) > 0) {
+    while (read(fd, buf, sizeof(buf)) > 0) {
         for (i = 0; i < static_cast<int>(sizeof(buf)); i++) {
             if (buf[i] == 'c')
                 nc++;
@@ -2106,8 +2100,6 @@ void sbrkfail(const char *s) {
 
 // test reads/writes from/to allocated memory
 void sbrkarg(const char *s) {
-    int n;
-
     char *a = sbrk(PGSIZE);
     const int fd = open("sbrk", O_CREATE | O_WRONLY);
     unlink("sbrk");
@@ -2115,7 +2107,7 @@ void sbrkarg(const char *s) {
         printf("%s: open sbrk failed\n", s);
         exit(1);
     }
-    if ((n = write(fd, a, PGSIZE)) < 0) {
+    if (write(fd, a, PGSIZE) < 0) {
         printf("%s: write sbrk failed\n", s);
         exit(1);
     }
@@ -2130,7 +2122,7 @@ void sbrkarg(const char *s) {
 }
 
 void validatetest(const char *s) {
-    const int hi = 1100 * 1024;
+    constexpr int hi = 1100 * 1024;
     for (uint64 p = 0; p <= static_cast<uint>(hi); p += PGSIZE) {
         // try to crash the kernel by passing in a bad string pointer
         if (link("nosuchfile", (char *)p) != -1) {
@@ -2213,7 +2205,7 @@ void fsfull() {
             break;
         }
         int total = 0;
-        while (1) {
+        while (true) {
             const int cc = write(fd, buf, BSIZE);
             if (cc < BSIZE)
                 break;
@@ -2278,8 +2270,8 @@ void stacktest(const char *s) {
 // cause a fault, e.g. process's text and TRAMPOLINE.
 void nowrite(const char *s) {
     int xstatus;
-    const uint64 addrs[] = {0, 0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
-                            0xffffffffffffffff};
+    constexpr uint64 addrs[] = {0, 0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
+                                0xffffffffffffffff};
 
     for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
         const int pid = fork();
@@ -2499,7 +2491,7 @@ void lazy_copy(const char *s) {
     }
 
     // read() and write() to these addresses should fail.
-    const unsigned long bad[] = {
+    constexpr unsigned long bad[] = {
         0x3fffffc000,
         0x3fffffd000,
         0x3fffffe000,
@@ -2555,7 +2547,7 @@ void lazy_sbrk(const char *s) {
     }
 
     p = sbrk(PGSIZE);
-    if (p == (char *)-1 || (uint64)p != TRAPFRAME - PGSIZE) {
+    if (p == reinterpret_cast<char *>(-1) || reinterpret_cast<uint64>(p) != TRAPFRAME - PGSIZE) {
         printf("sbrk(%d) returned %p, not expected TRAPFRAME-PGSIZE\n", PGSIZE, p);
         exit(1);
     }
@@ -2698,8 +2690,8 @@ void bigdir(const char *s) {
 // concurrent writes to try to provoke deadlock in the virtio disk
 // driver.
 void manywrites(const char *s) {
-    const int nchildren = 4;
-    const int howmany = 30; // increase to look for deadlock
+    constexpr int nchildren = 4;
+    constexpr int howmany = 30; // increase to look for deadlock
 
     for (int ci = 0; ci < nchildren; ci++) {
         const int pid = fork();
@@ -2722,7 +2714,7 @@ void manywrites(const char *s) {
                         printf("%s: cannot create %s\n", s, name);
                         exit(1);
                     }
-                    const int sz = sizeof(buf);
+                    constexpr int sz = sizeof(buf);
                     const int cc = write(fd, buf, sz);
                     if (cc != sz) {
                         printf("%s: write(%d) ret %d\n", s, sz, cc);
@@ -2753,7 +2745,7 @@ void manywrites(const char *s) {
 // out of blocks. assumed_free may need to be raised to be more than
 // the number of free blocks. this test takes a long time.
 void badwrite(const char *s) {
-    const int assumed_free = 600;
+    constexpr int assumed_free = 600;
 
     unlink("junk");
     for (int i = 0; i < assumed_free; i++) {
@@ -2794,7 +2786,7 @@ void execout(const char *s) {
         }
         if (pid == 0) {
             // allocate all of memory.
-            while (1) {
+            while (true) {
                 char *a = sbrk(PGSIZE);
                 if (a == SBRK_ERROR)
                     break;
@@ -2853,7 +2845,7 @@ void diskfull(const char *s) {
     // merely fails (doesn't panic) if it can't extend
     // directory content. one of these file creations
     // is expected to fail.
-    const int nzz = 128;
+    constexpr int nzz = 128;
     for (int i = 0; i < nzz; i++) {
         char name[32];
         name[0] = 'z';
@@ -2896,7 +2888,7 @@ void diskfull(const char *s) {
 }
 
 void outofinodes(const char *s) {
-    const int nzz = 32 * 32;
+    constexpr int nzz = 32 * 32;
     for (int i = 0; i < nzz; i++) {
         char name[32];
         name[0] = 'z';
@@ -2982,7 +2974,7 @@ int runtests(test *tests, char *justone, const int continuous) {
 int countfree() {
     int n = 0;
     const uint64 sz0 = reinterpret_cast<uint64>(sbrk(0));
-    while (1) {
+    while (true) {
         const char *a = sbrk(PGSIZE);
         if (a == SBRK_ERROR) {
             break;

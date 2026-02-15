@@ -50,7 +50,7 @@ void go(const int which_child) {
     }
     chdir("/");
 
-    while (1) {
+    while (true) {
         iters++;
         if (iters % 500 == 0)
             write(1, which_child ? "B" : "A", 1);
@@ -273,16 +273,16 @@ void go(const int which_child) {
             close(aa[0]);
             close(aa[1]);
             close(bb[1]);
-            char buf[4] = {0, 0, 0, 0};
-            read(bb[0], buf + 0, 1);
-            read(bb[0], buf + 1, 1);
-            read(bb[0], buf + 2, 1);
+            char str[4] = {0, 0, 0, 0};
+            read(bb[0], str + 0, 1);
+            read(bb[0], str + 1, 1);
+            read(bb[0], str + 2, 1);
             close(bb[0]);
             int st1, st2;
             wait(&st1);
             wait(&st2);
-            if (st1 != 0 || st2 != 0 || strcmp(buf, "hi\n") != 0) {
-                printf("grind: exec pipeline failed %d %d \"%s\"\n", st1, st2, buf);
+            if (st1 != 0 || st2 != 0 || strcmp(str, "hi\n") != 0) {
+                printf("grind: exec pipeline failed %d %d \"%s\"\n", st1, st2, str);
                 exit(1);
             }
         }
@@ -328,7 +328,7 @@ void iter() {
 }
 
 int main() {
-    while (1) {
+    while (true) {
         const int pid = fork();
         if (pid == 0) {
             iter();

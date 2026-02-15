@@ -40,6 +40,7 @@ argraw(const int n) {
         return p->trapf->a4;
     case 5:
         return p->trapf->a5;
+    default:;
     }
     panic("argraw");
     return -1;
