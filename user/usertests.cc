@@ -70,7 +70,7 @@ void copyin(const char *s) {
 // that write user memory with copyout?
 void copyout(const char *s) {
     const uint64 addrs[] = {0LL, 0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
-                      0xffffffffffffffff};
+                            0xffffffffffffffff};
 
     for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
         const uint64 addr = addrs[ai];
@@ -110,7 +110,7 @@ void copyout(const char *s) {
 // what if you pass ridiculous string pointers to system calls?
 void copyinstr1(const char *s) {
     const uint64 addrs[] = {0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
-                      0xffffffffffffffff};
+                            0xffffffffffffffff};
 
     for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
         const uint64 addr = addrs[ai];
@@ -2290,7 +2290,7 @@ void stacktest(const char *s) {
 void nowrite(const char *s) {
     int xstatus;
     const uint64 addrs[] = {0, 0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
-                      0xffffffffffffffff};
+                            0xffffffffffffffff};
 
     for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
         const int pid = fork();

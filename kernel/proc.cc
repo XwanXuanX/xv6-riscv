@@ -77,8 +77,7 @@ int cpuid() {
 
 // Return this CPU's cpu struct.
 // Interrupts must be disabled.
-cpu *
-mycpu(void) {
+cpu *mycpu(void) {
     const int id = cpuid();
     cpu *c = &cpus[id];
     return c;

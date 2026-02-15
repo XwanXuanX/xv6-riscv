@@ -28,10 +28,10 @@ struct context {
 
 // Per-CPU state.
 struct cpu {
-    struct proc *proc;      // The process running on this cpu, or null.
-    context ctx; // swtch() here to enter scheduler().
-    int noff;               // Depth of push_off() nesting.
-    int intena;             // Were interrupts enabled before push_off()?
+    struct proc *proc; // The process running on this cpu, or null.
+    context ctx;       // swtch() here to enter scheduler().
+    int noff;          // Depth of push_off() nesting.
+    int intena;        // Were interrupts enabled before push_off()?
 };
 
 extern cpu cpus[NCPU];
@@ -157,29 +157,29 @@ struct proc {
 
     // p->lock must be held when using these:
     procstate state; // Process state
-    void *chan;           // If non-zero, sleeping on chan
-    int killed;           // If non-zero, have been killed
-    int xstate;           // Exit status to be returned to parent's wait
-    int pid;              // Process ID
-    int in_ready_q;       // marks if this process is in ready queue or not (for validation)
-    int qlevel;           // current queue level
-    int qticks;           // ticks used at current level
-    int epoch;            // "version number" of the process
-    int slice_left;       // the remaining ticks left before preemption
-    int need_yield;       // signal to `kerneltrap()` and `usertrap()` to yield when the time slice is used up
+    void *chan;      // If non-zero, sleeping on chan
+    int killed;      // If non-zero, have been killed
+    int xstate;      // Exit status to be returned to parent's wait
+    int pid;         // Process ID
+    int in_ready_q;  // marks if this process is in ready queue or not (for validation)
+    int qlevel;      // current queue level
+    int qticks;      // ticks used at current level
+    int epoch;       // "version number" of the process
+    int slice_left;  // the remaining ticks left before preemption
+    int need_yield;  // signal to `kerneltrap()` and `usertrap()` to yield when the time slice is used up
 
     // wait_lock must be held when using this:
     proc *parent; // Parent process
 
     // these are private to the process, so p->lock need not be held.
-    uint64 kstack;               // Virtual address of kernel stack
-    uint64 sz;                   // Size of process memory (bytes)
-    pagetable_t pagetable;       // User page table
-    trapframe *trapf; // data page for trampoline.S
-    context ctx;      // swtch() here to run process
-    struct file *ofile[NOFILE];  // Open files
-    struct inode *cwd;           // Current directory
-    char name[16];               // Process name (debugging)
+    uint64 kstack;              // Virtual address of kernel stack
+    uint64 sz;                  // Size of process memory (bytes)
+    pagetable_t pagetable;      // User page table
+    trapframe *trapf;           // data page for trampoline.S
+    context ctx;                // swtch() here to run process
+    struct file *ofile[NOFILE]; // Open files
+    struct inode *cwd;          // Current directory
+    char name[16];              // Process name (debugging)
 };
 
 } // namespace xv6

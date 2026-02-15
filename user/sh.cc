@@ -186,16 +186,14 @@ int fork1(void) {
 // PAGEBREAK!
 //  Constructors
 
-cmd *
-exec_cmd() {
+cmd *exec_cmd() {
     const auto cmd = static_cast<struct execcmd *>(malloc(sizeof(execcmd)));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = EXEC;
     return reinterpret_cast<struct cmd *>(cmd);
 }
 
-cmd *
-redir_cmd(cmd *subcmd, char *file, char *efile, const int mode, const int fd) {
+cmd *redir_cmd(cmd *subcmd, char *file, char *efile, const int mode, const int fd) {
     const auto cmd = static_cast<struct redircmd *>(malloc(sizeof(redircmd)));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = REDIR;
@@ -207,8 +205,7 @@ redir_cmd(cmd *subcmd, char *file, char *efile, const int mode, const int fd) {
     return reinterpret_cast<struct cmd *>(cmd);
 }
 
-cmd *
-pipe_cmd(cmd *left, cmd *right) {
+cmd *pipe_cmd(cmd *left, cmd *right) {
 
     const auto cmd = static_cast<pipecmd *>(malloc(sizeof(pipecmd)));
     memset(cmd, 0, sizeof(*cmd));
@@ -218,8 +215,7 @@ pipe_cmd(cmd *left, cmd *right) {
     return reinterpret_cast<struct cmd *>(cmd);
 }
 
-cmd *
-list_cmd(cmd *left, cmd *right) {
+cmd *list_cmd(cmd *left, cmd *right) {
 
     const auto cmd = static_cast<listcmd *>(malloc(sizeof(listcmd)));
     memset(cmd, 0, sizeof(*cmd));
@@ -229,8 +225,7 @@ list_cmd(cmd *left, cmd *right) {
     return reinterpret_cast<struct cmd *>(cmd);
 }
 
-cmd *
-back_cmd(cmd *subcmd) {
+cmd *back_cmd(cmd *subcmd) {
 
     const auto cmd = static_cast<backcmd *>(malloc(sizeof(backcmd)));
     memset(cmd, 0, sizeof(*cmd));
@@ -299,8 +294,7 @@ cmd *parsepipe(char **, char *);
 cmd *parseexec(char **, char *);
 cmd *nulterminate(cmd *);
 
-cmd *
-parsecmd(char *s) {
+cmd *parsecmd(char *s) {
 
     char *es = s + strlen(s);
     cmd *cmd = parseline(&s, es);
@@ -313,8 +307,7 @@ parsecmd(char *s) {
     return cmd;
 }
 
-cmd *
-parseline(char **ps, char *es) {
+cmd *parseline(char **ps, char *es) {
 
     cmd *cmd = parsepipe(ps, es);
     while (peek(ps, es, "&")) {
@@ -328,8 +321,7 @@ parseline(char **ps, char *es) {
     return cmd;
 }
 
-cmd *
-parsepipe(char **ps, char *es) {
+cmd *parsepipe(char **ps, char *es) {
 
     cmd *cmd = parseexec(ps, es);
     if (peek(ps, es, "|")) {
@@ -339,8 +331,7 @@ parsepipe(char **ps, char *es) {
     return cmd;
 }
 
-cmd *
-parseredirs(cmd *cmd, char **ps, char *es) {
+cmd *parseredirs(cmd *cmd, char **ps, char *es) {
     char *q, *eq;
 
     while (peek(ps, es, "<>")) {
@@ -362,8 +353,7 @@ parseredirs(cmd *cmd, char **ps, char *es) {
     return cmd;
 }
 
-cmd *
-parseblock(char **ps, char *es) {
+cmd *parseblock(char **ps, char *es) {
 
     if (!peek(ps, es, "("))
         panic("parseblock");
@@ -376,8 +366,7 @@ parseblock(char **ps, char *es) {
     return cmd;
 }
 
-cmd *
-parseexec(char **ps, char *es) {
+cmd *parseexec(char **ps, char *es) {
     char *q, *eq;
     int tok;
 
@@ -407,8 +396,7 @@ parseexec(char **ps, char *es) {
 }
 
 // NUL-terminate all the counted strings.
-cmd *
-nulterminate(cmd *cmd) {
+cmd *nulterminate(cmd *cmd) {
     int i;
     backcmd *bcmd;
     execcmd *ecmd;

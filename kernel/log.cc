@@ -70,8 +70,8 @@ install_trans(const int recovering) {
         }
         buf *lbuf = bread(log.dev, log.start + tail + 1); // read log block
         buf *dbuf = bread(log.dev, log.lh.block[tail]);   // read dst
-        memmove(dbuf->data, lbuf->data, BSIZE);                  // copy block to dst
-        bwrite(dbuf);                                            // write dst to disk
+        memmove(dbuf->data, lbuf->data, BSIZE);           // copy block to dst
+        bwrite(dbuf);                                     // write dst to disk
         if (recovering == 0)
             bunpin(dbuf);
         brelse(lbuf);

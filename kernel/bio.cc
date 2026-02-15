@@ -83,8 +83,7 @@ bget(const uint dev, const uint blockno) {
 }
 
 // Return a locked buf with the contents of the indicated block.
-buf *
-bread(const uint dev, const uint blockno) {
+buf *bread(const uint dev, const uint blockno) {
 
     buf *b = bget(dev, blockno);
     if (!b->valid) {
