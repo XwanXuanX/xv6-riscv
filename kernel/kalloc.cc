@@ -30,7 +30,7 @@ void kinit() {
 }
 
 void freerange(void *pa_start, void *pa_end) {
-    char *p = (char *)PGROUNDUP((uint64)pa_start);
+    auto p = (char *)PGROUNDUP((uint64)pa_start);
     for (; p + PGSIZE <= (char *)pa_end; p += PGSIZE)
         kfree(p);
 }
@@ -47,7 +47,7 @@ void kfree(void *pa) {
     // Fill with junk to catch dangling refs.
     memset(pa, 1, PGSIZE);
 
-    struct run *r = (struct run *)pa;
+    const auto r = (struct run *)pa;
 
     kmem.lock.lock();
     r->next = kmem.freelist;

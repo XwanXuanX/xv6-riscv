@@ -40,7 +40,7 @@ uint strlen(const char *s) {
 
 void *
 memset(void *dst, const int c, const uint n) {
-    char *cdst = (char *)dst;
+    const auto cdst = (char *)dst;
     for (uint i = 0; i < n; i++) {
         cdst[i] = c;
     }
@@ -93,7 +93,7 @@ int atoi(const char *s) {
 void *
 memmove(void *vdst, const void *vsrc, int n) {
 
-    char *dst = (char *)vdst;
+    auto dst = (char *)vdst;
     const char *src = (char *)vsrc;
     if (src > dst) {
         while (n-- > 0)

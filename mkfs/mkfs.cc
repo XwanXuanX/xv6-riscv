@@ -52,7 +52,7 @@ void die(const char *);
 ushort
 xshort(const ushort x) {
     ushort y;
-    uchar *a = (uchar *)&y;
+    const auto a = (uchar *)&y;
     a[0] = x;
     a[1] = x >> 8;
     return y;
@@ -60,7 +60,7 @@ xshort(const ushort x) {
 
 uint xint(const uint x) {
     uint y;
-    uchar *a = (uchar *)&y;
+    const auto a = (uchar *)&y;
     a[0] = x;
     a[1] = x >> 8;
     a[2] = x >> 16;

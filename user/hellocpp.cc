@@ -50,7 +50,7 @@ inline void always_assert(const char *msg = nullptr) {
 }
 
 using nullopt_t = const details::S;
-constexpr nullopt_t nullopt = details::S::N;
+constexpr auto nullopt = details::S::N;
 
 template <typename T>
     requires is_default_constructible_v<T>

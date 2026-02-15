@@ -4,7 +4,7 @@ namespace xv6 {
 
 void *
 memset(void *dst, const int c, const uint n) {
-    char *cdst = (char *)dst;
+    const auto cdst = (char *)dst;
     for (uint i = 0; i < n; i++) {
         cdst[i] = c;
     }
@@ -13,8 +13,8 @@ memset(void *dst, const int c, const uint n) {
 
 int memcmp(const void *v1, const void *v2, uint n) {
 
-    const uchar *s1 = (const uchar *)v1;
-    const uchar *s2 = (const uchar *)v2;
+    auto s1 = (const uchar *)v1;
+    auto s2 = (const uchar *)v2;
     while (n-- > 0) {
         if (*s1 != *s2)
             return *s1 - *s2;
@@ -30,8 +30,8 @@ memmove(void *dst, const void *src, uint n) {
     if (n == 0)
         return dst;
 
-    const char *s = (const char *)src;
-    char *d = (char *)dst;
+    auto s = (const char *)src;
+    auto d = (char *)dst;
     if (s < d && s + n > d) {
         s += n;
         d += n;

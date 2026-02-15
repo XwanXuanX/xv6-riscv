@@ -47,7 +47,7 @@ morecore(uint nu) {
     char *p = sbrk(nu * sizeof(Header));
     if (p == SBRK_ERROR)
         return nullptr;
-    Header *hp = (Header *)p;
+    const auto hp = (Header *)p;
     hp->s.size = nu;
     free((void *)(hp + 1));
     return freep;

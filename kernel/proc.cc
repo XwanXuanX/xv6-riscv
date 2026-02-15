@@ -47,7 +47,7 @@ spinlock wait_lock;
 void proc_mapstacks(const pagetable_t kpgtbl) {
 
     for (const struct proc *p = proc; p < &proc[NPROC]; p++) {
-        char *pa = reinterpret_cast<char *>(kalloc());
+        auto pa = reinterpret_cast<char *>(kalloc());
         if (pa == nullptr)
             panic("kalloc");
         const uint64 va = KSTACK((int)(p - proc));

@@ -130,7 +130,7 @@ enum procstate {
      * YES.
      * A process's state can only change to RUNNING in `scheduler()` and when picked.
      * A RUNNING process should not stay in ready queue.
-     * Thus we remove it explicitly by popping it off the queue
+     * Thus, we remove it explicitly by popping it off the queue
      */
     RUNNING,
 

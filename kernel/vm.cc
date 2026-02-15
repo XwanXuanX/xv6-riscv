@@ -19,7 +19,7 @@ extern char trampoline[]; // trampoline.S
 pagetable_t
 kvmmake(void) {
 
-    const pagetable_t kpgtbl = (pagetable_t)kalloc();
+    const auto kpgtbl = (pagetable_t)kalloc();
     memset(kpgtbl, 0, PGSIZE);
 
     // uart registers
@@ -160,7 +160,7 @@ int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size, ui
 // returns 0 if out of memory.
 pagetable_t
 uvmcreate() {
-    const pagetable_t pagetable = (pagetable_t)kalloc();
+    const auto pagetable = (pagetable_t)kalloc();
     if (pagetable == nullptr)
         return nullptr;
     memset(pagetable, 0, PGSIZE);
@@ -199,7 +199,7 @@ uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz, const in
 
     oldsz = PGROUNDUP(oldsz);
     for (uint64 a = oldsz; a < newsz; a += PGSIZE) {
-        char *mem = reinterpret_cast<char *>(kalloc());
+        auto mem = reinterpret_cast<char *>(kalloc());
         if (mem == nullptr) {
             uvmdealloc(pagetable, a, oldsz);
             return 0;

@@ -390,7 +390,7 @@ bmap(struct inode *ip, uint bn) {
             ip->addrs[NDIRECT] = addr;
         }
         struct buf *bp = bread(ip->dev, addr);
-        uint *a = (uint *)bp->data;
+        const auto a = (uint *)bp->data;
         if ((addr = a[bn]) == 0) {
             addr = balloc(ip->dev);
             if (addr) {

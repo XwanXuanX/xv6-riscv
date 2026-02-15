@@ -7,7 +7,7 @@ namespace xv6 {
 
 // Fetch the uint64 at addr from the current process.
 int fetchaddr(const uint64 addr, uint64 *ip) {
-    struct proc *p = myproc();
+    const struct proc *p = myproc();
     if (addr >= p->sz || addr + sizeof(uint64) > p->sz) // both tests needed, in case of overflow
         return -1;
     if (copyin(p->pagetable, (char *)ip, addr, sizeof(*ip)) != 0)
@@ -18,7 +18,7 @@ int fetchaddr(const uint64 addr, uint64 *ip) {
 // Fetch the nul-terminated string at addr from the current process.
 // Returns length of string, not including nul, or -1 for error.
 int fetchstr(const uint64 addr, char *buf, const int max) {
-    struct proc *p = myproc();
+    const struct proc *p = myproc();
     if (copyinstr(p->pagetable, buf, addr, max) < 0)
         return -1;
     return strlen(buf);

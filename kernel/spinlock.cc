@@ -53,9 +53,9 @@ void pop_off() {
 } // namespace impl
 
 void spinlock::init_lock(const char *name) {
-    this->name = name;
-    locked = 0;
-    cpu = nullptr;
+    this->name_ = name;
+    locked_ = 0;
+    cpu_ = nullptr;
 }
 
 // Acquire the lock.
@@ -82,7 +82,7 @@ void spinlock::lock() {
     //   a5 = 1
     //   s1 = &lk->locked
     //   amoswap.w.aq a5, a5, (s1)
-    while (__sync_lock_test_and_set(&locked, 1) != 0)
+    while (__sync_lock_test_and_set(&locked_, 1) != 0)
         ;
 
     // Tell the C compiler and the processor to not move loads or stores
@@ -92,7 +92,7 @@ void spinlock::lock() {
     __sync_synchronize();
 
     // Record info about lock acquisition for holding() and debugging.
-    cpu = mycpu();
+    cpu_ = mycpu();
 }
 
 // Release the lock.
@@ -101,7 +101,7 @@ void spinlock::unlock() {
         panic("release");
     }
 
-    cpu = nullptr;
+    cpu_ = nullptr;
 
     // Tell the C compiler and the CPU to not move loads or stores
     // past this point, to ensure that all the stores in the critical
@@ -118,7 +118,7 @@ void spinlock::unlock() {
     // On RISC-V, sync_lock_release turns into an atomic swap:
     //   s1 = &lk->locked
     //   amoswap.w zero, zero, (s1)
-    __sync_lock_release(&locked);
+    __sync_lock_release(&locked_);
 
     impl::pop_off();
 }
@@ -126,7 +126,7 @@ void spinlock::unlock() {
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
 bool spinlock::holding() {
-    const int r = (locked && cpu == mycpu());
+    const int r = (locked_ && cpu_ == mycpu());
     return r;
 }
 

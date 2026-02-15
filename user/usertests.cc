@@ -198,7 +198,7 @@ void copyinstr3(const char *s) {
         exit(1);
     }
 
-    char *b = (char *)(top - 1);
+    const auto b = (char *)(top - 1);
     *b = 'x';
 
     int ret = unlink(b);
@@ -1972,7 +1972,7 @@ void sbrkmuch(const char *s) {
         exit(1);
     }
 
-    char *lastaddr = (char *)(BIG - 1);
+    const auto lastaddr = (char *)(BIG - 1);
     *lastaddr = 99;
 
     // can one de-allocate?
@@ -2012,7 +2012,7 @@ void sbrkmuch(const char *s) {
 // can we read the kernel's memory?
 void kernmem(const char *s) {
 
-    for (char *a = (char *)(KERNBASE); a < (char *)(KERNBASE + 2000000); a += 50000) {
+    for (auto a = (char *)(KERNBASE); a < (char *)(KERNBASE + 2000000); a += 50000) {
         const int pid = fork();
         if (pid < 0) {
             printf("%s: fork failed\n", s);
@@ -2321,7 +2321,7 @@ void nowrite(const char *s) {
 // regression test. copyin(), copyout(), and copyinstr() used to cast
 // the virtual page address to uint, which (with certain wild system
 // call arguments) resulted in a kernel page faults.
-void *big = (void *)0xeaeb0b5b00002f5e;
+auto big = (void *)0xeaeb0b5b00002f5e;
 void pgbug(const char *s) {
     char *argv[1];
     argv[0] = nullptr;
@@ -2398,7 +2398,7 @@ void sbrklast(const char *s) {
     sbrk(10);
     sbrk(-20);
     top = (uint64)sbrk(0);
-    char *p = (char *)(top - 64);
+    const auto p = (char *)(top - 64);
     p[0] = 'x';
     p[1] = '\0';
     int fd = open(p, O_RDWR | O_CREATE);
@@ -2981,7 +2981,7 @@ int run(void f(const char *), const char *s) {
 
 int runtests(struct test *tests, char *justone, const int continuous) {
     int ntests = 0;
-    for (struct test *t = tests; t->s != nullptr; t++) {
+    for (const struct test *t = tests; t->s != nullptr; t++) {
         if ((justone == nullptr) || strcmp(t->s, justone) == 0) {
             ntests++;
             if (!run(t->f, t->s)) {

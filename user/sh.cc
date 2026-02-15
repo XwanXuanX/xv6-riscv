@@ -189,7 +189,7 @@ int fork1(void) {
 struct cmd *
 execcmd(void) {
 
-    struct execcmd *cmd = (struct execcmd *)malloc(sizeof(*cmd));
+    const auto cmd = (struct execcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = EXEC;
     return (struct cmd *)cmd;
@@ -198,7 +198,7 @@ execcmd(void) {
 struct cmd *
 redircmd(struct cmd *subcmd, char *file, char *efile, const int mode, const int fd) {
 
-    struct redircmd *cmd = (struct redircmd *)malloc(sizeof(*cmd));
+    const auto cmd = (struct redircmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = REDIR;
     cmd->cmd = subcmd;
@@ -212,7 +212,7 @@ redircmd(struct cmd *subcmd, char *file, char *efile, const int mode, const int 
 struct cmd *
 pipecmd(struct cmd *left, struct cmd *right) {
 
-    struct pipecmd *cmd = (struct pipecmd *)malloc(sizeof(*cmd));
+    const auto cmd = (struct pipecmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = PIPE;
     cmd->left = left;
@@ -223,7 +223,7 @@ pipecmd(struct cmd *left, struct cmd *right) {
 struct cmd *
 listcmd(struct cmd *left, struct cmd *right) {
 
-    struct listcmd *cmd = (struct listcmd *)malloc(sizeof(*cmd));
+    const auto cmd = (struct listcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = LIST;
     cmd->left = left;
@@ -234,7 +234,7 @@ listcmd(struct cmd *left, struct cmd *right) {
 struct cmd *
 backcmd(struct cmd *subcmd) {
 
-    struct backcmd *cmd = (struct backcmd *)malloc(sizeof(*cmd));
+    const auto cmd = (struct backcmd *)malloc(sizeof(*cmd));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = BACK;
     cmd->cmd = subcmd;
@@ -387,7 +387,7 @@ parseexec(char **ps, char *es) {
         return parseblock(ps, es);
 
     struct cmd *ret = execcmd();
-    struct execcmd *cmd = (struct execcmd *)ret;
+    const auto cmd = (struct execcmd *)ret;
 
     int argc = 0;
     ret = parseredirs(ret, ps, es);
