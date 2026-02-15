@@ -55,8 +55,9 @@ uint64
 usertrap() {
     int which_dev = 0;
 
-    if ((r_sstatus() & SSTATUS_SPP) != 0)
+    if ((r_sstatus() & SSTATUS_SPP) != 0) {
         panic("usertrap: not from user mode");
+    }
 
     // send interrupts and exceptions to kerneltrap(),
     // since we're now in the kernel.
@@ -70,8 +71,9 @@ usertrap() {
     if (r_scause() == 8) {
         // system call
 
-        if (killed(p))
+        if (killed(p)) {
             kexit(-1);
+        }
 
         // sepc points to the ecall instruction,
         // but we want to return to the next instruction.
@@ -99,13 +101,15 @@ usertrap() {
 
     // give up the CPU if this is a timer interrupt.
     if (which_dev == 2) {
-        if (!p)
+        if (!p) {
             panic("p nullptr");
+        }
         int do_yield = 0;
 
         p->lock.lock();
-        if (p->state != RUNNING)
+        if (p->state != RUNNING) {
             panic("myproc() is not running");
+        }
         if (p->need_yield) {
             do_yield = 1;
             p->need_yield = 0;
@@ -172,10 +176,12 @@ extern "C" void kerneltrap() {
     const uint64 sstatus = xv6::r_sstatus();
     const uint64 scause = xv6::r_scause();
 
-    if ((sstatus & SSTATUS_SPP) == 0)
+    if ((sstatus & SSTATUS_SPP) == 0) {
         xv6::panic("kerneltrap: not from supervisor mode");
-    if (xv6::intr_get() != 0)
+    }
+    if (xv6::intr_get() != 0) {
         xv6::panic("kerneltrap: interrupts enabled");
+    }
 
     if ((which_dev = xv6::devintr()) == 0) {
         // interrupt or trap from an unknown source
@@ -186,13 +192,15 @@ extern "C" void kerneltrap() {
     // give up the CPU if this is a timer interrupt.
     if (which_dev == 2 && xv6::myproc() != nullptr) {
         xv6::proc *p = xv6::myproc();
-        if (!p)
+        if (!p) {
             xv6::panic("p nullptr");
+        }
         int do_yield = 0;
 
         p->lock.lock();
-        if (p->state != xv6::RUNNING)
+        if (p->state != xv6::RUNNING) {
             xv6::panic("myproc() is not running");
+        }
         if (p->need_yield) {
             do_yield = 1;
             p->need_yield = 0;
@@ -240,11 +248,13 @@ void clockintr() {
         p->lock.lock();
         {
             // the user process must be running
-            if (p->state != RUNNING)
+            if (p->state != RUNNING) {
                 panic("process not running");
+            }
             // process must NOT be in ready queue
-            if (p->in_ready_q)
+            if (p->in_ready_q) {
                 panic("running process in ready queue");
+            }
 
             // inc ticks spent
             p->qticks++;
@@ -258,8 +268,9 @@ void clockintr() {
 
             if (p->qticks >= allotment[p->qlevel]) {
                 // move down one priority if still can
-                if (p->qlevel < NLEVELS - 1)
+                if (p->qlevel < NLEVELS - 1) {
                     p->qlevel++;
+                }
                 p->qticks = 0;
             }
         }
@@ -297,8 +308,9 @@ int devintr() {
         // the PLIC allows each device to raise at most one
         // interrupt at a time; tell the PLIC the device is
         // now allowed to interrupt again.
-        if (irq)
+        if (irq) {
             plic_complete(irq);
+        }
 
         return 1;
     }

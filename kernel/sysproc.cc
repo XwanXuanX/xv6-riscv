@@ -50,10 +50,12 @@ sys_sbrk() {
         // Lazily allocate memory for this process: increase its memory
         // size but don't allocate memory. If the processes use the
         // memory, vmfault() will allocate it.
-        if (addr + n < addr)
+        if (addr + n < addr) {
             return -1;
-        if (addr + n > TRAPFRAME)
+        }
+        if (addr + n > TRAPFRAME) {
             return -1;
+        }
         myproc()->sz += n;
     }
     return addr;
@@ -64,8 +66,9 @@ sys_pause() {
     int n;
 
     argint(0, &n);
-    if (n < 0)
+    if (n < 0) {
         n = 0;
+    }
     tickslock.lock();
     const uint ticks0 = ticks;
     while (ticks - ticks0 < static_cast<uint>(n)) {

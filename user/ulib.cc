@@ -24,8 +24,9 @@ strcpy(char *s, const char *t) {
 }
 
 int strcmp(const char *p, const char *q) {
-    while (*p && *p == *q)
+    while (*p && *p == *q) {
         p++, q++;
+    }
     return static_cast<uchar>(*p) - static_cast<uchar>(*q);
 }
 
@@ -48,9 +49,11 @@ memset(void *dst, const int c, const uint n) {
 
 char *
 strchr(const char *s, const char c) {
-    for (; *s; s++)
-        if (*s == c)
+    for (; *s; s++) {
+        if (*s == c) {
             return const_cast<char *>(s);
+        }
+    }
     return nullptr;
 }
 
@@ -61,11 +64,13 @@ gets(char *buf, const int max) {
 
     for (i = 0; i + 1 < max;) {
         const int cc = read(0, &c, 1);
-        if (cc < 1)
+        if (cc < 1) {
             break;
+        }
         buf[i++] = c;
-        if (c == '\n' || c == '\r')
+        if (c == '\n' || c == '\r') {
             break;
+        }
     }
     buf[i] = '\0';
     return buf;
@@ -73,8 +78,9 @@ gets(char *buf, const int max) {
 
 int stat(const char *n, stats *st) {
     const int fd = open(n, O_RDONLY);
-    if (fd < 0)
+    if (fd < 0) {
         return -1;
+    }
     const int r = fstat(fd, st);
     close(fd);
     return r;
@@ -82,8 +88,9 @@ int stat(const char *n, stats *st) {
 
 int atoi(const char *s) {
     int n = 0;
-    while ('0' <= *s && *s <= '9')
+    while ('0' <= *s && *s <= '9') {
         n = n * 10 + *s++ - '0';
+    }
     return n;
 }
 
@@ -91,13 +98,15 @@ void *
 memmove(void *vdst, const void *vsrc, int n) {
     auto dst = static_cast<char *>(vdst);
     if (const char *src = static_cast<const char *>(vsrc); src > dst) {
-        while (n-- > 0)
+        while (n-- > 0) {
             *dst++ = *src++;
+        }
     } else {
         dst += n;
         src += n;
-        while (n-- > 0)
+        while (n-- > 0) {
             *--dst = *--src;
+        }
     }
     return vdst;
 }

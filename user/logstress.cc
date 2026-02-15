@@ -38,8 +38,9 @@ int main(const int argc, char **argv) {
     int xstatus;
     for (int i = 1; i < argc; i++) {
         wait(&xstatus);
-        if (xstatus != 0)
+        if (xstatus != 0) {
             exit(xstatus);
+        }
     }
     return 0;
 }

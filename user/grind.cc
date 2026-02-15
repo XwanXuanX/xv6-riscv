@@ -23,8 +23,9 @@ int do_rand(unsigned long *ctx) {
     const long hi = x / 127773;
     const long lo = x % 127773;
     x = 16807 * lo - 2836 * hi;
-    if (x < 0)
+    if (x < 0) {
         x += 0x7fffffff;
+    }
     /* Transform to [0, 0x7ffffffd] range. */
     x--;
     *ctx = x;
@@ -52,8 +53,9 @@ void go(const int which_child) {
 
     while (true) {
         iters++;
-        if (iters % 500 == 0)
+        if (iters % 500 == 0) {
             write(1, which_child ? "B" : "A", 1);
+        }
         const int what = rand() % 23;
         if (what == 1) {
             close(open("grindir/../a", O_CREATE | O_RDWR));
@@ -117,8 +119,9 @@ void go(const int which_child) {
         } else if (what == 15) {
             sbrk(6011);
         } else if (what == 16) {
-            if (sbrk(0) > break0)
+            if (sbrk(0) > break0) {
                 sbrk(-(sbrk(0) - break0));
+            }
         } else if (what == 17) {
             const int pid = fork();
             if (pid == 0) {
@@ -156,11 +159,13 @@ void go(const int which_child) {
             if (pid == 0) {
                 fork();
                 fork();
-                if (write(fds[1], "x", 1) != 1)
+                if (write(fds[1], "x", 1) != 1) {
                     printf("grind: pipe write failed\n");
+                }
                 char c;
-                if (read(fds[0], &c, 1) != 1)
+                if (read(fds[0], &c, 1) != 1) {
                     printf("grind: pipe read failed\n");
+                }
                 exit(0);
             }
             if (pid < 0) {

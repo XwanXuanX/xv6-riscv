@@ -37,8 +37,9 @@ readsb(const int dev, superblock *sb) {
 // Init fs
 void fsinit(const int dev) {
     readsb(dev, &sb);
-    if (sb.magic != FSMAGIC)
+    if (sb.magic != FSMAGIC) {
         panic("invalid file system");
+    }
     initlog(dev, &sb);
     ireclaim(dev);
 }
@@ -83,8 +84,9 @@ bfree(const int dev, const uint b) {
     buf *bp = bread(dev, BBLOCK(b, sb));
     const int bi = b % BPB;
     const int m = 1 << (bi % 8);
-    if ((bp->data[bi / 8] & m) == 0)
+    if ((bp->data[bi / 8] & m) == 0) {
         panic("freeing free block");
+    }
     bp->data[bi / 8] &= ~m;
     log_write(bp);
     brelse(bp);
@@ -231,13 +233,15 @@ iget(const uint dev, const uint inum) {
             itable.lock.unlock();
             return ip;
         }
-        if (empty == nullptr && ip->ref == 0) // Remember empty slot.
+        if (empty == nullptr && ip->ref == 0) { // Remember empty slot.
             empty = ip;
+        }
     }
 
     // Recycle an inode entry.
-    if (empty == nullptr)
+    if (empty == nullptr) {
         panic("iget: no inodes");
+    }
 
     ip = empty;
     ip->dev = dev;
@@ -262,8 +266,9 @@ idup(inode *ip) {
 // Lock the given inode.
 // Reads the inode from disk if necessary.
 void ilock(inode *ip) {
-    if (ip == nullptr || ip->ref < 1)
+    if (ip == nullptr || ip->ref < 1) {
         panic("ilock");
+    }
 
     acquiresleep(&ip->lock);
 
@@ -278,15 +283,17 @@ void ilock(inode *ip) {
         memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
         brelse(bp);
         ip->valid = 1;
-        if (ip->type == 0)
+        if (ip->type == 0) {
             panic("ilock: no type");
+        }
     }
 }
 
 // Unlock the given inode.
 void iunlock(inode *ip) {
-    if (ip == nullptr || !holdingsleep(&ip->lock) || ip->ref < 1)
+    if (ip == nullptr || !holdingsleep(&ip->lock) || ip->ref < 1) {
         panic("iunlock");
+    }
 
     releasesleep(&ip->lock);
 }
@@ -366,8 +373,9 @@ bmap(inode *ip, uint bn) {
     if (bn < NDIRECT) {
         if ((addr = ip->addrs[bn]) == 0) {
             addr = balloc(ip->dev);
-            if (addr == 0)
+            if (addr == 0) {
                 return 0;
+            }
             ip->addrs[bn] = addr;
         }
         return addr;
@@ -378,8 +386,9 @@ bmap(inode *ip, uint bn) {
         // Load indirect block, allocating if necessary.
         if ((addr = ip->addrs[NDIRECT]) == 0) {
             addr = balloc(ip->dev);
-            if (addr == 0)
+            if (addr == 0) {
                 return 0;
+            }
             ip->addrs[NDIRECT] = addr;
         }
         buf *bp = bread(ip->dev, addr);
@@ -411,8 +420,9 @@ void itrunc(inode *ip) {
         buf *bp = bread(ip->dev, ip->addrs[NDIRECT]);
         const uint *a = reinterpret_cast<uint *>(bp->data);
         for (uint j = 0; j < NINDIRECT; j++) {
-            if (a[j])
+            if (a[j]) {
                 bfree(ip->dev, a[j]);
+            }
         }
         brelse(bp);
         bfree(ip->dev, ip->addrs[NDIRECT]);
@@ -440,15 +450,18 @@ void stati(inode *ip, stats *st) {
 uint readi(inode *ip, const int user_dst, uint64 dst, uint off, uint n) {
     uint tot, m;
 
-    if (off > ip->size || off + n < off)
+    if (off > ip->size || off + n < off) {
         return 0;
-    if (off + n > ip->size)
+    }
+    if (off + n > ip->size) {
         n = ip->size - off;
+    }
 
     for (tot = 0; tot < n; tot += m, off += m, dst += m) {
         const uint addr = bmap(ip, off / BSIZE);
-        if (addr == 0)
+        if (addr == 0) {
             break;
+        }
         buf *bp = bread(ip->dev, addr);
         m = MIN(n - tot, BSIZE - off % BSIZE);
         if (either_copyout(user_dst, dst, bp->data + off % BSIZE, m) == -1) {
@@ -471,15 +484,18 @@ uint readi(inode *ip, const int user_dst, uint64 dst, uint off, uint n) {
 int writei(inode *ip, const int user_src, uint64 src, uint off, const uint n) {
     uint tot, m;
 
-    if (off > ip->size || off + n < off)
+    if (off > ip->size || off + n < off) {
         return -1;
-    if (off + n > MAXFILE * BSIZE)
+    }
+    if (off + n > MAXFILE * BSIZE) {
         return -1;
+    }
 
     for (tot = 0; tot < n; tot += m, off += m, src += m) {
         const uint addr = bmap(ip, off / BSIZE);
-        if (addr == 0)
+        if (addr == 0) {
             break;
+        }
         buf *bp = bread(ip->dev, addr);
         m = MIN(n - tot, BSIZE - off % BSIZE);
         if (either_copyin(bp->data + off % BSIZE, user_src, src, m) == -1) {
@@ -490,8 +506,9 @@ int writei(inode *ip, const int user_src, uint64 src, uint off, const uint n) {
         brelse(bp);
     }
 
-    if (off > ip->size)
+    if (off > ip->size) {
         ip->size = off;
+    }
 
     // write the i-node back to disk even if the size didn't change
     // because the loop above might have called bmap() and added a new
@@ -513,18 +530,22 @@ inode *
 dirlookup(inode *dp, const char *name, uint *poff) {
     dirent de;
 
-    if (dp->type != T_DIR)
+    if (dp->type != T_DIR) {
         panic("dirlookup not DIR");
+    }
 
     for (uint off = 0; off < dp->size; off += sizeof(de)) {
-        if (readi(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de))
+        if (readi(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de)) {
             panic("dirlookup read");
-        if (de.inum == 0)
+        }
+        if (de.inum == 0) {
             continue;
+        }
         if (namecmp(name, de.name) == 0) {
             // entry matches path element
-            if (poff)
+            if (poff) {
                 *poff = off;
+            }
             const uint inum = de.inum;
             return iget(dp->dev, inum);
         }
@@ -548,16 +569,19 @@ int dirlink(inode *dp, const char *name, const uint inum) {
 
     // Look for an empty dirent.
     for (off = 0; off < dp->size; off += sizeof(de)) {
-        if (readi(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de))
+        if (readi(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de)) {
             panic("dirlink read");
-        if (de.inum == 0)
+        }
+        if (de.inum == 0) {
             break;
+        }
     }
 
     strncpy(de.name, name, DIRSIZ);
     de.inum = inum;
-    if (writei(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de))
+    if (writei(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de)) {
         return -1;
+    }
 
     return 0;
 }
@@ -578,22 +602,26 @@ int dirlink(inode *dp, const char *name, const uint inum) {
 //
 static const char *
 skipelem(const char *path, char *name) {
-    while (*path == '/')
+    while (*path == '/') {
         path++;
-    if (*path == 0)
+    }
+    if (*path == 0) {
         return nullptr;
+    }
     const char *s = path;
-    while (*path != '/' && *path != 0)
+    while (*path != '/' && *path != 0) {
         path++;
+    }
     const int len = path - s;
-    if (len >= DIRSIZ)
+    if (len >= DIRSIZ) {
         memmove(name, s, DIRSIZ);
-    else {
+    } else {
         memmove(name, s, len);
         name[len] = 0;
     }
-    while (*path == '/')
+    while (*path == '/') {
         path++;
+    }
     return path;
 }
 
@@ -605,10 +633,11 @@ static inode *
 namex(const char *path, const int nameiparent, char *name) {
     inode *ip, *next;
 
-    if (*path == '/')
+    if (*path == '/') {
         ip = iget(ROOTDEV, ROOTINO);
-    else
+    } else {
         ip = idup(myproc()->cwd);
+    }
 
     while ((path = skipelem(path, name)) != nullptr) {
         ilock(ip);

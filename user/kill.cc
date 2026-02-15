@@ -5,7 +5,8 @@ int main(const int argc, char **argv) {
         fprintf(2, "usage: kill pid...\n");
         exit(1);
     }
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++) {
         kill(atoi(argv[i]));
+    }
     exit(0);
 }

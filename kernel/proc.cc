@@ -47,8 +47,9 @@ spinlock wait_lock;
 void proc_mapstacks(const pagetable_t kpgtbl) {
     for (const struct proc *p = proc; p < &proc[NPROC]; p++) {
         auto pa = reinterpret_cast<char *>(kalloc());
-        if (pa == nullptr)
+        if (pa == nullptr) {
             panic("kalloc");
+        }
         const uint64 va = KSTACK(static_cast<int>(p - proc));
         kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
     }
@@ -175,11 +176,13 @@ found:
 // p->lock must be held.
 static void
 freeproc(struct proc *p) {
-    if (p->trapf)
+    if (p->trapf) {
         kfree(p->trapf);
+    }
     p->trapf = nullptr;
-    if (p->pagetable)
+    if (p->pagetable) {
         proc_freepagetable(p->pagetable, p->sz);
+    }
     p->pagetable = nullptr;
     p->sz = 0;
     p->pid = 0;
@@ -203,8 +206,9 @@ pagetable_t
 proc_pagetable(struct proc *p) {
     // An empty page table.
     const pagetable_t pagetable = uvmcreate();
-    if (pagetable == nullptr)
+    if (pagetable == nullptr) {
         return nullptr;
+    }
 
     // map the trampoline code (for system call return)
     // at the highest user virtual address.
@@ -309,9 +313,11 @@ int kfork() {
     np->trapf->a0 = 0;
 
     // increment reference counts on open file descriptors.
-    for (int i = 0; i < NOFILE; i++)
-        if (p->ofile[i])
+    for (int i = 0; i < NOFILE; i++) {
+        if (p->ofile[i]) {
             np->ofile[i] = filedup(p->ofile[i]);
+        }
+    }
     np->cwd = idup(p->cwd);
 
     safestrcpy(np->name, p->name, sizeof(p->name));
@@ -365,8 +371,9 @@ void kexit(const int status) {
     // get the currently running process
     struct proc *p = myproc();
 
-    if (p == initproc)
+    if (p == initproc) {
         panic("init exiting");
+    }
 
     // Close all open files.
     for (int fd = 0; fd < NOFILE; fd++) {
@@ -687,14 +694,18 @@ void sched() {
     // I'm the process calling this
     struct proc *p = myproc();
 
-    if (!p->lock.holding())
+    if (!p->lock.holding()) {
         panic("sched p->lock");
-    if (mycpu()->noff != 1)
+    }
+    if (mycpu()->noff != 1) {
         panic("sched locks");
-    if (p->state == RUNNING)
+    }
+    if (p->state == RUNNING) {
         panic("sched RUNNING");
-    if (intr_get())
+    }
+    if (intr_get()) {
         panic("sched interruptible");
+    }
 
     const int intena = mycpu()->intena;
     // I will switch to scheduler for now...
@@ -927,8 +938,9 @@ static void mlfq_dump_nolock() {
             p = p->rqnext;
             cnt++;
         }
-        if (p)
+        if (p) {
             printf(" ...");
+        }
         printf("\n");
     }
 }
@@ -948,12 +960,14 @@ void procdump() {
 
     printf("PID\tSTATE\tNAME\n");
     for (struct proc *p = proc; p < &proc[NPROC]; p++) {
-        if (p->state == UNUSED)
+        if (p->state == UNUSED) {
             continue;
-        if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
+        }
+        if (p->state >= 0 && p->state < NELEM(states) && states[p->state]) {
             state = states[p->state];
-        else
+        } else {
             state = "???";
+        }
         printf("%d\t%s\t%s", p->pid, state, p->name);
         printf("\n");
     }

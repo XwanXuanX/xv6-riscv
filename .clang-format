@@ -15,4 +15,7 @@ ColumnLimit: 0
 
 # Remove blank lines at the start of blocks (including function bodies)
 KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Always insert braces
+InsertBraces: true
 ---

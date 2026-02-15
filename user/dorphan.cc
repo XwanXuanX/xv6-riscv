@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
     }
     printf("wait for kill and reclaim\n");
     // sit around until killed
-    for (;;)
+    for (;;) {
         pause(1000);
+    }
 }

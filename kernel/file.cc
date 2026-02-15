@@ -42,8 +42,9 @@ filealloc() {
 file *
 filedup(file *f) {
     ftable.lock.lock();
-    if (f->ref < 1)
+    if (f->ref < 1) {
         panic("filedup");
+    }
     f->ref++;
     ftable.lock.unlock();
     return f;
@@ -52,8 +53,9 @@ filedup(file *f) {
 // Close file f.  (Decrement ref count, close when reaches 0.)
 void fileclose(file *f) {
     ftable.lock.lock();
-    if (f->ref < 1)
+    if (f->ref < 1) {
         panic("fileclose");
+    }
     if (--f->ref > 0) {
         ftable.lock.unlock();
         return;
@@ -82,8 +84,9 @@ int filestat(file *f, const uint64 addr) {
         ilock(f->ip);
         stati(f->ip, &st);
         iunlock(f->ip);
-        if (copyout(p->pagetable, addr, reinterpret_cast<char *>(&st), sizeof(st)) < 0)
+        if (copyout(p->pagetable, addr, reinterpret_cast<char *>(&st), sizeof(st)) < 0) {
             return -1;
+        }
         return 0;
     }
     return -1;
@@ -94,19 +97,22 @@ int filestat(file *f, const uint64 addr) {
 int fileread(file *f, const uint64 addr, const int n) {
     int r = 0;
 
-    if (f->readable == 0)
+    if (f->readable == 0) {
         return -1;
+    }
 
     if (f->type == fd_pipe) {
         r = piperead(f->pip, addr, n);
     } else if (f->type == fd_device) {
-        if (f->major < 0 || f->major >= NDEV || !devsw[f->major].read)
+        if (f->major < 0 || f->major >= NDEV || !devsw[f->major].read) {
             return -1;
+        }
         r = devsw[f->major].read(1, addr, n);
     } else if (f->type == fd_inode) {
         ilock(f->ip);
-        if ((r = readi(f->ip, 1, addr, f->off, n)) > 0)
+        if ((r = readi(f->ip, 1, addr, f->off, n)) > 0) {
             f->off += r;
+        }
         iunlock(f->ip);
     } else {
         panic("fileread");
@@ -120,14 +126,16 @@ int fileread(file *f, const uint64 addr, const int n) {
 int filewrite(file *f, const uint64 addr, const int n) {
     int r, ret = 0;
 
-    if (f->writable == 0)
+    if (f->writable == 0) {
         return -1;
+    }
 
     if (f->type == fd_pipe) {
         ret = pipewrite(f->pip, addr, n);
     } else if (f->type == fd_device) {
-        if (f->major < 0 || f->major >= NDEV || !devsw[f->major].write)
+        if (f->major < 0 || f->major >= NDEV || !devsw[f->major].write) {
             return -1;
+        }
         ret = devsw[f->major].write(1, addr, n);
     } else if (f->type == fd_inode) {
         // write a few blocks at a time to avoid exceeding
@@ -138,13 +146,15 @@ int filewrite(file *f, const uint64 addr, const int n) {
         int i = 0;
         while (i < n) {
             int n1 = n - i;
-            if (n1 > max)
+            if (n1 > max) {
                 n1 = max;
+            }
 
             begin_op();
             ilock(f->ip);
-            if ((r = writei(f->ip, 1, addr + i, f->off, n1)) > 0)
+            if ((r = writei(f->ip, 1, addr + i, f->off, n1)) > 0) {
                 f->off += r;
+            }
             iunlock(f->ip);
             end_op();
 

@@ -125,8 +125,9 @@ void copyinstr1(const char *s) {
 void copyinstr2(const char *s) {
     char b[MAXPATH + 1];
 
-    for (int i = 0; i < MAXPATH; i++)
+    for (int i = 0; i < MAXPATH; i++) {
         b[i] = 'x';
+    }
     b[MAXPATH] = '\0';
 
     int ret = unlink(b);
@@ -161,8 +162,9 @@ void copyinstr2(const char *s) {
     }
     if (pid == 0) {
         static char big[PGSIZE + 1];
-        for (int i = 0; i < PGSIZE; i++)
+        for (int i = 0; i < PGSIZE; i++) {
             big[i] = 'x';
+        }
         big[PGSIZE] = '\0';
         const char *args2[] = {big, big, big, nullptr};
         ret = exec("echo", args2);
@@ -664,8 +666,9 @@ void exectest(const char *s) {
     if (wait(&xstatus) != pid) {
         printf("%s: wait failed!\n", s);
     }
-    if (xstatus != 0)
+    if (xstatus != 0) {
         exit(xstatus);
+    }
 
     fd = open("echo-ok", O_RDONLY);
     if (fd < 0) {
@@ -677,8 +680,9 @@ void exectest(const char *s) {
         exit(1);
     }
     unlink("echo-ok");
-    if (buf[0] == 'O' && buf[1] == 'K')
+    if (buf[0] == 'O' && buf[1] == 'K') {
         exit(0);
+    }
     printf("%s: wrong output\n", s);
     exit(1);
 }
@@ -700,8 +704,9 @@ void pipe1(const char *s) {
     if (pid == 0) {
         close(fds[0]);
         for (n = 0; n < N; n++) {
-            for (i = 0; i < SZ; i++)
+            for (i = 0; i < SZ; i++) {
                 buf[i] = seq++;
+            }
             if (write(fds[1], buf, SZ) != SZ) {
                 printf("%s: pipe1 oops 1\n", s);
                 exit(1);
@@ -722,8 +727,9 @@ void pipe1(const char *s) {
             }
             total += n;
             cc = cc * 2;
-            if (cc > static_cast<int>(sizeof(buf)))
+            if (cc > static_cast<int>(sizeof(buf))) {
                 cc = sizeof(buf);
+            }
         }
         if (total != N * SZ) {
             printf("%s: pipe1 oops 3 total %d\n", s, total);
@@ -773,18 +779,20 @@ void preempt(const char *s) {
         printf("%s: fork failed", s);
         exit(1);
     }
-    if (pid1 == 0)
+    if (pid1 == 0) {
         for (;;)
             ;
+    }
 
     const int pid2 = fork();
     if (pid2 < 0) {
         printf("%s: fork failed\n", s);
         exit(1);
     }
-    if (pid2 == 0)
+    if (pid2 == 0) {
         for (;;)
             ;
+    }
 
     pipe(pfds);
     const int pid3 = fork();
@@ -794,8 +802,9 @@ void preempt(const char *s) {
     }
     if (pid3 == 0) {
         close(pfds[0]);
-        if (write(pfds[1], "x", 1) != 1)
+        if (write(pfds[1], "x", 1) != 1) {
             printf("%s: preempt write error", s);
+        }
         close(pfds[1]);
         for (;;)
             ;
@@ -1040,8 +1049,9 @@ void sharedfd(const char *s) {
     }
     int xstatus;
     wait(&xstatus);
-    if (xstatus != 0)
+    if (xstatus != 0) {
         exit(xstatus);
+    }
 
     close(fd);
     fd = open("sharedfd", 0);
@@ -1052,10 +1062,12 @@ void sharedfd(const char *s) {
     int nc = np = 0;
     while (read(fd, buf, sizeof(buf)) > 0) {
         for (i = 0; i < static_cast<int>(sizeof(buf)); i++) {
-            if (buf[i] == 'c')
+            if (buf[i] == 'c') {
                 nc++;
-            if (buf[i] == 'p')
+            }
+            if (buf[i] == 'p') {
                 np++;
+            }
         }
     }
     close(fd);
@@ -1108,8 +1120,9 @@ void fourfiles(const char *s) {
     int xstatus;
     for (pi = 0; pi < NCHILD; pi++) {
         wait(&xstatus);
-        if (xstatus != 0)
+        if (xstatus != 0) {
             exit(xstatus);
+        }
     }
 
     for (i = 0; i < NCHILD; i++) {
@@ -1174,8 +1187,9 @@ void createdelete(const char *s) {
     int xstatus;
     for (pi = 0; pi < NCHILD; pi++) {
         wait(&xstatus);
-        if (xstatus != 0)
+        if (xstatus != 0) {
             exit(1);
+        }
     }
 
     name[0] = name[1] = name[2] = 0;
@@ -1192,8 +1206,9 @@ void createdelete(const char *s) {
                 printf("%s: oops createdelete %s did exist\n", s, name);
                 exit(1);
             }
-            if (fd >= 0)
+            if (fd >= 0) {
                 close(fd);
+            }
         }
     }
 
@@ -1338,16 +1353,18 @@ void concreate(const char *s) {
         }
         int xstatus;
         wait(&xstatus);
-        if (xstatus != 0)
+        if (xstatus != 0) {
             exit(1);
+        }
     }
 
     memset(fa, 0, sizeof(fa));
     fd = open(".", 0);
     int n = 0;
     while (read(fd, &de, sizeof(de)) > 0) {
-        if (de.inum == 0)
+        if (de.inum == 0) {
             continue;
+        }
         if (de.name[0] == 'C' && de.name[2] == '\0') {
             i = de.name[1] - '0';
             if (i < 0 || i >= static_cast<int>(sizeof(fa))) {
@@ -1392,8 +1409,9 @@ void concreate(const char *s) {
             unlink(file);
             unlink(file);
         }
-        if (pid == 0)
+        if (pid == 0) {
             exit(0);
+        }
         wait(nullptr);
     }
 }
@@ -1420,10 +1438,11 @@ void linkunlink(const char *s) {
         }
     }
 
-    if (pid)
+    if (pid) {
         wait(nullptr);
-    else
+    } else {
         exit(0);
+    }
 }
 
 void subdir(const char *s) {
@@ -1654,8 +1673,9 @@ void bigfile(const char *s) {
             printf("%s: read bigfile failed\n", s);
             exit(1);
         }
-        if (cc == 0)
+        if (cc == 0) {
             break;
+        }
         if (cc != SZ / 2) {
             printf("%s: short read bigfile\n", s);
             exit(1);
@@ -1820,11 +1840,13 @@ void iref(const char *s) {
         mkdir("");
         link("README", "");
         int fd = open("", O_CREATE);
-        if (fd >= 0)
+        if (fd >= 0) {
             close(fd);
+        }
         fd = open("xx", O_CREATE);
-        if (fd >= 0)
+        if (fd >= 0) {
             close(fd);
+        }
         unlink("xx");
     }
 
@@ -1846,10 +1868,12 @@ void forktest(const char *s) {
 
     for (n = 0; n < N; n++) {
         const int pid = fork();
-        if (pid < 0)
+        if (pid < 0) {
             break;
-        if (pid == 0)
+        }
+        if (pid == 0) {
             exit(0);
+        }
     }
 
     if (n == 0) {
@@ -1931,8 +1955,9 @@ void sbrkbasic(const char *s) {
         printf("%s: sbrk test failed post-fork\n", s);
         exit(1);
     }
-    if (pid == 0)
+    if (pid == 0) {
         exit(0);
+    }
     wait(&xstatus);
     exit(xstatus);
 }
@@ -2002,8 +2027,9 @@ void kernmem(const char *s) {
         }
         int xstatus;
         wait(&xstatus);
-        if (xstatus != -1) // did kernel kill child?
+        if (xstatus != -1) { // did kernel kill child?
             exit(1);
+        }
     }
 }
 
@@ -2023,8 +2049,9 @@ void MAXVAplus(const char *s) {
         }
         int xstatus;
         wait(&xstatus);
-        if (xstatus != -1) // did kernel kill child?
+        if (xstatus != -1) { // did kernel kill child?
             exit(1);
+        }
         a = a << 1;
     }
 }
@@ -2046,18 +2073,21 @@ void sbrkfail(const char *s) {
     for (i = 0; i < static_cast<int>(sizeof(pids) / sizeof(pids[0])); i++) {
         if ((pids[i] = fork()) == 0) {
             // allocate a lot of memory
-            if (sbrk(BIG - (uint64)sbrk(0)) == SBRK_ERROR)
+            if (sbrk(BIG - (uint64)sbrk(0)) == SBRK_ERROR) {
                 write(fds[1], "0", 1);
-            else
+            } else {
                 write(fds[1], "1", 1);
+            }
             // sit around until killed
-            for (;;)
+            for (;;) {
                 pause(1000);
+            }
         }
         if (pids[i] != -1) {
             read(fds[0], &scratch, 1);
-            if (scratch == '0')
+            if (scratch == '0') {
                 failed = 1;
+            }
         }
     }
     if (!failed) {
@@ -2068,8 +2098,9 @@ void sbrkfail(const char *s) {
     // we'll be able to allocate here
     const char *c = sbrk(PGSIZE);
     for (i = 0; i < static_cast<int>(sizeof(pids) / sizeof(pids[0])); i++) {
-        if (pids[i] == -1)
+        if (pids[i] == -1) {
             continue;
+        }
         kill(pids[i]);
         wait(nullptr);
     }
@@ -2094,8 +2125,9 @@ void sbrkfail(const char *s) {
         exit(1);
     }
     wait(&xstatus);
-    if (xstatus != 0)
+    if (xstatus != 0) {
         exit(1);
+    }
 }
 
 // test reads/writes from/to allocated memory
@@ -2156,8 +2188,9 @@ void bigargtest(const char *s) {
         char big[400];
         memset(big, ' ', sizeof(big));
         big[sizeof(big) - 1] = '\0';
-        for (int i = 0; i < MAXARG - 1; i++)
+        for (int i = 0; i < MAXARG - 1; i++) {
             args[i] = big;
+        }
         args[MAXARG - 1] = nullptr;
         // this exec() should fail (and return) because the
         // arguments are too large.
@@ -2172,8 +2205,9 @@ void bigargtest(const char *s) {
     }
 
     wait(&xstatus);
-    if (xstatus != 0)
+    if (xstatus != 0) {
         exit(xstatus);
+    }
     fd = open("bigarg-ok", 0);
     if (fd < 0) {
         printf("%s: bigarg test failed!\n", s);
@@ -2207,15 +2241,17 @@ void fsfull() {
         int total = 0;
         while (true) {
             const int cc = write(fd, buf, BSIZE);
-            if (cc < BSIZE)
+            if (cc < BSIZE) {
                 break;
+            }
             total += cc;
             fsblocks++;
         }
         printf("wrote %d bytes\n", total);
         close(fd);
-        if (total == 0)
+        if (total == 0) {
             break;
+        }
     }
 
     while (nfiles >= 0) {
@@ -2261,8 +2297,9 @@ void stacktest(const char *s) {
         exit(1);
     }
     wait(&xstatus);
-    if (xstatus == -1) // kernel killed child?
+    if (xstatus == -1) { // kernel killed child?
         exit(0);
+    }
     exit(xstatus);
 }
 
@@ -2368,8 +2405,9 @@ void sbrkbugs(const char *s) {
 // still copyin() from addresses in the last page?
 void sbrklast(const char *s) {
     uint64 top = (uint64)sbrk(0);
-    if (top % PGSIZE != 0)
+    if (top % PGSIZE != 0) {
         sbrk(PGSIZE - top % PGSIZE);
+    }
     sbrk(PGSIZE);
     sbrk(10);
     sbrk(-20);
@@ -2383,8 +2421,9 @@ void sbrklast(const char *s) {
     fd = open(p, O_RDWR);
     p[0] = '\0';
     read(fd, p, 1);
-    if (p[0] != 'x')
+    if (p[0] != 'x') {
         exit(1);
+    }
 }
 
 // does sbrk handle signed int32 wrap-around with
@@ -2422,8 +2461,9 @@ void lazy_alloc(const char *s) {
     }
     const char *new_end = prev_end + REGION_SZ;
 
-    for (i = prev_end + PGSIZE; i < new_end; i += 64 * PGSIZE)
+    for (i = prev_end + PGSIZE; i < new_end; i += 64 * PGSIZE) {
         *(char **)i = i;
+    }
 
     for (i = prev_end + PGSIZE; i < new_end; i += 64 * PGSIZE) {
         if (*(char **)i != i) {
@@ -2448,8 +2488,9 @@ void lazy_unmap(const char *s) {
     }
     const char *new_end = prev_end + REGION_SZ;
 
-    for (i = prev_end + PGSIZE; i < new_end; i += PGSIZE * PGSIZE)
+    for (i = prev_end + PGSIZE; i < new_end; i += PGSIZE * PGSIZE) {
         *(char **)i = i;
+    }
 
     for (i = prev_end + PGSIZE; i < new_end; i += PGSIZE * PGSIZE) {
         const int pid = fork();
@@ -2733,8 +2774,9 @@ void manywrites(const char *s) {
     for (int ci = 0; ci < nchildren; ci++) {
         int st = 0;
         wait(&st);
-        if (st != 0)
+        if (st != 0) {
             exit(st);
+        }
     }
     exit(0);
 }
@@ -2788,15 +2830,17 @@ void execout(const char *s) {
             // allocate all of memory.
             while (true) {
                 char *a = sbrk(PGSIZE);
-                if (a == SBRK_ERROR)
+                if (a == SBRK_ERROR) {
                     break;
+                }
                 *(a + PGSIZE - 1) = 1;
             }
 
             // free a few pages, in order to let exec() make some
             // progress.
-            for (int i = 0; i < avail; i++)
+            for (int i = 0; i < avail; i++) {
                 sbrk(-PGSIZE);
+            }
 
             close(1);
             const char *args[] = {"echo", "x", nullptr};
@@ -2855,14 +2899,16 @@ void diskfull(const char *s) {
         name[4] = '\0';
         unlink(name);
         const int fd = open(name, O_CREATE | O_RDWR | O_TRUNC);
-        if (fd < 0)
+        if (fd < 0) {
             break;
+        }
         close(fd);
     }
 
     // this mkdir() is expected to fail.
-    if (mkdir("diskfulldir") == 0)
+    if (mkdir("diskfulldir") == 0) {
         printf("%s: mkdir(diskfulldir) unexpectedly succeeded!\n", s);
+    }
 
     unlink("diskfulldir");
 
@@ -2947,10 +2993,11 @@ int run(void f(const char *), const char *s) {
         exit(0);
     }
     wait(&xstatus);
-    if (xstatus != 0)
+    if (xstatus != 0) {
         printf("FAILED\n");
-    else
+    } else {
         printf("OK\n");
+    }
     return xstatus == 0;
 }
 
@@ -3000,8 +3047,9 @@ int drivetests(const int quick, const int continuous, char *justone) {
             ntests += n;
         }
         if (!quick) {
-            if (justone == nullptr)
+            if (justone == nullptr) {
                 printf("usertests slow tests starting\n");
+            }
             n = runtests(slowtests, justone, continuous);
             if (n < 0) {
                 if (continuous != 2) {

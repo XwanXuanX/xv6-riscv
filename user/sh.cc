@@ -62,8 +62,9 @@ void runcmd(cmd *cmd) {
     pipecmd *pcmd;
     redircmd *rcmd;
 
-    if (cmd == nullptr)
+    if (cmd == nullptr) {
         exit(1);
+    }
 
     switch (cmd->type) {
     default:
@@ -71,8 +72,9 @@ void runcmd(cmd *cmd) {
 
     case EXEC:
         ecmd = (execcmd *)cmd;
-        if (ecmd->argv[0] == nullptr)
+        if (ecmd->argv[0] == nullptr) {
             exit(1);
+        }
         exec(ecmd->argv[0], (const char **)ecmd->argv);
         fprintf(2, "exec %s failed\n", ecmd->argv[0]);
         break;
@@ -89,16 +91,18 @@ void runcmd(cmd *cmd) {
 
     case LIST:
         lcmd = (listcmd *)cmd;
-        if (fork1() == 0)
+        if (fork1() == 0) {
             runcmd(lcmd->left);
+        }
         wait(nullptr);
         runcmd(lcmd->right);
         break;
 
     case PIPE:
         pcmd = (pipecmd *)cmd;
-        if (pipe(p) < 0)
+        if (pipe(p) < 0) {
             panic("pipe");
+        }
         if (fork1() == 0) {
             close(1);
             dup(p[1]);
@@ -121,8 +125,9 @@ void runcmd(cmd *cmd) {
 
     case BACK:
         bcmd = (backcmd *)cmd;
-        if (fork1() == 0)
+        if (fork1() == 0) {
             runcmd(bcmd->command);
+        }
         break;
     }
     exit(0);
@@ -132,8 +137,9 @@ int getcmd(char *buf, const int nbuf) {
     write(2, "$ ", 2);
     memset(buf, 0, nbuf);
     gets(buf, nbuf);
-    if (buf[0] == 0) // EOF
+    if (buf[0] == 0) { // EOF
         return -1;
+    }
     return 0;
 }
 
@@ -152,18 +158,22 @@ int main() {
     // Read and run input commands.
     while (getcmd(buf, sizeof(buf)) >= 0) {
         char *cmd = buf;
-        while (*cmd == ' ' || *cmd == '\t')
+        while (*cmd == ' ' || *cmd == '\t') {
             cmd++;
-        if (*cmd == '\n') // is a blank command
+        }
+        if (*cmd == '\n') { // is a blank command
             continue;
+        }
         if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == ' ') {
             // Chdir must be called by the parent, not the child.
             cmd[strlen(cmd) - 1] = 0; // chop \n
-            if (chdir(cmd + 3) < 0)
+            if (chdir(cmd + 3) < 0) {
                 fprintf(2, "cannot cd %s\n", cmd + 3);
+            }
         } else {
-            if (fork1() == 0)
+            if (fork1() == 0) {
                 runcmd(parsecmd(cmd));
+            }
             wait(nullptr);
         }
     }
@@ -177,8 +187,9 @@ void panic(const char *s) {
 
 int fork1() {
     const int pid = fork();
-    if (pid == -1)
+    if (pid == -1) {
         panic("fork");
+    }
     return pid;
 }
 
@@ -237,10 +248,12 @@ char symbols[] = "<|>&;()";
 
 int gettoken(char **ps, const char *es, char **q, char **eq) {
     char *s = *ps;
-    while (s < es && strchr(whitespace, *s))
+    while (s < es && strchr(whitespace, *s)) {
         s++;
-    if (q)
+    }
+    if (q) {
         *q = s;
+    }
     int ret = *s;
     switch (*s) {
     case 0:
@@ -262,23 +275,27 @@ int gettoken(char **ps, const char *es, char **q, char **eq) {
         break;
     default:
         ret = 'a';
-        while (s < es && !strchr(whitespace, *s) && !strchr(symbols, *s))
+        while (s < es && !strchr(whitespace, *s) && !strchr(symbols, *s)) {
             s++;
+        }
         break;
     }
-    if (eq)
+    if (eq) {
         *eq = s;
+    }
 
-    while (s < es && strchr(whitespace, *s))
+    while (s < es && strchr(whitespace, *s)) {
         s++;
+    }
     *ps = s;
     return ret;
 }
 
 int peek(char **ps, const char *es, const char *toks) {
     char *s = *ps;
-    while (s < es && strchr(whitespace, *s))
+    while (s < es && strchr(whitespace, *s)) {
         s++;
+    }
     *ps = s;
     return *s && strchr(toks, *s);
 }
@@ -327,8 +344,9 @@ cmd *parseredirs(cmd *cmd, char **ps, char *es) {
 
     while (peek(ps, es, "<>")) {
         const int tok = gettoken(ps, es, nullptr, nullptr);
-        if (gettoken(ps, es, &q, &eq) != 'a')
+        if (gettoken(ps, es, &q, &eq) != 'a') {
             panic("missing file for redirection");
+        }
         switch (tok) {
         case '<':
             cmd = redir_cmd(cmd, q, eq, O_RDONLY, 0);
@@ -346,12 +364,14 @@ cmd *parseredirs(cmd *cmd, char **ps, char *es) {
 }
 
 cmd *parseblock(char **ps, char *es) {
-    if (!peek(ps, es, "("))
+    if (!peek(ps, es, "(")) {
         panic("parseblock");
+    }
     gettoken(ps, es, nullptr, nullptr);
     cmd *cmd = parseline(ps, es);
-    if (!peek(ps, es, ")"))
+    if (!peek(ps, es, ")")) {
         panic("syntax - missing )");
+    }
     gettoken(ps, es, nullptr, nullptr);
     cmd = parseredirs(cmd, ps, es);
     return cmd;
@@ -361,8 +381,9 @@ cmd *parseexec(char **ps, char *es) {
     char *q, *eq;
     int tok;
 
-    if (peek(ps, es, "("))
+    if (peek(ps, es, "(")) {
         return parseblock(ps, es);
+    }
 
     cmd *ret = exec_cmd();
     const auto cmd = (struct execcmd *)ret;
@@ -370,15 +391,18 @@ cmd *parseexec(char **ps, char *es) {
     int argc = 0;
     ret = parseredirs(ret, ps, es);
     while (!peek(ps, es, "|)&;")) {
-        if ((tok = gettoken(ps, es, &q, &eq)) == 0)
+        if ((tok = gettoken(ps, es, &q, &eq)) == 0) {
             break;
-        if (tok != 'a')
+        }
+        if (tok != 'a') {
             panic("syntax");
+        }
         cmd->argv[argc] = q;
         cmd->eargv[argc] = eq;
         argc++;
-        if (argc >= MAXARGS)
+        if (argc >= MAXARGS) {
             panic("too many args");
+        }
         ret = parseredirs(ret, ps, es);
     }
     cmd->argv[argc] = nullptr;
@@ -395,14 +419,16 @@ cmd *nulterminate(cmd *cmd) {
     pipecmd *pcmd;
     redircmd *rcmd;
 
-    if (cmd == nullptr)
+    if (cmd == nullptr) {
         return nullptr;
+    }
 
     switch (cmd->type) {
     case EXEC:
         ecmd = (execcmd *)cmd;
-        for (i = 0; ecmd->argv[i]; i++)
+        for (i = 0; ecmd->argv[i]; i++) {
             *ecmd->eargv[i] = 0;
+        }
         break;
 
     case REDIR:

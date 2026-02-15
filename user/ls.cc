@@ -14,8 +14,9 @@ fmtname(const char *path) {
     p++;
 
     // Return blank-padded name.
-    if (strlen(p) >= DIRSIZ)
+    if (strlen(p) >= DIRSIZ) {
         return p;
+    }
     memmove(buf, p, static_cast<int>(strlen(p)));
     memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
     buf[sizeof(buf) - 1] = '\0';
@@ -54,8 +55,9 @@ void ls(const char *path) {
         p = buf + strlen(buf);
         *p++ = '/';
         while (read(fd, &de, sizeof(de)) == sizeof(de)) {
-            if (de.inum == 0)
+            if (de.inum == 0) {
                 continue;
+            }
             memmove(p, de.name, DIRSIZ);
             p[DIRSIZ] = 0;
             if (stat(buf, &st) < 0) {
@@ -75,7 +77,8 @@ int main(const int argc, char *argv[]) {
         ls(".");
         exit(0);
     }
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++) {
         ls(argv[i]);
+    }
     exit(0);
 }

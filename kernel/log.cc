@@ -51,8 +51,9 @@ static void recover_from_log();
 static void commit();
 
 void initlog(const int dev, superblock *sb) {
-    if (sizeof(logheader) >= BSIZE)
+    if (sizeof(logheader) >= BSIZE) {
         panic("initlog: too big logheader");
+    }
 
     log.lock.init_lock("log");
     log.start = sb->logstart;
@@ -71,8 +72,9 @@ install_trans(const int recovering) {
         buf *dbuf = bread(log.dev, log.lh.block[tail]);   // read dst
         memmove(dbuf->data, lbuf->data, BSIZE);           // copy block to dst
         bwrite(dbuf);                                     // write dst to disk
-        if (recovering == 0)
+        if (recovering == 0) {
             bunpin(dbuf);
+        }
         brelse(lbuf);
         brelse(dbuf);
     }
@@ -137,8 +139,9 @@ void end_op() {
 
     log.lock.lock();
     log.outstanding -= 1;
-    if (log.committing)
+    if (log.committing) {
         panic("log.committing");
+    }
     if (log.outstanding == 0) {
         do_commit = 1;
         log.committing = 1;
@@ -198,14 +201,17 @@ void log_write(buf *b) {
     int i;
 
     log.lock.lock();
-    if (log.lh.n >= LOGBLOCKS)
+    if (log.lh.n >= LOGBLOCKS) {
         panic("too big a transaction");
-    if (log.outstanding < 1)
+    }
+    if (log.outstanding < 1) {
         panic("log_write outside of trans");
+    }
 
     for (i = 0; i < log.lh.n; i++) {
-        if (log.lh.block[i] == b->blockno) // log absorption
+        if (log.lh.block[i] == b->blockno) { // log absorption
             break;
+        }
     }
     log.lh.block[i] = b->blockno;
     if (i == log.lh.n) { // Add new block to log?

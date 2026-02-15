@@ -20,10 +20,12 @@ struct pipe {
 int pipealloc(file **f0, file **f1) {
     pipe *pi = nullptr;
     *f0 = *f1 = nullptr;
-    if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr)
+    if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr) {
         goto bad;
-    if ((pi = static_cast<pipe *>(kalloc())) == nullptr)
+    }
+    if ((pi = static_cast<pipe *>(kalloc())) == nullptr) {
         goto bad;
+    }
     pi->readopen = 1;
     pi->writeopen = 1;
     pi->nwrite = 0;
@@ -40,12 +42,15 @@ int pipealloc(file **f0, file **f1) {
     return 0;
 
 bad:
-    if (pi)
+    if (pi) {
         kfree(pi);
-    if (*f0)
+    }
+    if (*f0) {
         fileclose(*f0);
-    if (*f1)
+    }
+    if (*f1) {
         fileclose(*f1);
+    }
     return -1;
 }
 
@@ -61,8 +66,9 @@ void pipeclose(pipe *pi, const int writable) {
     if (pi->readopen == 0 && pi->writeopen == 0) {
         pi->lock.unlock();
         kfree(pi);
-    } else
+    } else {
         pi->lock.unlock();
+    }
 }
 
 int pipewrite(pipe *pi, const uint64 addr, const int n) {
@@ -80,8 +86,9 @@ int pipewrite(pipe *pi, const uint64 addr, const int n) {
             sleep(&pi->nwrite, &pi->lock);
         } else {
             char ch;
-            if (copyin(pr->pagetable, &ch, addr + i, 1) == -1)
+            if (copyin(pr->pagetable, &ch, addr + i, 1) == -1) {
                 break;
+            }
             pi->data[pi->nwrite++ % PIPESIZE] = ch;
             i++;
         }
@@ -106,12 +113,14 @@ int piperead(pipe *pi, const uint64 addr, const int n) {
         sleep(&pi->nread, &pi->lock); // DOC: piperead-sleep
     }
     for (i = 0; i < n; i++) { // DOC: piperead-copy
-        if (pi->nread == pi->nwrite)
+        if (pi->nread == pi->nwrite) {
             break;
+        }
         ch = pi->data[pi->nread % PIPESIZE];
         if (copyout(pr->pagetable, addr + i, &ch, 1) == -1) {
-            if (i == 0)
+            if (i == 0) {
                 i = -1;
+            }
             break;
         }
         pi->nread++;
