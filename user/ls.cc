@@ -2,9 +2,11 @@
 #include "user/user.h"
 #include "kernel/fs.h"
 #include "kernel/fcntl.h"
+#include <array>
+#include <span>
 
 const char *fmtname(const char *path) {
-    static char buf[DIRSIZ + 1];
+    static std::array<char, DIRSIZ + 1> buf{};
     const char *p;
 
     // Find first character after last slash.
@@ -16,14 +18,15 @@ const char *fmtname(const char *path) {
     if (strlen(p) >= DIRSIZ) {
         return p;
     }
-    memmove(buf, p, static_cast<int>(strlen(p)));
-    memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
+    memmove(buf.data(), p, static_cast<int>(strlen(p)));
+    memset(buf.data() + strlen(p), ' ', DIRSIZ - strlen(p));
     buf[sizeof(buf) - 1] = '\0';
-    return buf;
+    return buf.data();
 }
 
 void ls(const char *path) {
-    char buf[512], *p;
+    std::array<char, 512> buf{};
+    char *p;
     int fd;
     xv6::dirent de{};
     stats st{};
@@ -51,20 +54,20 @@ void ls(const char *path) {
             printf("ls: path too long\n");
             break;
         }
-        strcpy(buf, path);
-        p = buf + strlen(buf);
+        strcpy(buf.data(), path);
+        p = buf.data() + strlen(buf.data());
         *p++ = '/';
         while (read(fd, &de, sizeof(de)) == sizeof(de)) {
             if (de.inum == 0) {
                 continue;
             }
-            memmove(p, de.name, DIRSIZ);
+            memmove(p, de.name.data(), DIRSIZ);
             p[DIRSIZ] = 0;
-            if (stat(buf, &st) < 0) {
-                printf("ls: cannot stat %s\n", buf);
+            if (stat(buf.data(), &st) < 0) {
+                printf("ls: cannot stat %s\n", buf.data());
                 continue;
             }
-            printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino,
+            printf("%s %d %d %d\n", fmtname(buf.data()), st.type, st.ino,
                    static_cast<int>(st.size));
         }
         break;
@@ -73,7 +76,7 @@ void ls(const char *path) {
     close(fd);
 }
 
-int main(const int argc, char *argv[]) {
+int main(const int argc, std::span<char *> argv) {
     if (argc < 2) {
         ls(".");
         exit(0);

@@ -14,6 +14,7 @@
 #include "fs.h"
 #include "buf.h"
 #include "virtio.h"
+#include <array>
 
 namespace xv6 {
 
@@ -40,20 +41,21 @@ static struct disk {
     virtq_used *used;
 
     // our own book-keeping.
-    char free[NUM];  // is a descriptor free?
+    std::array<char, NUM> free;  // is a descriptor free?
     uint16 used_idx; // we've looked this far in used[2..NUM].
 
     // track info about in-flight operations,
     // for use when completion interrupt arrives.
     // indexed by first descriptor index of chain.
-    struct {
+    struct _info{
         buf *b;
         char status;
-    } info[NUM];
+    };
+    std::array<_info, NUM> info;
 
     // disk command headers.
     // one-for-one with descriptors, for convenience.
-    virtio_blk_req ops[NUM];
+    std::array<virtio_blk_req, NUM> ops;
 
     spinlock vdisk_lock;
 
@@ -222,9 +224,9 @@ void virtio_disk_rw(buf *b, const int write) {
     // data, one for a 1-byte status result.
 
     // allocate the three descriptors.
-    int idx[3];
+    std::array<int, 3> idx{};
     while (true) {
-        if (alloc3_desc(idx) == 0) {
+        if (alloc3_desc(idx.data()) == 0) {
             break;
         }
         sleep(&disk.free[0], &disk.vdisk_lock);
@@ -248,7 +250,7 @@ void virtio_disk_rw(buf *b, const int write) {
     disk.desc[idx[0]].flags = VRING_DESC_F_NEXT;
     disk.desc[idx[0]].next = idx[1];
 
-    disk.desc[idx[1]].addr = (uint64)b->data;
+    disk.desc[idx[1]].addr = (uint64)b->data.data();
     disk.desc[idx[1]].len = BSIZE;
     if (write) {
         disk.desc[idx[1]].flags = 0; // device reads b->data

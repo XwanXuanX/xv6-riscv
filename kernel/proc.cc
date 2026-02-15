@@ -992,7 +992,7 @@ void procdump() {
         } else {
             state = "???";
         }
-        printf("%d\t%s\t%s", p->pid, state, p->name);
+        printf("%d\t%s\t%s", p->pid, state, p->name.data());
         printf("\n");
     }
 

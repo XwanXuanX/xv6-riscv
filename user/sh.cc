@@ -2,6 +2,8 @@
 
 #include "user/user.h"
 #include "kernel/fcntl.h"
+#include <array>
+#include <string_view>
 
 // Parsed command representation
 enum { EXEC = 1, REDIR = 2, PIPE = 3, LIST = 4, BACK = 5 };
@@ -14,8 +16,8 @@ struct cmd {
 
 struct execcmd {
     int type;
-    char *argv[MAXARGS];
-    char *eargv[MAXARGS];
+    std::array<char *, MAXARGS> argv;
+    std::array<char *, MAXARGS> eargv;
 };
 
 struct redircmd {
@@ -51,7 +53,7 @@ void runcmd(cmd *) __attribute__((noreturn));
 
 // Execute cmd.  Never returns.
 void runcmd(cmd *cmd) {
-    int p[2];
+    std::array<int, 2> p{};
     backcmd *bcmd;
     execcmd *ecmd;
     listcmd *lcmd;
@@ -71,7 +73,7 @@ void runcmd(cmd *cmd) {
         if (ecmd->argv[0] == nullptr) {
             exit(1);
         }
-        exec(ecmd->argv[0], (const char **)ecmd->argv);
+        exec(ecmd->argv[0], (const char **)ecmd->argv.data());
         fprintf(2, "exec %s failed\n", ecmd->argv[0]);
         break;
 
@@ -96,7 +98,7 @@ void runcmd(cmd *cmd) {
 
     case PIPE:
         pcmd = (pipecmd *)cmd;
-        if (pipe(p) < 0) {
+        if (pipe(p.data()) < 0) {
             panic("pipe");
         }
         if (fork1() == 0) {
@@ -140,7 +142,7 @@ int getcmd(char *buf, const int nbuf) {
 }
 
 int main() {
-    static char buf[100];
+    static std::array<char, 100> buf{};
     int fd;
 
     // Ensure that three file descriptors are open.
@@ -152,8 +154,8 @@ int main() {
     }
 
     // Read and run input commands.
-    while (getcmd(buf, sizeof(buf)) >= 0) {
-        char *cmd = buf;
+    while (getcmd(buf.data(), sizeof(buf)) >= 0) {
+        char *cmd = buf.data();
         while (*cmd == ' ' || *cmd == '\t') {
             cmd++;
         }
@@ -240,12 +242,12 @@ cmd *back_cmd(cmd *subcmd) {
 // PAGEBREAK!
 //  Parsing
 
-char whitespace[] = " \t\r\n\v";
-char symbols[] = "<|>&;()";
+constexpr std::string_view whitespace = " \t\r\n\v";
+constexpr std::string_view symbols = "<|>&;()";
 
 int gettoken(char **ps, const char *es, char **q, char **eq) {
     char *s = *ps;
-    while (s < es && strchr(whitespace, *s)) {
+    while (s < es && strchr(whitespace.data(), *s)) {
         s++;
     }
     if (q) {
@@ -272,7 +274,7 @@ int gettoken(char **ps, const char *es, char **q, char **eq) {
         break;
     default:
         ret = 'a';
-        while (s < es && !strchr(whitespace, *s) && !strchr(symbols, *s)) {
+        while (s < es && !strchr(whitespace.data(), *s) && !strchr(symbols.data(), *s)) {
             s++;
         }
         break;
@@ -281,7 +283,7 @@ int gettoken(char **ps, const char *es, char **q, char **eq) {
         *eq = s;
     }
 
-    while (s < es && strchr(whitespace, *s)) {
+    while (s < es && strchr(whitespace.data(), *s)) {
         s++;
     }
     *ps = s;
@@ -290,7 +292,7 @@ int gettoken(char **ps, const char *es, char **q, char **eq) {
 
 int peek(char **ps, const char *es, const char *toks) {
     char *s = *ps;
-    while (s < es && strchr(whitespace, *s)) {
+    while (s < es && strchr(whitespace.data(), *s)) {
         s++;
     }
     *ps = s;

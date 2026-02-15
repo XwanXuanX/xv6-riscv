@@ -2,11 +2,12 @@
 #include "param.h"
 #include "riscv.h"
 #include "defs.h"
+#include <array>
 
 using namespace xv6;
 
 // entry.S needs one stack per CPU.
-__attribute__((aligned(16))) char stack0[4096 * NCPU];
+alignas(16) std::array<char, 4096 * NCPU> stack0;
 
 extern "C" {
 void timerinit();

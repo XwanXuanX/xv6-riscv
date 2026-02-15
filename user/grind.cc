@@ -6,6 +6,7 @@
 #include "kernel/stats.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
+#include <array>
 
 // from FreeBSD.
 int do_rand(unsigned long *ctx) {
@@ -38,7 +39,7 @@ int rand() { return do_rand(&rand_next); }
 
 void go(const int which_child) {
     int fd = -1;
-    static char buf[999];
+    static std::array<char, 999> buf{};
     const char *break0 = sbrk(0);
     uint64 iters = 0;
 
@@ -75,9 +76,9 @@ void go(const int which_child) {
             close(fd);
             fd = open("/./grindir/./../b", O_CREATE | O_RDWR);
         } else if (what == 7) {
-            write(fd, buf, sizeof(buf));
+            write(fd, buf.data(), sizeof(buf));
         } else if (what == 8) {
-            read(fd, buf, sizeof(buf));
+            read(fd, buf.data(), sizeof(buf));
         } else if (what == 9) {
             mkdir("grindir/../a");
             close(open("a/../a/./a", O_CREATE | O_RDWR));
@@ -148,8 +149,8 @@ void go(const int which_child) {
             }
             wait(nullptr);
         } else if (what == 19) {
-            int fds[2];
-            if (pipe(fds) < 0) {
+            std::array<int, 2> fds{};
+            if (pipe(fds.data()) < 0) {
                 printf("grind: pipe failed\n");
                 exit(1);
             }
@@ -220,12 +221,12 @@ void go(const int which_child) {
             unlink("c");
         } else if (what == 22) {
             // echo hi | cat
-            int aa[2], bb[2];
-            if (pipe(aa) < 0) {
+            std::array<int, 2> aa{}, bb{};
+            if (pipe(aa.data()) < 0) {
                 fprintf(2, "grind: pipe failed\n");
                 exit(1);
             }
-            if (pipe(bb) < 0) {
+            if (pipe(bb.data()) < 0) {
                 fprintf(2, "grind: pipe failed\n");
                 exit(1);
             }
@@ -240,8 +241,8 @@ void go(const int which_child) {
                     exit(1);
                 }
                 close(aa[1]);
-                const char *args[3] = {"echo", "hi", nullptr};
-                exec("grindir/../echo", args);
+                constexpr std::array<const char *, 3> args = {"echo", "hi", nullptr};
+                exec("grindir/../echo", const_cast<const char**>(args.data()));
                 fprintf(2, "grind: echo: not found\n");
                 exit(2);
             }
@@ -265,8 +266,8 @@ void go(const int which_child) {
                     exit(5);
                 }
                 close(bb[1]);
-                const char *args[2] = {"cat", nullptr};
-                exec("/cat", args);
+                constexpr std::array<const char *, 2> args = {"cat", nullptr};
+                exec("/cat", const_cast<const char**>(args.data()));
                 fprintf(2, "grind: cat: not found\n");
                 exit(6);
             }
@@ -277,17 +278,17 @@ void go(const int which_child) {
             close(aa[0]);
             close(aa[1]);
             close(bb[1]);
-            char str[4] = {0, 0, 0, 0};
-            read(bb[0], str + 0, 1);
-            read(bb[0], str + 1, 1);
-            read(bb[0], str + 2, 1);
+            std::array<char, 4> str = {0, 0, 0, 0};
+            read(bb[0], str.data() + 0, 1);
+            read(bb[0], str.data() + 1, 1);
+            read(bb[0], str.data() + 2, 1);
             close(bb[0]);
             int st1, st2;
             wait(&st1);
             wait(&st2);
-            if (st1 != 0 || st2 != 0 || strcmp(str, "hi\n") != 0) {
+            if (st1 != 0 || st2 != 0 || strcmp(str.data(), "hi\n") != 0) {
                 printf("grind: exec pipeline failed %d %d \"%s\"\n", st1, st2,
-                       str);
+                       str.data());
                 exit(1);
             }
         }

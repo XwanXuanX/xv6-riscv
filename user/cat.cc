@@ -1,13 +1,15 @@
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include <array>
+#include <span>
 
-char buf[512];
+std::array<char, 512> buf;
 
 void cat(const int fd) {
     int n;
 
-    while ((n = read(fd, buf, sizeof(buf))) > 0) {
-        if (write(1, buf, n) != n) {
+    while ((n = read(fd, buf.data(), sizeof(buf))) > 0) {
+        if (write(1, buf.data(), n) != n) {
             fprintf(2, "cat: write error\n");
             exit(1);
         }
@@ -18,7 +20,7 @@ void cat(const int fd) {
     }
 }
 
-int main(const int argc, char *argv[]) {
+int main(const int argc, std::span<char *> argv) {
     int fd;
 
     if (argc <= 1) {

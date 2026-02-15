@@ -1,6 +1,7 @@
 #include "user/user.h"
+#include <span>
 
-int main(const int argc, char *argv[]) {
+int main(const int argc, std::span<char *> argv) {
     if (argc != 3) {
         fprintf(2, "Usage: ln old new\n");
         exit(1);

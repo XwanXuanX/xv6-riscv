@@ -4,8 +4,9 @@
 #include "kernel/file.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
+#include <array>
 
-const char *argv[] = {"sh", nullptr};
+constexpr std::array<const char *, 2> argv = {"sh", nullptr};
 
 int main() {
     if (open("console", O_RDWR) < 0) {
@@ -23,7 +24,7 @@ int main() {
             exit(1);
         }
         if (pid == 0) {
-            exec("sh", argv);
+            exec("sh", const_cast<const char**>(argv.data()));
             printf("init: exec sh failed\n");
             exit(1);
         }

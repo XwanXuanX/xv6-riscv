@@ -10,6 +10,8 @@
 // virtio mmio control registers, mapped starting at 0x10001000.
 // from qemu virtio_mmio.h
 #pragma once
+#include <array>
+
 #define VIRTIO_MMIO_MAGIC_VALUE 0x000 // 0x74726976
 #define VIRTIO_MMIO_VERSION 0x004     // version; should be 2
 #define VIRTIO_MMIO_DEVICE_ID 0x008   // device type; 1 is net, 2 is disk
@@ -67,7 +69,7 @@ struct virtq_desc {
 struct virtq_avail {
     uint16 flags;     // always zero
     uint16 idx;       // driver will write ring[idx] next
-    uint16 ring[NUM]; // descriptor numbers of chain heads
+    std::array<uint16, NUM> ring; // descriptor numbers of chain heads
     uint16 unused;
 };
 
@@ -81,7 +83,7 @@ struct virtq_used_elem {
 struct virtq_used {
     uint16 flags; // always zero
     uint16 idx;   // device increments when it adds a ring[] entry
-    virtq_used_elem ring[NUM];
+    std::array<virtq_used_elem, NUM> ring;
 };
 
 // these are specific to virtio block devices, e.g. disks,

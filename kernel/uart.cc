@@ -5,6 +5,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "defs.h"
+#include <span>
 
 namespace xv6 {
 
@@ -72,11 +73,11 @@ void uartinit() {
 // transmit buf[] to the uart. it blocks if the
 // uart is busy, so it cannot be called from
 // interrupts, only from write() system calls.
-void uartwrite(char buf[], const int n) {
+void uartwrite(std::span<char> buf) {
     tx_lock.lock();
 
     int i = 0;
-    while (i < n) {
+    while (i < static_cast<int>(buf.size())) {
         while (tx_busy != 0) {
             // wait for a UART transmit-complete interrupt
             // to set tx_busy to 0.

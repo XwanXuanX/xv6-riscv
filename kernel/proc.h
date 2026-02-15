@@ -3,6 +3,7 @@
 #include "param.h"
 #include "riscv.h"
 #include "spinlock.h"
+#include <array>
 
 namespace xv6 {
 
@@ -34,7 +35,7 @@ struct cpu {
     int intena;        // Were interrupts enabled before push_off()?
 };
 
-extern cpu cpus[NCPU];
+extern std::array<cpu, NCPU> cpus;
 
 // per-process data for the trap handling code in trampoline.S.
 // sits in a page by itself just under the trampoline page in the
@@ -184,9 +185,9 @@ struct proc {
     pagetable_t pagetable;      // User page table
     trapframe *trapf;           // data page for trampoline.S
     context ctx;                // swtch() here to run process
-    struct file *ofile[NOFILE]; // Open files
+    std::array<struct file *, NOFILE> ofile; // Open files
     struct inode *cwd;          // Current directory
-    char name[16];              // Process name (debugging)
+    std::array<char, 16> name;  // Process name (debugging)
 };
 
 } // namespace xv6
