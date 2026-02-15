@@ -97,7 +97,7 @@ int atoi(const char *s) {
 void *
 memmove(void *vdst, const void *vsrc, int n) {
     auto dst = static_cast<char *>(vdst);
-    if (const char *src = static_cast<const char *>(vsrc); src > dst) {
+    if (auto src = static_cast<const char *>(vsrc); src > dst) {
         while (n-- > 0) {
             *dst++ = *src++;
         }

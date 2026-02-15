@@ -92,7 +92,7 @@ class string_view final {
  * For example, this function checks if two objects are equal by introspecting their types
  */
 template <typename T>
-auto eq(const T &a, const T &b) -> std::optional<bool> {
+std::optional<bool> eq(const T &a, const T &b) {
     if constexpr (std::is_integral_v<T>) {
         return a == b;
     } else if constexpr (std::is_same_v<T, std::string_view>) {
