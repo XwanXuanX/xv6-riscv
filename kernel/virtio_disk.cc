@@ -139,9 +139,11 @@ void virtio_disk_init() {
     *R(VIRTIO_MMIO_QUEUE_DESC_LOW) = reinterpret_cast<uint64>(disk.desc);
     *R(VIRTIO_MMIO_QUEUE_DESC_HIGH) = reinterpret_cast<uint64>(disk.desc) >> 32;
     *R(VIRTIO_MMIO_DRIVER_DESC_LOW) = reinterpret_cast<uint64>(disk.avail);
-    *R(VIRTIO_MMIO_DRIVER_DESC_HIGH) = reinterpret_cast<uint64>(disk.avail) >> 32;
+    *R(VIRTIO_MMIO_DRIVER_DESC_HIGH) =
+        reinterpret_cast<uint64>(disk.avail) >> 32;
     *R(VIRTIO_MMIO_DEVICE_DESC_LOW) = reinterpret_cast<uint64>(disk.used);
-    *R(VIRTIO_MMIO_DEVICE_DESC_HIGH) = reinterpret_cast<uint64>(disk.used) >> 32;
+    *R(VIRTIO_MMIO_DEVICE_DESC_HIGH) =
+        reinterpret_cast<uint64>(disk.used) >> 32;
 
     // queue is ready.
     *R(VIRTIO_MMIO_QUEUE_READY) = 0x1;
@@ -261,7 +263,8 @@ void virtio_disk_rw(buf *b, const int write) {
     disk.desc[idx[1]].next = idx[2];
 
     disk.info[idx[0]].status = 0xff; // device writes 0 on success
-    disk.desc[idx[2]].addr = reinterpret_cast<uint64>(&disk.info[idx[0]].status);
+    disk.desc[idx[2]].addr =
+        reinterpret_cast<uint64>(&disk.info[idx[0]].status);
     disk.desc[idx[2]].len = 1;
     disk.desc[idx[2]].flags = VRING_DESC_F_WRITE; // device writes the status
     disk.desc[idx[2]].next = 0;
