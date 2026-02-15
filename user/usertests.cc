@@ -2321,10 +2321,10 @@ void nowrite(const char *s) {
                                 0x4000000000,
                                 0xffffffffffffffff};
 
-    for (uint ai = 0; ai < std::size(addrs); ai++) {
+    for (const unsigned long ai : addrs) {
         const int pid = fork();
         if (pid == 0) {
-            volatile int *addr = reinterpret_cast<int *>(addrs[ai]);
+            volatile int *addr = reinterpret_cast<int *>(ai);
             *addr = 10;
             printf("%s: write to %p did not fail!\n", s, addr);
             exit(0);
