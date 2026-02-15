@@ -7,7 +7,7 @@
 
 namespace xv6 {
 
-void initsleeplock(sleeplock *lk, const char *name) {
+void initsleeplock(sleeplock *lk) {
     lk->lk.init_lock("sleep lock");
 }
 

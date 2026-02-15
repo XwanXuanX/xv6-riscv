@@ -169,7 +169,7 @@ void pop_off();
 void acquiresleep(sleeplock *);
 void releasesleep(sleeplock *);
 int holdingsleep(sleeplock *);
-void initsleeplock(sleeplock *, const char *);
+void initsleeplock(sleeplock *);
 
 // string.c
 int memcmp(const void *, const void *, uint);
@@ -220,7 +220,7 @@ int copyout(pagetable_t, uint64, const char *, uint64);
 int copyin(pagetable_t, char *, uint64, uint64);
 int copyinstr(pagetable_t, char *, uint64, uint64);
 int ismapped(pagetable_t, uint64);
-uint64 vmfault(pagetable_t, uint64, int);
+uint64 vmfault(pagetable_t, uint64);
 
 // plic.c
 void plicinit();

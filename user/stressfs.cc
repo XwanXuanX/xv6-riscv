@@ -12,7 +12,7 @@
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
-int main(int argc, char *argv[]) {
+int main() {
     int i;
     constexpr std::string_view path = "stressfs0";
     std::array<char, 512> data{};

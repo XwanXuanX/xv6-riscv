@@ -335,7 +335,7 @@ int copyout(const pagetable_t pagetable, uint64 dstva, const char *src,
 
         uint64 pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0) {
-            if ((pa0 = vmfault(pagetable, va0, 0)) == 0) {
+            if ((pa0 = vmfault(pagetable, va0)) == 0) {
                 return -1;
             }
         }
@@ -367,7 +367,7 @@ int copyin(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
         const uint64 va0 = PGROUNDDOWN(srcva);
         uint64 pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0) {
-            if ((pa0 = vmfault(pagetable, va0, 0)) == 0) {
+            if ((pa0 = vmfault(pagetable, va0)) == 0) {
                 return -1;
             }
         }
@@ -429,7 +429,7 @@ int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva,
 // that was lazily allocated in sys_sbrk().
 // returns 0 if va is invalid or already mapped, or if
 // out of physical memory, and physical address if successful.
-uint64 vmfault(const pagetable_t pagetable, uint64 va, int read) {
+uint64 vmfault(const pagetable_t pagetable, uint64 va) {
     const proc *p = myproc();
 
     if (va >= p->sz) {

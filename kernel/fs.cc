@@ -167,7 +167,7 @@ void iinit() {
 
     itable.lock.init_lock("itable");
     for (i = 0; i < NINODE; i++) {
-        initsleeplock(&itable.node[i].lock, "inode");
+        initsleeplock(&itable.node[i].lock);
     }
 }
 
