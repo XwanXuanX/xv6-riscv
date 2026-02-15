@@ -13,6 +13,7 @@
 #include "fs.h"
 #include "file.h"
 #include "fcntl.h"
+#include <array>
 
 namespace xv6 {
 
@@ -115,15 +116,16 @@ uint64 sys_fstat() {
 
 // Create the path new as a link to the same inode as old.
 uint64 sys_link() {
-    char name[DIRSIZ] = {}, nw[MAXPATH] = {}, old[MAXPATH] = {};
+    std::array<char, DIRSIZ> name{};
+    std::array<char, MAXPATH> nw{}, old{};
     inode *dp, *ip;
 
-    if (argstr(0, old, MAXPATH) < 0 || argstr(1, nw, MAXPATH) < 0) {
+    if (argstr(0, old.data(), MAXPATH) < 0 || argstr(1, nw.data(), MAXPATH) < 0) {
         return -1;
     }
 
     begin_op();
-    if ((ip = namei(old)) == nullptr) {
+    if ((ip = namei(old.data())) == nullptr) {
         end_op();
         return -1;
     }
@@ -139,11 +141,11 @@ uint64 sys_link() {
     iupdate(ip);
     iunlock(ip);
 
-    if ((dp = nameiparent(nw, name)) == nullptr) {
+    if ((dp = nameiparent(nw.data(), name.data())) == nullptr) {
         goto bad;
     }
     ilock(dp);
-    if (dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
+    if (dp->dev != ip->dev || dirlink(dp, name.data(), ip->inum) < 0) {
         iunlockput(dp);
         goto bad;
     }
@@ -181,15 +183,16 @@ static int isdirempty(inode *dp) {
 uint64 sys_unlink() {
     inode *ip, *dp;
     dirent de{};
-    char name[DIRSIZ] = {}, path[MAXPATH] = {};
+    std::array<char, DIRSIZ> name{};
+    std::array<char, MAXPATH> path{};
     uint off;
 
-    if (argstr(0, path, MAXPATH) < 0) {
+    if (argstr(0, path.data(), MAXPATH) < 0) {
         return -1;
     }
 
     begin_op();
-    if ((dp = nameiparent(path, name)) == nullptr) {
+    if ((dp = nameiparent(path.data(), name.data())) == nullptr) {
         end_op();
         return -1;
     }
@@ -197,11 +200,11 @@ uint64 sys_unlink() {
     ilock(dp);
 
     // Cannot unlink "." or "..".
-    if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0) {
+    if (namecmp(name.data(), ".") == 0 || namecmp(name.data(), "..") == 0) {
         goto bad;
     }
 
-    if ((ip = dirlookup(dp, name, &off)) == nullptr) {
+    if ((ip = dirlookup(dp, name.data(), &off)) == nullptr) {
         goto bad;
     }
     ilock(ip);
@@ -241,15 +244,15 @@ bad:
 static inode *
 create(char *path, const short type, const short major, const short minor) {
     inode *ip, *dp;
-    char name[DIRSIZ] = {};
+    std::array<char, DIRSIZ> name{};
 
-    if ((dp = nameiparent(path, name)) == nullptr) {
+    if ((dp = nameiparent(path, name.data())) == nullptr) {
         return nullptr;
     }
 
     ilock(dp);
 
-    if ((ip = dirlookup(dp, name, nullptr)) != nullptr) {
+    if ((ip = dirlookup(dp, name.data(), nullptr)) != nullptr) {
         iunlockput(dp);
         ilock(ip);
         if (type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE)) {
@@ -277,7 +280,7 @@ create(char *path, const short type, const short major, const short minor) {
         }
     }
 
-    if (dirlink(dp, name, ip->inum) < 0) {
+    if (dirlink(dp, name.data(), ip->inum) < 0) {
         goto fail;
     }
 
@@ -301,26 +304,26 @@ fail:
 }
 
 uint64 sys_open() {
-    char path[MAXPATH];
+    std::array<char, MAXPATH> path{};
     int fd, omode;
     file *f;
     inode *ip;
 
     argint(1, &omode);
-    if (argstr(0, path, MAXPATH) < 0) {
+    if (argstr(0, path.data(), MAXPATH) < 0) {
         return -1;
     }
 
     begin_op();
 
     if (omode & O_CREATE) {
-        ip = create(path, T_FILE, 0, 0);
+        ip = create(path.data(), T_FILE, 0, 0);
         if (ip == nullptr) {
             end_op();
             return -1;
         }
     } else {
-        if ((ip = namei(path)) == nullptr) {
+        if ((ip = namei(path.data())) == nullptr) {
             end_op();
             return -1;
         }
@@ -369,12 +372,12 @@ uint64 sys_open() {
 }
 
 uint64 sys_mkdir() {
-    char path[MAXPATH];
+    std::array<char, MAXPATH> path{};
     inode *ip;
 
     begin_op();
-    if (argstr(0, path, MAXPATH) < 0 ||
-        (ip = create(path, T_DIR, 0, 0)) == nullptr) {
+    if (argstr(0, path.data(), MAXPATH) < 0 ||
+        (ip = create(path.data(), T_DIR, 0, 0)) == nullptr) {
         end_op();
         return -1;
     }
@@ -385,14 +388,14 @@ uint64 sys_mkdir() {
 
 uint64 sys_mknod() {
     inode *ip;
-    char path[MAXPATH];
+    std::array<char, MAXPATH> path{};
     int major, minor;
 
     begin_op();
     argint(1, &major);
     argint(2, &minor);
-    if (argstr(0, path, MAXPATH) < 0 ||
-        (ip = create(path, T_DEVICE, major, minor)) == nullptr) {
+    if ((argstr(0, path.data(), MAXPATH)) < 0 ||
+        (ip = create(path.data(), T_DEVICE, major, minor)) == nullptr) {
         end_op();
         return -1;
     }
@@ -402,12 +405,12 @@ uint64 sys_mknod() {
 }
 
 uint64 sys_chdir() {
-    char path[MAXPATH];
+    std::array<char, MAXPATH> path{};
     inode *ip;
     proc *p = myproc();
 
     begin_op();
-    if (argstr(0, path, MAXPATH) < 0 || (ip = namei(path)) == nullptr) {
+    if (argstr(0, path.data(), MAXPATH) < 0 || (ip = namei(path.data())) == nullptr) {
         end_op();
         return -1;
     }
@@ -425,19 +428,19 @@ uint64 sys_chdir() {
 }
 
 uint64 sys_exec() {
-    char path[MAXPATH];
-    const char *argv[MAXARG];
+    std::array<char, MAXPATH> path{};
+    std::array<const char *, MAXARG> argv{};
     uint i;
     int ret;
     uint64 uargv, uarg;
 
     argaddr(1, &uargv);
-    if (argstr(0, path, MAXPATH) < 0) {
+    if (argstr(0, path.data(), MAXPATH) < 0) {
         return -1;
     }
-    memset(argv, 0, sizeof(argv));
+    memset(argv.data(), 0, sizeof(argv));
     for (i = 0;; i++) {
-        if (i >= NELEM(argv)) {
+        if (i >= argv.size()) {
             goto bad;
         }
         if (fetchaddr(uargv + sizeof(uint64) * i, &uarg) < 0) {
@@ -456,7 +459,7 @@ uint64 sys_exec() {
         }
     }
 
-    ret = kexec(path, argv);
+    ret = kexec(path.data(), argv.data());
 
     for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++) {
         kfree((void *)argv[i]);

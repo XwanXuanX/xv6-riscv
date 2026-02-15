@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include "riscv.h"
+#include <span>
 
 namespace xv6 {
 
@@ -170,7 +171,7 @@ void prepare_return();
 // uart.c
 void uartinit();
 void uartintr();
-void uartwrite(char[], int);
+void uartwrite(std::span<char>);
 void uartputc_sync(int);
 int uartgetc();
 

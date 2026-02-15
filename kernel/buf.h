@@ -2,6 +2,7 @@
 
 #include "sleeplock.h"
 #include "fs.h"
+#include <array>
 
 namespace xv6 {
 
@@ -14,7 +15,7 @@ struct buf {
     uint refcnt;
     buf *prev; // LRU cache list
     buf *next;
-    uchar data[BSIZE];
+    std::array<uchar, BSIZE> data;
 };
 
 } // namespace xv6

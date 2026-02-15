@@ -10,13 +10,14 @@
 #include "file.h"
 #include "stats.h"
 #include "proc.h"
+#include <array>
 
 namespace xv6 {
 
-struct devsw devsw[NDEV];
+std::array<struct devsw, NDEV> devsw;
 struct {
     spinlock lock;
-    file files[NFILE];
+    std::array<file, NFILE> files;
 } ftable;
 
 void fileinit() { ftable.lock.init_lock("ftable"); }
@@ -24,7 +25,7 @@ void fileinit() { ftable.lock.init_lock("ftable"); }
 // Allocate a file structure.
 file *filealloc() {
     ftable.lock.lock();
-    for (file *f = ftable.files; f < ftable.files + NFILE; f++) {
+    for (file *f = ftable.files.data(); f < ftable.files.data() + NFILE; f++) {
         if (f->ref == 0) {
             f->ref = 1;
             ftable.lock.unlock();

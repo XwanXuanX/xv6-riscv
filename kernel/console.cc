@@ -14,6 +14,7 @@
 #include "fs.h"
 #include "file.h"
 #include "defs.h"
+#include <array>
 
 #define BACKSPACE 0x100  // erase the last output character
 #define C(x) ((x) - '@') // Control-x
@@ -42,18 +43,17 @@ struct {
 
     // input circular buffer
 #define INPUT_BUF_SIZE 128
-    char buf[INPUT_BUF_SIZE];
+    std::array<char, INPUT_BUF_SIZE> buf;
     uint r; // Read index
     uint w; // Write index
     uint e; // Edit index
 } cons;
 
-//
 // user write() system calls to the console go here.
 // uses sleep() and UART interrupts.
 //
 int consolewrite(const int user_src, const uint64 src, const int n) {
-    char buf[32]; // move batches from user space to uart.
+    std::array<char, 32> buf{}; // move batches from user space to uart.
     int i = 0;
 
     while (i < n) {
@@ -61,10 +61,10 @@ int consolewrite(const int user_src, const uint64 src, const int n) {
         if (nn > n - i) {
             nn = n - i;
         }
-        if (either_copyin(buf, user_src, src + i, nn) == -1) {
+        if (either_copyin(buf.data(), user_src, src + i, nn) == -1) {
             break;
         }
-        uartwrite(buf, nn);
+        uartwrite(buf);
         i += nn;
     }
 

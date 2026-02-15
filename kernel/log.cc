@@ -4,6 +4,7 @@
 #include "spinlock.h"
 #include "fs.h"
 #include "buf.h"
+#include <array>
 
 namespace xv6 {
 
@@ -34,7 +35,7 @@ namespace xv6 {
 // and to keep track in memory of logged block# before commit.
 struct logheader {
     int n;
-    uint block[LOGBLOCKS];
+    std::array<uint, LOGBLOCKS> block;
 };
 
 struct log {
@@ -45,7 +46,7 @@ struct log {
     int dev;
     logheader lh;
 };
-log log;
+struct log log;
 
 static void recover_from_log();
 static void commit();
@@ -69,7 +70,7 @@ static void install_trans(const int recovering) {
         }
         buf *lbuf = bread(log.dev, log.start + tail + 1); // read log block
         buf *dbuf = bread(log.dev, log.lh.block[tail]);   // read dst
-        memmove(dbuf->data, lbuf->data, BSIZE);           // copy block to dst
+        memmove(dbuf->data.data(), lbuf->data.data(), BSIZE);           // copy block to dst
         bwrite(dbuf);                                     // write dst to disk
         if (recovering == 0) {
             bunpin(dbuf);
@@ -82,7 +83,7 @@ static void install_trans(const int recovering) {
 // Read the log header from disk into the in-memory log header
 static void read_head() {
     buf *buf = bread(log.dev, log.start);
-    const logheader *lh = (struct logheader *)buf->data;
+    const logheader *lh = (struct logheader *)buf->data.data();
     log.lh.n = lh->n;
     for (int i = 0; i < log.lh.n; i++) {
         log.lh.block[i] = lh->block[i];
@@ -95,7 +96,7 @@ static void read_head() {
 // current transaction commits.
 static void write_head() {
     buf *buf = bread(log.dev, log.start);
-    const auto hb = (struct logheader *)buf->data;
+    const auto hb = (struct logheader *)buf->data.data();
     hb->n = log.lh.n;
     for (int i = 0; i < log.lh.n; i++) {
         hb->block[i] = log.lh.block[i];
@@ -165,7 +166,7 @@ static void write_log() {
     for (int tail = 0; tail < log.lh.n; tail++) {
         buf *to = bread(log.dev, log.start + tail + 1); // log block
         buf *from = bread(log.dev, log.lh.block[tail]); // cache block
-        memmove(to->data, from->data, BSIZE);
+        memmove(to->data.data(), from->data.data(), BSIZE);
         bwrite(to); // write the log
         brelse(from);
         brelse(to);

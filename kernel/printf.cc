@@ -7,6 +7,8 @@
 #include "types.h"
 #include "spinlock.h"
 #include "defs.h"
+#include <array>
+#include <string_view>
 
 namespace xv6 {
 
@@ -18,10 +20,10 @@ static struct {
     spinlock lock;
 } pr;
 
-static char digits[] = "0123456789abcdef";
+constexpr std::string_view digits = "0123456789abcdef";
 
 static void printint(const long long xx, const int base, int sign) {
-    char buf[20];
+    std::array<char, 20> buf{};
     unsigned long long x;
 
     if (sign && ((sign = xx < 0))) {

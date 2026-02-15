@@ -4,6 +4,7 @@
 // Both the kernel and user programs use this header file.
 
 #include "types.h"
+#include <array>
 
 namespace xv6 {
 
@@ -40,7 +41,7 @@ struct dinode {
     ushort minor;            // Minor device number (T_DEVICE only)
     ushort nlink;            // Number of links to inode in file system
     uint size;               // Size of file (bytes)
-    uint addrs[NDIRECT + 1]; // Data block addresses
+    std::array<uint, NDIRECT + 1> addrs; // Data block addresses
 };
 
 // Inodes per block.
@@ -62,7 +63,7 @@ struct dinode {
 // character.
 struct dirent {
     ushort inum;
-    char name[DIRSIZ] __attribute__((nonstring));
+    std::array<char, DIRSIZ> name;
 };
 
 } // namespace xv6

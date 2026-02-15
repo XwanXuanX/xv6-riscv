@@ -18,6 +18,7 @@
 #include "fs.h"
 #include "buf.h"
 #include "file.h"
+#include <array>
 
 namespace xv6 {
 
@@ -29,7 +30,7 @@ superblock sb;
 // Read the super block.
 static void readsb(const int dev, superblock *sb) {
     buf *bp = bread(dev, 1);
-    memmove(sb, bp->data, sizeof(*sb));
+    memmove(sb, bp->data.data(), sizeof(*sb));
     brelse(bp);
 }
 
@@ -46,7 +47,7 @@ void fsinit(const int dev) {
 // Zero a block.
 static void bzero(const int dev, const int bno) {
     buf *bp = bread(dev, bno);
-    memset(bp->data, 0, BSIZE);
+    memset(bp->data.data(), 0, BSIZE);
     log_write(bp);
     brelse(bp);
 }
@@ -159,7 +160,7 @@ static void bfree(const int dev, const uint b) {
 
 struct {
     spinlock lock;
-    inode node[NINODE];
+    std::array<inode, NINODE> node;
 } itable;
 
 void iinit() {
@@ -180,7 +181,7 @@ static inode *iget(uint dev, uint inum);
 inode *ialloc(const uint dev, const short type) {
     for (uint inum = 1; inum < sb.ninodes; inum++) {
         buf *bp = bread(dev, IBLOCK(inum, sb));
-        dinode *dip = reinterpret_cast<struct dinode *>(bp->data) + inum % IPB;
+        dinode *dip = reinterpret_cast<struct dinode *>(bp->data.data()) + inum % IPB;
         if (dip->type == 0) { // a free inode
             memset(dip, 0, sizeof(*dip));
             dip->type = type;
@@ -200,13 +201,13 @@ inode *ialloc(const uint dev, const short type) {
 // Caller must hold ip->lock.
 void iupdate(const inode *ip) {
     buf *bp = bread(ip->dev, IBLOCK(ip->inum, sb));
-    dinode *dip = reinterpret_cast<dinode *>(bp->data) + ip->inum % IPB;
+    dinode *dip = reinterpret_cast<dinode *>(bp->data.data()) + ip->inum % IPB;
     dip->type = ip->type;
     dip->major = ip->major;
     dip->minor = ip->minor;
     dip->nlink = ip->nlink;
     dip->size = ip->size;
-    memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
+    memmove(dip->addrs.data(), ip->addrs, sizeof(ip->addrs));
     log_write(bp);
     brelse(bp);
 }
@@ -268,13 +269,13 @@ void ilock(inode *ip) {
     if (ip->valid == 0) {
         buf *bp = bread(ip->dev, IBLOCK(ip->inum, sb));
         const dinode *dip =
-            reinterpret_cast<dinode *>(bp->data) + ip->inum % IPB;
+            reinterpret_cast<dinode *>(bp->data.data()) + ip->inum % IPB;
         ip->type = dip->type;
         ip->major = dip->major;
         ip->minor = dip->minor;
         ip->nlink = dip->nlink;
         ip->size = dip->size;
-        memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
+        memmove(ip->addrs, dip->addrs.data(), sizeof(ip->addrs));
         brelse(bp);
         ip->valid = 1;
         if (ip->type == 0) {
@@ -336,7 +337,7 @@ void ireclaim(const int dev) {
         inode *ip = nullptr;
         buf *bp = bread(dev, IBLOCK(inum, sb));
         if (const dinode *dip =
-                reinterpret_cast<struct dinode *>(bp->data) + inum % IPB;
+                reinterpret_cast<struct dinode *>(bp->data.data()) + inum % IPB;
             dip->type != 0 && dip->nlink == 0) { // is an orphaned inode
             printf("ireclaim: orphaned inode %d\n", inum);
             ip = iget(dev, inum);
@@ -387,7 +388,7 @@ static uint bmap(inode *ip, uint bn) {
             ip->addrs[NDIRECT] = addr;
         }
         buf *bp = bread(ip->dev, addr);
-        if (const auto a = reinterpret_cast<uint *>(bp->data);
+        if (const auto a = reinterpret_cast<uint *>(bp->data.data());
             (addr = a[bn]) == 0) {
             addr = balloc(ip->dev);
             if (addr) {
@@ -414,7 +415,7 @@ void itrunc(inode *ip) {
 
     if (ip->addrs[NDIRECT]) {
         buf *bp = bread(ip->dev, ip->addrs[NDIRECT]);
-        const uint *a = reinterpret_cast<uint *>(bp->data);
+        const uint *a = reinterpret_cast<uint *>(bp->data.data());
         for (uint j = 0; j < NINDIRECT; j++) {
             if (a[j]) {
                 bfree(ip->dev, a[j]);
@@ -460,7 +461,7 @@ uint readi(inode *ip, const int user_dst, uint64 dst, uint off, uint n) {
         }
         buf *bp = bread(ip->dev, addr);
         m = MIN(n - tot, BSIZE - off % BSIZE);
-        if (either_copyout(user_dst, dst, bp->data + off % BSIZE, m) == -1) {
+        if (either_copyout(user_dst, dst, bp->data.data() + off % BSIZE, m) == -1) {
             brelse(bp);
             tot = -1;
             break;
@@ -494,7 +495,7 @@ int writei(inode *ip, const int user_src, uint64 src, uint off, const uint n) {
         }
         buf *bp = bread(ip->dev, addr);
         m = MIN(n - tot, BSIZE - off % BSIZE);
-        if (either_copyin(bp->data + off % BSIZE, user_src, src, m) == -1) {
+        if (either_copyin(bp->data.data() + off % BSIZE, user_src, src, m) == -1) {
             brelse(bp);
             break;
         }
@@ -535,7 +536,7 @@ inode *dirlookup(inode *dp, const char *name, uint *poff) {
         if (de.inum == 0) {
             continue;
         }
-        if (namecmp(name, de.name) == 0) {
+        if (namecmp(name, de.name.data()) == 0) {
             // entry matches path element
             if (poff) {
                 *poff = off;
@@ -572,7 +573,7 @@ int dirlink(inode *dp, const char *name, const uint inum) {
         }
     }
 
-    strncpy(de.name, name, DIRSIZ);
+    strncpy(de.name.data(), name, DIRSIZ);
     de.inum = inum;
     if (writei(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) !=
         sizeof(de)) {
@@ -659,8 +660,8 @@ static inode *namex(const char *path, const int nameiparent, char *name) {
 }
 
 inode *namei(const char *path) {
-    char name[DIRSIZ];
-    return namex(path, 0, name);
+    std::array<char, DIRSIZ> name{};
+    return namex(path, 0, name.data());
 }
 
 inode *nameiparent(const char *path, char *name) {

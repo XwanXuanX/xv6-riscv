@@ -12,7 +12,7 @@ set(COMMON_FLAGS
     -Wall
     -Werror
     -Wno-unknown-attributes
-    -O
+    -O2
     -fno-omit-frame-pointer
     -ggdb
     -gdwarf-2

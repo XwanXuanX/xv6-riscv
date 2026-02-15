@@ -5,6 +5,7 @@
 #include "proc.h"
 #include "defs.h"
 #include "mlfq.h"
+#include <array>
 
 namespace xv6 {
 
@@ -15,9 +16,9 @@ static void assert(const bool cond, const char *msg) {
     }
 }
 
-cpu cpus[NCPU];
+std::array<cpu, NCPU> cpus;
 
-proc proc[NPROC];
+std::array<struct proc, NPROC> proc;
 
 // The multi-level queue in MLFQ (contains lock)
 // Shared across ALL CPUs (allocated in data/BSS segment)
@@ -32,7 +33,7 @@ spinlock pid_lock;
 extern void forkret();
 static void freeproc(struct proc *p);
 
-extern int quantum[NLEVELS]; // trap.c
+extern std::array<int, NLEVELS> quantum; // trap.c
 extern char trampoline[];    // trampoline.S
 
 // helps ensure that wakeups of wait()ing
@@ -45,12 +46,12 @@ spinlock wait_lock;
 // Map it high in memory, followed by an invalid
 // guard page.
 void proc_mapstacks(const pagetable_t kpgtbl) {
-    for (const struct proc *p = proc; p < &proc[NPROC]; p++) {
+    for (const struct proc *p = proc.data(); p < &proc[NPROC]; p++) {
         auto pa = static_cast<char *>(kalloc());
         if (pa == nullptr) {
             panic("kalloc");
         }
-        const uint64 va = KSTACK(static_cast<int>(p - proc));
+        const uint64 va = KSTACK(static_cast<int>(p - proc.data()));
         kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
     }
 }
@@ -59,10 +60,10 @@ void proc_mapstacks(const pagetable_t kpgtbl) {
 void procinit() {
     pid_lock.init_lock("nextpid");
     wait_lock.init_lock("wait_lock");
-    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc.data(); p < &proc[NPROC]; p++) {
         p->lock.init_lock("proc");
         p->state = UNUSED;
-        p->kstack = KSTACK(static_cast<int>(p - proc));
+        p->kstack = KSTACK(static_cast<int>(p - proc.data()));
     }
 }
 
@@ -112,7 +113,7 @@ static struct proc *allocproc() {
     //  2. acquire the lock
     //  3. if ok: proceed to setup with lock held
     //  4. if no: release the lock immediately
-    for (p = proc; p < &proc[NPROC]; p++) {
+    for (p = proc.data(); p < &proc[NPROC]; p++) {
         p->lock.lock();
         if (p->state == UNUSED) {
             goto found;
@@ -316,7 +317,7 @@ int kfork() {
     }
     np->cwd = idup(p->cwd);
 
-    safestrcpy(np->name, p->name, sizeof(p->name));
+    safestrcpy(np->name.data(), p->name.data(), sizeof(p->name));
 
     const int pid = np->pid;
 
@@ -352,7 +353,7 @@ int kfork() {
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
 void reparent(const struct proc *const p) {
-    for (struct proc *pp = proc; pp < &proc[NPROC]; pp++) {
+    for (struct proc *pp = proc.data(); pp < &proc[NPROC]; pp++) {
         if (pp->parent == p) {
             pp->parent = initproc;
             wakeup(initproc);
@@ -421,7 +422,7 @@ int kwait(const uint64 addr) {
     for (;;) {
         // Scan through table looking for exited children.
         int havekids = 0;
-        for (struct proc *pp = proc; pp < &proc[NPROC]; pp++) {
+        for (struct proc *pp = proc.data(); pp < &proc[NPROC]; pp++) {
             if (pp->parent == p) {
                 // make sure the child isn't still in exit() or swtch().
                 pp->lock.lock();
@@ -513,7 +514,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
         // save CPU
         int found = 0;
         // simple RR loop
-        for (p = proc; p < &proc[NPROC]; p++) {
+        for (p = proc.data(); p < &proc[NPROC]; p++) {
             // lock each process before inspecting or modifying it to avoid race
             // condition without this lock, other CPUs could concurrently modify
             // this process's state or the process itself could be transitioning
@@ -793,7 +794,8 @@ void forkret() {
 
         // We can invoke kexec() now that file system is initialized.
         // Put the return value (argc) of kexec into a0.
-        p->trapf->a0 = kexec("/init", (const char *[]){"/init", nullptr});
+        static constexpr std::array<const char *, 2> init_argv = {"/init", nullptr};
+        p->trapf->a0 = kexec("/init", const_cast<const char **>(init_argv.data()));
         if (p->trapf->a0 == static_cast<uint64>(-1)) {
             panic("exec");
         }
@@ -849,7 +851,7 @@ void sleep(void *chan, spinlock *lk) {
 // Wake up all processes sleeping on channel chan.
 // Caller should hold the condition lock.
 void wakeup(const void *chan) {
-    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc.data(); p < &proc[NPROC]; p++) {
         if (p != myproc()) {
             p->lock.lock();
             if (p->state == SLEEPING && p->chan == chan) {
@@ -880,7 +882,7 @@ void wakeup(const void *chan) {
 // The victim won't exit until it tries to return
 // to user space (see usertrap() in trap.c).
 int kkill(const int pid) {
-    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc.data(); p < &proc[NPROC]; p++) {
         p->lock.lock();
         if (p->pid == pid) {
             p->killed = 1;
@@ -975,13 +977,13 @@ static void mlfq_dump_nolock() {
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
 void procdump() {
-    static const char *states[] = {
-        [UNUSED] = "unused",   [USED] = "used",      [SLEEPING] = "sleep ",
-        [RUNNABLE] = "runble", [RUNNING] = "run   ", [ZOMBIE] = "zombie"};
+    static constexpr std::array<const char *, 6> states = {
+        "unused",   "used",     "sleep ",
+        "runble", "run   ", "zombie"};
     const char *state;
 
     printf("PID\tSTATE\tNAME\n");
-    for (struct proc *p = proc; p < &proc[NPROC]; p++) {
+    for (struct proc *p = proc.data(); p < &proc[NPROC]; p++) {
         if (p->state == UNUSED) {
             continue;
         }

@@ -3,6 +3,7 @@
 #include "kernel/types.h"
 #include "kernel/fs.h"
 #include "kernel/sleeplock.h"
+#include <array>
 
 namespace xv6 {
 
@@ -47,7 +48,7 @@ struct devsw {
     int (*write)(int, uint64, int);
 };
 
-extern devsw devsw[];
+extern std::array<struct devsw, NDEV> devsw;
 
 #define CONSOLE 1
 

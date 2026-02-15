@@ -3,6 +3,7 @@
 
 #include "param.h"
 #include "spinlock.h"
+#include <array>
 
 namespace xv6 {
 
@@ -10,12 +11,12 @@ namespace xv6 {
 struct proc;
 
 struct rqueue {
-    proc *head;
-    proc *tail;
+    struct proc *head;
+    struct proc *tail;
 };
 
 struct mlfq {
-    rqueue q[NLEVELS];
+    std::array<rqueue, NLEVELS> q;
     spinlock lock;
     // The "version number" of the MLFQ
     // used for periodic priority boosting
@@ -34,11 +35,11 @@ void mlfq_init(mlfq *m);
 //  1. place newly created process at the top level queue
 //  2. demote a process to a lower level queue
 //  3. periodical priority boost for all processes
-void mlfq_enq(mlfq *m, int lvl, proc *p);
+void mlfq_enq(mlfq *m, int lvl, struct proc *p);
 
 // Deque a process from a specific level queue
 // return nullptr when the current queue is empty
-proc *mlfq_deq(mlfq *m, int lvl);
+struct proc *mlfq_deq(mlfq *m, int lvl);
 
 // Remove a process from a specific level queue
 // could be used in:
@@ -46,15 +47,15 @@ proc *mlfq_deq(mlfq *m, int lvl);
 //  3. periodical priority boost
 // There could be cases where the remove target does not exist in the queue
 //  - return a bool to indicate if the removal is successful
-bool mlfq_rm(mlfq *m, int lvl, proc *p);
+bool mlfq_rm(mlfq *m, int lvl, struct proc *p);
 
 //
 // Unsafe APIs (assume locked, used in bulk operation)
 //
 
-void mlfq_enq_locked(mlfq *m, int lvl, proc *p);
-proc *mlfq_deq_locked(mlfq *m, int lvl);
-bool mlfq_rm_locked(mlfq *m, int lvl, const proc *p);
+void mlfq_enq_locked(mlfq *m, int lvl, struct proc *p);
+struct proc *mlfq_deq_locked(mlfq *m, int lvl);
+bool mlfq_rm_locked(mlfq *m, int lvl, const struct proc *p);
 
 } // namespace xv6
 
