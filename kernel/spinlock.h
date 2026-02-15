@@ -19,7 +19,7 @@ class spinlock {
     void unlock();
 
     // Is anyone holding the lock
-    bool holding();
+    bool holding() const;
 
   private:
     uint locked_; // Is the lock held?

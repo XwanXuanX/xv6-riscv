@@ -125,7 +125,7 @@ void spinlock::unlock() {
 
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
-bool spinlock::holding() {
+bool spinlock::holding() const {
     const int r = locked_ && cpu_ == mycpu();
     return r;
 }

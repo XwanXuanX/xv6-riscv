@@ -18,4 +18,10 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 
 # Always insert braces
 InsertBraces: true
+
+AlwaysBreakAfterReturnType: None
+BreakBeforeBraces: Attach
+PenaltyReturnTypeOnItsOwnLine: 0
+
+AllowShortFunctionsOnASingleLine: All
 ---
