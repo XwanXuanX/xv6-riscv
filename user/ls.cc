@@ -1,4 +1,4 @@
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "user/user.h"
 #include "kernel/fs.h"
 #include "kernel/fcntl.h"
@@ -25,8 +25,8 @@ fmtname(const char *path) {
 void ls(const char *path) {
     char buf[512], *p;
     int fd;
-    xv6::dirent de;
-    struct stat st;
+    xv6::dirent de{};
+    struct stats st{};
 
     if ((fd = open(path, O_RDONLY)) < 0) {
         fprintf(2, "ls: cannot open %s\n", path);

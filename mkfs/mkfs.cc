@@ -8,7 +8,7 @@
 #define stat xv6_stat // avoid clash with host struct stat
 #include "kernel/types.h"
 #include "kernel/fs.h"
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "kernel/param.h"
 
 using namespace xv6;
@@ -231,7 +231,7 @@ void balloc(const int used) {
     wsect(sb.bmapstart, buf);
 }
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 void iappend(const uint inum, void *xp, int n) {
     const char *p = static_cast<char *>(xp);
@@ -262,7 +262,7 @@ void iappend(const uint inum, void *xp, int n) {
             }
             x = xint(indirect[fbn - NDIRECT]);
         }
-        const uint n1 = min(n, (fbn + 1) * BSIZE - off);
+        const uint n1 = MIN(n, (fbn + 1) * BSIZE - off);
         rsect(x, buf);
         bcopy(p, buf + off - fbn * BSIZE, n1);
         wsect(x, buf);

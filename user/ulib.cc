@@ -1,5 +1,5 @@
 #include "kernel/types.h"
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "kernel/fcntl.h"
 #include "kernel/vm.h"
 #include "user/user.h"
@@ -72,7 +72,7 @@ gets(char *buf, const int max) {
     return buf;
 }
 
-int stat(const char *n, xv6::stat *st) {
+int stat(const char *n, xv6::stats *st) {
 
     const int fd = open(n, O_RDONLY);
     if (fd < 0)

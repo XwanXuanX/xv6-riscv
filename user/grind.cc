@@ -3,7 +3,7 @@
 //
 
 #include "kernel/types.h"
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
@@ -199,7 +199,7 @@ void go(const int which_child) {
                 printf("grind: write c failed\n");
                 exit(1);
             }
-            struct stat st;
+            struct stats st;
             if (fstat(fd1, &st) != 0) {
                 printf("grind: fstat failed\n");
                 exit(1);

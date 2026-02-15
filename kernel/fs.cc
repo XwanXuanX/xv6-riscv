@@ -12,7 +12,7 @@
 #include "types.h"
 #include "defs.h"
 #include "param.h"
-#include "stat.h"
+#include "stats.h"
 #include "spinlock.h"
 #include "proc.h"
 #include "fs.h"
@@ -21,7 +21,7 @@
 
 namespace xv6 {
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 // there should be one superblock per disk device, but we run with
 // only one device
 superblock sb;
@@ -29,7 +29,6 @@ superblock sb;
 // Read the super block.
 static void
 readsb(const int dev, superblock *sb) {
-
     buf *bp = bread(dev, 1);
     memmove(sb, bp->data, sizeof(*sb));
     brelse(bp);
@@ -433,7 +432,7 @@ void itrunc(inode *ip) {
 
 // Copy stat information from inode.
 // Caller must hold ip->lock.
-void stati(inode *ip, stat *st) {
+void stati(inode *ip, stats *st) {
     st->dev = ip->dev;
     st->ino = ip->inum;
     st->type = ip->type;
@@ -458,7 +457,7 @@ uint readi(inode *ip, const int user_dst, uint64 dst, uint off, uint n) {
         if (addr == 0)
             break;
         buf *bp = bread(ip->dev, addr);
-        m = min(n - tot, BSIZE - off % BSIZE);
+        m = MIN(n - tot, BSIZE - off % BSIZE);
         if (either_copyout(user_dst, dst, bp->data + off % BSIZE, m) == -1) {
             brelse(bp);
             tot = -1;
@@ -489,7 +488,7 @@ int writei(inode *ip, const int user_src, uint64 src, uint off, const uint n) {
         if (addr == 0)
             break;
         buf *bp = bread(ip->dev, addr);
-        m = min(n - tot, BSIZE - off % BSIZE);
+        m = MIN(n - tot, BSIZE - off % BSIZE);
         if (either_copyin(bp->data + off % BSIZE, user_src, src, m) == -1) {
             brelse(bp);
             break;

@@ -1,4 +1,4 @@
-#include "kernel/stat.h"
+#include "kernel/stats.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
 
@@ -11,7 +11,7 @@ char buf[BUFSZ];
 int main(int argc, char **argv) {
     int fd = 0;
     char *s = argv[0];
-    struct stat st;
+    struct stats st;
     const auto ff = "file0";
 
     if ((fd = open(ff, O_CREATE | O_WRONLY)) < 0) {

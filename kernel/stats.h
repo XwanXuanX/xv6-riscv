@@ -8,7 +8,7 @@ namespace xv6 {
 #define T_FILE 2   // File
 #define T_DEVICE 3 // Device
 
-struct stat {
+struct stats {
     int dev;     // File system's disk device
     uint ino;    // Inode number
     short type;  // Type of file

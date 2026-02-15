@@ -8,7 +8,7 @@
 #include "fs.h"
 #include "spinlock.h"
 #include "file.h"
-#include "stat.h"
+#include "stats.h"
 #include "proc.h"
 
 namespace xv6 {
@@ -76,7 +76,7 @@ void fileclose(file *f) {
 // addr is a user virtual address, pointing to a struct stat.
 int filestat(file *f, const uint64 addr) {
     const proc *p = myproc();
-    stat st{};
+    stats st{};
 
     if (f->type == FD_INODE || f->type == FD_DEVICE) {
         ilock(f->ip);

@@ -14,7 +14,7 @@ struct pipe;
 struct proc;
 class spinlock;
 struct sleeplock;
-struct stat;
+struct stats;
 struct superblock;
 
 // number of elements in fixed-size array
@@ -95,7 +95,7 @@ int namecmp(const char *, const char *);
 inode *namei(const char *);
 inode *nameiparent(char *, char *);
 uint readi(inode *, int, uint64, uint, uint);
-void stati(inode *, stat *);
+void stati(inode *, stats *);
 int writei(inode *, int, uint64, uint, uint);
 void itrunc(inode *);
 void ireclaim(int);
