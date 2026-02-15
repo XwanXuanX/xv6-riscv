@@ -9,7 +9,7 @@
 
 std::array<char, BUFSZ> buf;
 
-int main([[maybe_unused]] int argc, char **argv) {
+[[noreturn]] int main([[maybe_unused]] int argc, char **argv) {
     int fd = 0;
     char *s = argv[0];
     stats st;
