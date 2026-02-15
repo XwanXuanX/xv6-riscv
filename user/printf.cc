@@ -38,7 +38,7 @@ static void
 printptr(const int fd, uint64 x) {
     putc(fd, '0');
     putc(fd, 'x');
-    for (uint i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
+    for (uint i = 0; i < sizeof(uint64) * 2; i++, x <<= 4)
         putc(fd, digits[x >> (sizeof(uint64) * 8 - 4)]);
 }
 

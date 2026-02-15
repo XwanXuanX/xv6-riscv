@@ -131,10 +131,10 @@ walkaddr(const pagetable_t pagetable, const uint64 va) {
 int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size, uint64 pa, const int perm) {
     pte_t *pte;
 
-    if ((va % PGSIZE) != 0)
+    if (va % PGSIZE != 0)
         panic("mappages: va not aligned");
 
-    if ((size % PGSIZE) != 0)
+    if (size % PGSIZE != 0)
         panic("mappages: size not aligned");
 
     if (size == 0)
@@ -173,7 +173,7 @@ uvmcreate() {
 void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages, const int do_free) {
     pte_t *pte;
 
-    if ((va % PGSIZE) != 0)
+    if (va % PGSIZE != 0)
         panic("uvmunmap: not aligned");
 
     for (uint64 a = va; a < va + npages * PGSIZE; a += PGSIZE) {
@@ -237,7 +237,7 @@ void freewalk(const pagetable_t pagetable) {
     // there are 2^9 = 512 PTEs in a page table.
     for (int i = 0; i < 512; i++) {
         const pte_t pte = pagetable[i];
-        if ((pte & PTE_V) && (pte & (PTE_R | PTE_W | PTE_X)) == 0) {
+        if (pte & PTE_V && (pte & (PTE_R | PTE_W | PTE_X)) == 0) {
             // this PTE points to a lower-level page table.
             const uint64 child = PTE2PA(pte);
             freewalk((pagetable_t)child);
@@ -246,7 +246,7 @@ void freewalk(const pagetable_t pagetable) {
             panic("freewalk: leaf");
         }
     }
-    kfree((void *)pagetable);
+    kfree(pagetable);
 }
 
 // Free user memory pages,
@@ -382,9 +382,8 @@ int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) 
                 *dst = '\0';
                 got_null = 1;
                 break;
-            } else {
-                *dst = *p;
             }
+            *dst = *p;
             --n;
             --max;
             p++;
@@ -395,9 +394,8 @@ int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) 
     }
     if (got_null) {
         return 0;
-    } else {
-        return -1;
     }
+    return -1;
 }
 
 // allocate and map user memory if process is referencing a page

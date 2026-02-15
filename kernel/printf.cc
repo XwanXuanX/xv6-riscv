@@ -25,7 +25,7 @@ printint(const long long xx, const int base, int sign) {
     char buf[20];
     unsigned long long x;
 
-    if (sign && (sign = (xx < 0)))
+    if (sign && (sign = xx < 0))
         x = -xx;
     else
         x = xx;
@@ -46,7 +46,7 @@ static void
 printptr(uint64 x) {
     consputc('0');
     consputc('x');
-    for (uint i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
+    for (uint i = 0; i < sizeof(uint64) * 2; i++, x <<= 4)
         consputc(digits[x >> (sizeof(uint64) * 8 - 4)]);
 }
 

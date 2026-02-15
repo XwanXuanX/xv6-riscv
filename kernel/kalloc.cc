@@ -41,7 +41,7 @@ void freerange(void *pa_start, void *pa_end) {
 // initializing the allocator; see kinit above.)
 void kfree(void *pa) {
 
-    if (((uint64)pa % PGSIZE) != 0 || static_cast<char *>(pa) < end || (uint64)pa >= PHYSTOP)
+    if ((uint64)pa % PGSIZE != 0 || static_cast<char *>(pa) < end || (uint64)pa >= PHYSTOP)
         panic("kfree");
 
     // Fill with junk to catch dangling refs.
@@ -68,8 +68,8 @@ kalloc(void) {
     kmem.lock.unlock();
 
     if (r)
-        memset((char *)r, 5, PGSIZE); // fill with junk
-    return (void *)r;
+        memset(r, 5, PGSIZE); // fill with junk
+    return r;
 }
 
 } // namespace xv6

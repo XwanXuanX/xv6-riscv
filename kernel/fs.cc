@@ -459,7 +459,7 @@ uint readi(inode *ip, const int user_dst, uint64 dst, uint off, uint n) {
             break;
         buf *bp = bread(ip->dev, addr);
         m = min(n - tot, BSIZE - off % BSIZE);
-        if (either_copyout(user_dst, dst, bp->data + (off % BSIZE), m) == -1) {
+        if (either_copyout(user_dst, dst, bp->data + off % BSIZE, m) == -1) {
             brelse(bp);
             tot = -1;
             break;
@@ -490,7 +490,7 @@ int writei(inode *ip, const int user_src, uint64 src, uint off, const uint n) {
             break;
         buf *bp = bread(ip->dev, addr);
         m = min(n - tot, BSIZE - off % BSIZE);
-        if (either_copyin(bp->data + (off % BSIZE), user_src, src, m) == -1) {
+        if (either_copyin(bp->data + off % BSIZE, user_src, src, m) == -1) {
             brelse(bp);
             break;
         }

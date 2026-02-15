@@ -19,7 +19,7 @@ int do_rand(unsigned long *ctx) {
      */
 
     /* Transform to [1, 0x7ffffffe] range. */
-    long x = (*ctx % 0x7ffffffe) + 1;
+    long x = *ctx % 0x7ffffffe + 1;
     const long hi = x / 127773;
     const long lo = x % 127773;
     x = 16807 * lo - 2836 * hi;
@@ -28,13 +28,13 @@ int do_rand(unsigned long *ctx) {
     /* Transform to [0, 0x7ffffffd] range. */
     x--;
     *ctx = x;
-    return (x);
+    return x;
 }
 
 unsigned long rand_next = 1;
 
 int rand() {
-    return (do_rand(&rand_next));
+    return do_rand(&rand_next);
 }
 
 void go(const int which_child) {
@@ -52,7 +52,7 @@ void go(const int which_child) {
 
     while (1) {
         iters++;
-        if ((iters % 500) == 0)
+        if (iters % 500 == 0)
             write(1, which_child ? "B" : "A", 1);
         const int what = rand() % 23;
         if (what == 1) {
@@ -96,7 +96,8 @@ void go(const int which_child) {
             const int pid = fork();
             if (pid == 0) {
                 exit(0);
-            } else if (pid < 0) {
+            }
+            if (pid < 0) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
@@ -107,7 +108,8 @@ void go(const int which_child) {
                 fork();
                 fork();
                 exit(0);
-            } else if (pid < 0) {
+            }
+            if (pid < 0) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
@@ -122,7 +124,8 @@ void go(const int which_child) {
             if (pid == 0) {
                 close(open("a", O_CREATE | O_RDWR));
                 exit(0);
-            } else if (pid < 0) {
+            }
+            if (pid < 0) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
@@ -137,7 +140,8 @@ void go(const int which_child) {
             if (pid == 0) {
                 kill(getpid());
                 exit(0);
-            } else if (pid < 0) {
+            }
+            if (pid < 0) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
@@ -158,7 +162,8 @@ void go(const int which_child) {
                 if (read(fds[0], &c, 1) != 1)
                     printf("grind: pipe read failed\n");
                 exit(0);
-            } else if (pid < 0) {
+            }
+            if (pid < 0) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
@@ -175,7 +180,8 @@ void go(const int which_child) {
                 fd = open("x", O_CREATE | O_RDWR);
                 unlink("x");
                 exit(0);
-            } else if (pid < 0) {
+            }
+            if (pid < 0) {
                 printf("grind: fork failed\n");
                 exit(1);
             }
@@ -231,10 +237,11 @@ void go(const int which_child) {
                 }
                 close(aa[1]);
                 const char *args[3] = {"echo", "hi", nullptr};
-                exec("grindir/../echo", (const char **)args);
+                exec("grindir/../echo", args);
                 fprintf(2, "grind: echo: not found\n");
                 exit(2);
-            } else if (pid1 < 0) {
+            }
+            if (pid1 < 0) {
                 fprintf(2, "grind: fork failed\n");
                 exit(3);
             }
@@ -255,10 +262,11 @@ void go(const int which_child) {
                 }
                 close(bb[1]);
                 const char *args[2] = {"cat", nullptr};
-                exec("/cat", (const char **)args);
+                exec("/cat", args);
                 fprintf(2, "grind: cat: not found\n");
                 exit(6);
-            } else if (pid2 < 0) {
+            }
+            if (pid2 < 0) {
                 fprintf(2, "grind: fork failed\n");
                 exit(7);
             }

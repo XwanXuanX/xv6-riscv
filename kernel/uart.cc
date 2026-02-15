@@ -119,9 +119,8 @@ int uartgetc() {
     if (ReadReg(LSR) & LSR_RX_READY) {
         // input data is ready.
         return ReadReg(RHR);
-    } else {
-        return -1;
     }
+    return -1;
 }
 
 // handle a uart interrupt, raised because input has

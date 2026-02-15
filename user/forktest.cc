@@ -9,7 +9,7 @@ void print(const char *s) {
     write(1, s, strlen(s));
 }
 
-void forktest(void) {
+void forktest() {
     int n;
 
     print("fork test\n");

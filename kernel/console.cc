@@ -150,7 +150,7 @@ void consoleintr(int c) {
         break;
     default:
         if (c != 0 && cons.e - cons.r < INPUT_BUF_SIZE) {
-            c = (c == '\r') ? '\n' : c;
+            c = c == '\r' ? '\n' : c;
 
             // echo back to the user.
             consputc(c);

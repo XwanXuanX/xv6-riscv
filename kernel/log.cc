@@ -83,7 +83,7 @@ install_trans(const int recovering) {
 static void
 read_head(void) {
     buf *buf = bread(log.dev, log.start);
-    const logheader *lh = (struct logheader *)(buf->data);
+    const logheader *lh = (struct logheader *)buf->data;
     log.lh.n = lh->n;
     for (int i = 0; i < log.lh.n; i++) {
         log.lh.block[i] = lh->block[i];
@@ -97,7 +97,7 @@ read_head(void) {
 static void
 write_head(void) {
     buf *buf = bread(log.dev, log.start);
-    const auto hb = (struct logheader *)(buf->data);
+    const auto hb = (struct logheader *)buf->data;
     hb->n = log.lh.n;
     for (int i = 0; i < log.lh.n; i++) {
         hb->block[i] = log.lh.block[i];

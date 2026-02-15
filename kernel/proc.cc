@@ -29,7 +29,7 @@ struct proc *initproc;
 int nextpid = 1;
 spinlock pid_lock;
 
-extern void forkret(void);
+extern void forkret();
 static void freeproc(struct proc *p);
 
 extern int quantum[NLEVELS]; // trap.c
@@ -121,9 +121,8 @@ allocproc(void) {
         p->lock.lock();
         if (p->state == UNUSED) {
             goto found;
-        } else {
-            p->lock.unlock();
         }
+        p->lock.unlock();
     }
     return nullptr;
 
@@ -181,7 +180,7 @@ found:
 static void
 freeproc(struct proc *p) {
     if (p->trapf)
-        kfree((void *)p->trapf);
+        kfree(p->trapf);
     p->trapf = nullptr;
     if (p->pagetable)
         proc_freepagetable(p->pagetable, p->sz);
@@ -225,7 +224,7 @@ proc_pagetable(struct proc *p) {
     // map the trapframe page just below the trampoline page, for
     // trampoline.S.
     if (mappages(pagetable, TRAPFRAME, PGSIZE,
-                 (uint64)(p->trapf), PTE_R | PTE_W) < 0) {
+                 (uint64)p->trapf, PTE_R | PTE_W) < 0) {
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
         uvmfree(pagetable, 0);
         return nullptr;
@@ -310,7 +309,7 @@ int kfork(void) {
     np->sz = p->sz;
 
     // copy saved user registers.
-    *(np->trapf) = *(p->trapf);
+    *np->trapf = *p->trapf;
 
     // Cause fork to return 0 in the child.
     np->trapf->a0 = 0;
@@ -905,10 +904,9 @@ int either_copyout(const int user_dst, const uint64 dst, void *src, const uint64
     const struct proc *p = myproc();
     if (user_dst) {
         return copyout(p->pagetable, dst, reinterpret_cast<char *>(src), len);
-    } else {
-        memmove((char *)dst, src, len);
-        return 0;
     }
+    memmove((char *)dst, src, len);
+    return 0;
 }
 
 // Copy from either a user address, or kernel address,
@@ -918,10 +916,9 @@ int either_copyin(void *dst, const int user_src, const uint64 src, const uint64 
     const struct proc *p = myproc();
     if (user_src) {
         return copyin(p->pagetable, reinterpret_cast<char *>(dst), src, len);
-    } else {
-        memmove(dst, (char *)src, len);
-        return 0;
     }
+    memmove(dst, (char *)src, len);
+    return 0;
 }
 
 // Print the status of MLFQ for debugging

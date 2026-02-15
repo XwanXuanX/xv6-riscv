@@ -32,7 +32,7 @@ void releasesleep(sleeplock *lk) {
 int holdingsleep(sleeplock *lk) {
 
     lk->lk.lock();
-    const int r = lk->locked && (lk->pid == myproc()->pid);
+    const int r = lk->locked && lk->pid == myproc()->pid;
     lk->lk.unlock();
     return r;
 }

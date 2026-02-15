@@ -85,7 +85,7 @@ usertrap() {
     } else if ((which_dev = devintr()) != 0) {
         // ok
     } else if ((r_scause() == 15 || r_scause() == 13) &&
-               vmfault(p->pagetable, r_stval(), (r_scause() == 13) ? 1 : 0) != 0) {
+               vmfault(p->pagetable, r_stval(), r_scause() == 13 ? 1 : 0) != 0) {
         // page fault on lazily-allocated page
     } else {
         printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
@@ -301,13 +301,13 @@ int devintr() {
             plic_complete(irq);
 
         return 1;
-    } else if (scause == 0x8000000000000005L) {
+    }
+    if (scause == 0x8000000000000005L) {
         // timer interrupt.
         clockintr();
         return 2;
-    } else {
-        return 0;
     }
+    return 0;
 }
 
 } // namespace xv6

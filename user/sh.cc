@@ -410,42 +410,42 @@ parseexec(char **ps, char *es) {
 cmd *
 nulterminate(cmd *cmd) {
     int i;
-    struct backcmd *bcmd;
-    struct execcmd *ecmd;
-    struct listcmd *lcmd;
-    struct pipecmd *pcmd;
-    struct redircmd *rcmd;
+    backcmd *bcmd;
+    execcmd *ecmd;
+    listcmd *lcmd;
+    pipecmd *pcmd;
+    redircmd *rcmd;
 
     if (cmd == nullptr)
         return nullptr;
 
     switch (cmd->type) {
     case EXEC:
-        ecmd = (struct execcmd *)cmd;
+        ecmd = (execcmd *)cmd;
         for (i = 0; ecmd->argv[i]; i++)
             *ecmd->eargv[i] = 0;
         break;
 
     case REDIR:
-        rcmd = (struct redircmd *)cmd;
+        rcmd = (redircmd *)cmd;
         nulterminate(rcmd->command);
         *rcmd->efile = 0;
         break;
 
     case PIPE:
-        pcmd = (struct pipecmd *)cmd;
+        pcmd = (pipecmd *)cmd;
         nulterminate(pcmd->left);
         nulterminate(pcmd->right);
         break;
 
     case LIST:
-        lcmd = (struct listcmd *)cmd;
+        lcmd = (listcmd *)cmd;
         nulterminate(lcmd->left);
         nulterminate(lcmd->right);
         break;
 
     case BACK:
-        bcmd = (struct backcmd *)cmd;
+        bcmd = (backcmd *)cmd;
         nulterminate(bcmd->command);
         break;
     }

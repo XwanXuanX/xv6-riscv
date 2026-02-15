@@ -164,7 +164,7 @@ int main(const int argc, char *argv[]) {
     // fix size of root inode dir
     rinode(rootino, &din);
     uint off = xint(din.size);
-    off = ((off / BSIZE) + 1) * BSIZE;
+    off = (off / BSIZE + 1) * BSIZE;
     din.size = xint(off);
     winode(rootino, &din);
 
@@ -185,7 +185,7 @@ void winode(const uint inum, dinode *ip) {
 
     const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf);
-    dinode *dip = ((struct dinode *)buf) + (inum % IPB);
+    dinode *dip = (struct dinode *)buf + inum % IPB;
     *dip = *ip;
     wsect(bn, buf);
 }
@@ -195,7 +195,7 @@ void rinode(const uint inum, dinode *ip) {
 
     const uint bn = IBLOCK(inum, sb);
     rsect(bn, buf);
-    const dinode *dip = ((struct dinode *)buf) + (inum % IPB);
+    const dinode *dip = (struct dinode *)buf + inum % IPB;
     *ip = *dip;
 }
 
@@ -225,7 +225,7 @@ void balloc(const int used) {
     assert(used < BPB);
     bzero(buf, BSIZE);
     for (int i = 0; i < used; i++) {
-        buf[i / 8] = buf[i / 8] | (0x1 << (i % 8));
+        buf[i / 8] = buf[i / 8] | 0x1 << (i % 8);
     }
     printf("balloc: write bitmap block at sector %d\n", sb.bmapstart);
     wsect(sb.bmapstart, buf);
@@ -255,16 +255,16 @@ void iappend(const uint inum, void *xp, int n) {
             if (xint(din.addrs[NDIRECT]) == 0) {
                 din.addrs[NDIRECT] = xint(freeblock++);
             }
-            rsect(xint(din.addrs[NDIRECT]), (char *)indirect);
+            rsect(xint(din.addrs[NDIRECT]), indirect);
             if (indirect[fbn - NDIRECT] == 0) {
                 indirect[fbn - NDIRECT] = xint(freeblock++);
-                wsect(xint(din.addrs[NDIRECT]), (char *)indirect);
+                wsect(xint(din.addrs[NDIRECT]), indirect);
             }
             x = xint(indirect[fbn - NDIRECT]);
         }
         const uint n1 = min(n, (fbn + 1) * BSIZE - off);
         rsect(x, buf);
-        bcopy(p, buf + off - (fbn * BSIZE), n1);
+        bcopy(p, buf + off - fbn * BSIZE, n1);
         wsect(x, buf);
         n -= n1;
         off += n1;

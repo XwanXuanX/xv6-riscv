@@ -344,9 +344,9 @@ sys_open(void) {
     }
     f->ip = ip;
     f->readable = !(omode & O_WRONLY);
-    f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+    f->writable = omode & O_WRONLY || omode & O_RDWR;
 
-    if ((omode & O_TRUNC) && ip->type == T_FILE) {
+    if (omode & O_TRUNC && ip->type == T_FILE) {
         itrunc(ip);
     }
 
@@ -380,7 +380,7 @@ sys_mknod(void) {
     begin_op();
     argint(1, &major);
     argint(2, &minor);
-    if ((argstr(0, path, MAXPATH)) < 0 ||
+    if (argstr(0, path, MAXPATH) < 0 ||
         (ip = create(path, T_DEVICE, major, minor)) == nullptr) {
         end_op();
         return -1;
@@ -431,7 +431,7 @@ sys_exec(void) {
         if (i >= NELEM(argv)) {
             goto bad;
         }
-        if (fetchaddr(uargv + sizeof(uint64) * i, (uint64 *)&uarg) < 0) {
+        if (fetchaddr(uargv + sizeof(uint64) * i, &uarg) < 0) {
             goto bad;
         }
         if (uarg == 0) {
@@ -448,13 +448,13 @@ sys_exec(void) {
     ret = kexec(path, argv);
 
     for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++)
-        kfree((void *)(argv[i]));
+        kfree((void *)argv[i]);
 
     return ret;
 
 bad:
     for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++)
-        kfree((void *)(argv[i]));
+        kfree((void *)argv[i]);
     return -1;
 }
 

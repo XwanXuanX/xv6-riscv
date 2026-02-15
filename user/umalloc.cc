@@ -49,7 +49,7 @@ morecore(uint nu) {
         return nullptr;
     const auto hp = (Header *)p;
     hp->s.size = nu;
-    free((void *)(hp + 1));
+    free(hp + 1);
     return freep;
 }
 
@@ -72,7 +72,7 @@ malloc(const uint nbytes) {
                 p->s.size = nunits;
             }
             freep = prevp;
-            return (void *)(p + 1);
+            return p + 1;
         }
         if (p == freep)
             if ((p = morecore(nunits)) == nullptr)

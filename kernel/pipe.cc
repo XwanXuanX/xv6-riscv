@@ -41,7 +41,7 @@ int pipealloc(file **f0, file **f1) {
 
 bad:
     if (pi)
-        kfree((char *)pi);
+        kfree(pi);
     if (*f0)
         fileclose(*f0);
     if (*f1)
@@ -60,7 +60,7 @@ void pipeclose(pipe *pi, const int writable) {
     }
     if (pi->readopen == 0 && pi->writeopen == 0) {
         pi->lock.unlock();
-        kfree((char *)pi);
+        kfree(pi);
     } else
         pi->lock.unlock();
 }
