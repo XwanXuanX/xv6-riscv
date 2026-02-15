@@ -1,8 +1,48 @@
+# About
+
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
 but is implemented for a modern RISC-V multiprocessor using ANSI C.
 
-ACKNOWLEDGMENTS
+# Building xv6-riscv with CMake
+
+## Command Line
+
+```bash
+# Create build directory
+mkdir build
+cd build
+
+# Configure (toolchain will be auto-detected)
+cmake ..
+
+# Build everything
+cmake --build .
+
+# Run in QEMU
+cmake --build . --target qemu
+```
+
+## Available CMake Targets
+
+- `kernel` - Build the xv6 kernel
+- `_<program>` - Build individual user programs (e.g., `_sh`, `_ls`, `_usertests`)
+- `fs_img` - Create the filesystem image
+- `qemu` - Build everything and run in QEMU
+- `qemu-gdb` - Run in QEMU with GDB server (for debugging)
+
+## Debugging with GDB
+
+```bash
+# Terminal 1: Start QEMU with GDB server
+cmake --build . --target qemu-gdb
+
+# Terminal 2: Connect GDB
+riscv64-unknown-elf-gdb kernel/kernel
+(gdb) target remote :PORT  # Port is displayed when you run qemu-gdb
+```
+
+# Acknowledgements
 
 xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
 to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
@@ -33,16 +73,9 @@ Amane Uehara, Pablo Ventura, Luc Videau, Xi Wang, WaheedHafez, Keiichi
 Watanabe, Lucas Wolf, Nicolas Wolovick, wxdao, Grant Wu, x653, Andy
 Zhang, Jindong Zhang, Icenowy Zheng, ZhUyU1997, and Zou Chang Wei.
 
-ERROR REPORTS
+# Error Reports
 
 Please send errors and suggestions to Frans Kaashoek and Robert Morris
 (kaashoek,rtm@mit.edu).  The main purpose of xv6 is as a teaching
 operating system for MIT's 6.1810, so we are more interested in
 simplifications and clarifications than new features.
-
-BUILDING AND RUNNING XV6
-
-You will need a RISC-V "newlib" tool chain from
-https://github.com/riscv/riscv-gnu-toolchain, and qemu compiled for
-riscv64-softmmu.  Once they are installed, and in your shell
-search path, you can run "make qemu".
