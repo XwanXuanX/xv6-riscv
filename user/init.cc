@@ -24,7 +24,7 @@ int main() {
             exit(1);
         }
         if (pid == 0) {
-            exec("sh", const_cast<const char**>(argv.data()));
+            exec("sh", const_cast<const char **>(argv.data()));
             printf("init: exec sh failed\n");
             exit(1);
         }

@@ -68,10 +68,12 @@ static void install_trans(const int recovering) {
         if (recovering) {
             printf("recovering tail %d dst %d\n", tail, logger.lh.block[tail]);
         }
-        buf *lbuf = bread(logger.dev, logger.start + tail + 1); // read log block
-        buf *dbuf = bread(logger.dev, logger.lh.block[tail]);   // read dst
-        memmove(dbuf->data.data(), lbuf->data.data(), BSIZE);           // copy block to dst
-        bwrite(dbuf);                                     // write dst to disk
+        buf *lbuf =
+            bread(logger.dev, logger.start + tail + 1);       // read log block
+        buf *dbuf = bread(logger.dev, logger.lh.block[tail]); // read dst
+        memmove(dbuf->data.data(), lbuf->data.data(),
+                BSIZE); // copy block to dst
+        bwrite(dbuf);   // write dst to disk
         if (recovering == 0) {
             bunpin(dbuf);
         }
@@ -118,7 +120,8 @@ void begin_op() {
     while (true) {
         if (logger.committing) {
             sleep(&logger, &logger.lock);
-        } else if (logger.lh.n + (logger.outstanding + 1) * MAXOPBLOCKS > LOGBLOCKS) {
+        } else if (logger.lh.n + (logger.outstanding + 1) * MAXOPBLOCKS >
+                   LOGBLOCKS) {
             // this op might exhaust log space; wait for commit.
             sleep(&logger, &logger.lock);
         } else {

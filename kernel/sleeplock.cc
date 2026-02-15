@@ -7,9 +7,7 @@
 
 namespace xv6 {
 
-void initsleeplock(sleeplock *lk) {
-    lk->lk.init_lock("sleep lock");
-}
+void initsleeplock(sleeplock *lk) { lk->lk.init_lock("sleep lock"); }
 
 void acquiresleep(sleeplock *lk) {
     lk->lk.lock();

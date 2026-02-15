@@ -180,14 +180,14 @@ struct proc {
     proc *parent; // Parent process
 
     // these are private to the process, so p->lock need not be held.
-    uint64 kstack;              // Virtual address of kernel stack
-    uint64 sz;                  // Size of process memory (bytes)
-    pagetable_t pagetable;      // User page table
-    trapframe *trapf;           // data page for trampoline.S
-    context ctx;                // swtch() here to run process
+    uint64 kstack;                           // Virtual address of kernel stack
+    uint64 sz;                               // Size of process memory (bytes)
+    pagetable_t pagetable;                   // User page table
+    trapframe *trapf;                        // data page for trampoline.S
+    context ctx;                             // swtch() here to run process
     std::array<struct file *, NOFILE> ofile; // Open files
-    struct inode *cwd;          // Current directory
-    std::array<char, 16> name;  // Process name (debugging)
+    struct inode *cwd;                       // Current directory
+    std::array<char, 16> name;               // Process name (debugging)
 };
 
 } // namespace xv6

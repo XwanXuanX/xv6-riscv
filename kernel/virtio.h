@@ -67,8 +67,8 @@ struct virtq_desc {
 
 // the (entire) avail ring, from the spec.
 struct virtq_avail {
-    uint16 flags;     // always zero
-    uint16 idx;       // driver will write ring[idx] next
+    uint16 flags;                 // always zero
+    uint16 idx;                   // driver will write ring[idx] next
     std::array<uint16, NUM> ring; // descriptor numbers of chain heads
     uint16 unused;
 };

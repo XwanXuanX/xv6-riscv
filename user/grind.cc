@@ -241,8 +241,9 @@ void go(const int which_child) {
                     exit(1);
                 }
                 close(aa[1]);
-                constexpr std::array<const char *, 3> args = {"echo", "hi", nullptr};
-                exec("grindir/../echo", const_cast<const char**>(args.data()));
+                constexpr std::array<const char *, 3> args = {"echo", "hi",
+                                                              nullptr};
+                exec("grindir/../echo", const_cast<const char **>(args.data()));
                 fprintf(2, "grind: echo: not found\n");
                 exit(2);
             }
@@ -267,7 +268,7 @@ void go(const int which_child) {
                 }
                 close(bb[1]);
                 constexpr std::array<const char *, 2> args = {"cat", nullptr};
-                exec("/cat", const_cast<const char**>(args.data()));
+                exec("/cat", const_cast<const char **>(args.data()));
                 fprintf(2, "grind: cat: not found\n");
                 exit(6);
             }

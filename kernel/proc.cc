@@ -34,7 +34,7 @@ extern void forkret();
 static void freeproc(proc *p);
 
 extern std::array<int, NLEVELS> quantum; // trap.c
-extern char trampoline[];    // trampoline.S
+extern char trampoline[];                // trampoline.S
 
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
@@ -794,8 +794,10 @@ void forkret() {
 
         // We can invoke kexec() now that file system is initialized.
         // Put the return value (argc) of kexec into a0.
-        static constexpr std::array<const char *, 2> init_argv = {"/init", nullptr};
-        p->trapf->a0 = kexec("/init", const_cast<const char **>(init_argv.data()));
+        static constexpr std::array<const char *, 2> init_argv = {"/init",
+                                                                  nullptr};
+        p->trapf->a0 =
+            kexec("/init", const_cast<const char **>(init_argv.data()));
         if (p->trapf->a0 == static_cast<uint64>(-1)) {
             panic("exec");
         }
@@ -978,8 +980,7 @@ static void mlfq_dump_nolock() {
 // No lock to avoid wedging a stuck machine further.
 void procdump() {
     static constexpr std::array<const char *, 6> states = {
-        "unused",   "used",     "sleep ",
-        "runble", "run   ", "zombie"};
+        "unused", "used", "sleep ", "runble", "run   ", "zombie"};
     const char *state;
 
     printf("PID\tSTATE\tNAME\n");

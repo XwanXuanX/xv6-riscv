@@ -181,7 +181,8 @@ static inode *iget(uint dev, uint inum);
 inode *ialloc(const uint dev, const short type) {
     for (uint inum = 1; inum < sb.ninodes; inum++) {
         buf *bp = bread(dev, IBLOCK(inum, sb));
-        dinode *dip = reinterpret_cast<struct dinode *>(bp->data.data()) + inum % IPB;
+        dinode *dip =
+            reinterpret_cast<struct dinode *>(bp->data.data()) + inum % IPB;
         if (dip->type == 0) { // a free inode
             memset(dip, 0, sizeof(*dip));
             dip->type = type;
@@ -461,7 +462,8 @@ uint readi(inode *ip, const int user_dst, uint64 dst, uint off, uint n) {
         }
         buf *bp = bread(ip->dev, addr);
         m = MIN(n - tot, BSIZE - off % BSIZE);
-        if (either_copyout(user_dst, dst, bp->data.data() + off % BSIZE, m) == -1) {
+        if (either_copyout(user_dst, dst, bp->data.data() + off % BSIZE, m) ==
+            -1) {
             brelse(bp);
             tot = -1;
             break;
@@ -495,7 +497,8 @@ int writei(inode *ip, const int user_src, uint64 src, uint off, const uint n) {
         }
         buf *bp = bread(ip->dev, addr);
         m = MIN(n - tot, BSIZE - off % BSIZE);
-        if (either_copyin(bp->data.data() + off % BSIZE, user_src, src, m) == -1) {
+        if (either_copyin(bp->data.data() + off % BSIZE, user_src, src, m) ==
+            -1) {
             brelse(bp);
             break;
         }

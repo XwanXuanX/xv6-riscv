@@ -274,7 +274,8 @@ int gettoken(char **ps, const char *es, char **q, char **eq) {
         break;
     default:
         ret = 'a';
-        while (s < es && !strchr(whitespace.data(), *s) && !strchr(symbols.data(), *s)) {
+        while (s < es && !strchr(whitespace.data(), *s) &&
+               !strchr(symbols.data(), *s)) {
             s++;
         }
         break;

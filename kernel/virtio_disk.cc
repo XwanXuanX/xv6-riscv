@@ -41,13 +41,13 @@ static struct disk {
     virtq_used *used;
 
     // our own book-keeping.
-    std::array<char, NUM> free;  // is a descriptor free?
-    uint16 used_idx; // we've looked this far in used[2..NUM].
+    std::array<char, NUM> free; // is a descriptor free?
+    uint16 used_idx;            // we've looked this far in used[2..NUM].
 
     // track info about in-flight operations,
     // for use when completion interrupt arrives.
     // indexed by first descriptor index of chain.
-    struct _info{
+    struct _info {
         buf *b;
         char status;
     };

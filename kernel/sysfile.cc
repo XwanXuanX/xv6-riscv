@@ -120,7 +120,8 @@ uint64 sys_link() {
     std::array<char, MAXPATH> nw{}, old{};
     inode *dp, *ip;
 
-    if (argstr(0, old.data(), MAXPATH) < 0 || argstr(1, nw.data(), MAXPATH) < 0) {
+    if (argstr(0, old.data(), MAXPATH) < 0 ||
+        argstr(1, nw.data(), MAXPATH) < 0) {
         return -1;
     }
 
@@ -410,7 +411,8 @@ uint64 sys_chdir() {
     proc *p = myproc();
 
     begin_op();
-    if (argstr(0, path.data(), MAXPATH) < 0 || (ip = namei(path.data())) == nullptr) {
+    if (argstr(0, path.data(), MAXPATH) < 0 ||
+        (ip = namei(path.data())) == nullptr) {
         end_op();
         return -1;
     }
