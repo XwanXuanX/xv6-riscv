@@ -14,7 +14,7 @@
 
 namespace xv6 {
 
-std::array<struct devsw, NDEV> devsw;
+std::array<devsw, NDEV> dev;
 struct {
     spinlock lock;
     std::array<file, NFILE> files;
@@ -102,10 +102,10 @@ int fileread(file *f, const uint64 addr, const int n) {
     if (f->type == fd_pipe) {
         r = piperead(f->pip, addr, n);
     } else if (f->type == fd_device) {
-        if (f->major < 0 || f->major >= NDEV || !devsw[f->major].read) {
+        if (f->major < 0 || f->major >= NDEV || !dev[f->major].read) {
             return -1;
         }
-        r = devsw[f->major].read(1, addr, n);
+        r = dev[f->major].read(1, addr, n);
     } else if (f->type == fd_inode) {
         ilock(f->ip);
         if ((r = readi(f->ip, 1, addr, f->off, n)) > 0) {
@@ -131,10 +131,10 @@ int filewrite(file *f, const uint64 addr, const int n) {
     if (f->type == fd_pipe) {
         ret = pipewrite(f->pip, addr, n);
     } else if (f->type == fd_device) {
-        if (f->major < 0 || f->major >= NDEV || !devsw[f->major].write) {
+        if (f->major < 0 || f->major >= NDEV || !dev[f->major].write) {
             return -1;
         }
-        ret = devsw[f->major].write(1, addr, n);
+        ret = dev[f->major].write(1, addr, n);
     } else if (f->type == fd_inode) {
         int r;
         // write a few blocks at a time to avoid exceeding

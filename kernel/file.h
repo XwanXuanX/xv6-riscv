@@ -49,7 +49,7 @@ struct devsw {
     int (*write)(int, uint64, int);
 };
 
-extern std::array<struct devsw, NDEV> devsw;
+extern std::array<devsw, NDEV> dev;
 
 #define CONSOLE 1
 

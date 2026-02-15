@@ -394,7 +394,7 @@ uint64 sys_mknod() {
     begin_op();
     argint(1, &major);
     argint(2, &minor);
-    if ((argstr(0, path.data(), MAXPATH)) < 0 ||
+    if (argstr(0, path.data(), MAXPATH) < 0 ||
         (ip = create(path.data(), T_DEVICE, major, minor)) == nullptr) {
         end_op();
         return -1;
