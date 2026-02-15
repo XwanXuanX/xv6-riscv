@@ -34,9 +34,7 @@ int do_rand(unsigned long *ctx) {
 
 unsigned long rand_next = 1;
 
-int rand() {
-    return do_rand(&rand_next);
-}
+int rand() { return do_rand(&rand_next); }
 
 void go(const int which_child) {
     int fd = -1;
@@ -210,7 +208,8 @@ void go(const int which_child) {
                 exit(1);
             }
             if (st.size != 1) {
-                printf("grind: fstat reports wrong size %d\n", static_cast<int>(st.size));
+                printf("grind: fstat reports wrong size %d\n",
+                       static_cast<int>(st.size));
                 exit(1);
             }
             if (st.ino > 200) {
@@ -287,7 +286,8 @@ void go(const int which_child) {
             wait(&st1);
             wait(&st2);
             if (st1 != 0 || st2 != 0 || strcmp(str, "hi\n") != 0) {
-                printf("grind: exec pipeline failed %d %d \"%s\"\n", st1, st2, str);
+                printf("grind: exec pipeline failed %d %d \"%s\"\n", st1, st2,
+                       str);
                 exit(1);
             }
         }

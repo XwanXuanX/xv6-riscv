@@ -45,7 +45,8 @@ int kexec(const char *path, const char **argv) {
     ilock(ip);
 
     // Read the ELF header.
-    if (readi(ip, 0, reinterpret_cast<uint64>(&elf), 0, sizeof(elf)) != sizeof(elf)) {
+    if (readi(ip, 0, reinterpret_cast<uint64>(&elf), 0, sizeof(elf)) !=
+        sizeof(elf)) {
         goto bad;
     }
 
@@ -60,7 +61,8 @@ int kexec(const char *path, const char **argv) {
 
     // Load program into memory.
     for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
-        if (readi(ip, 0, reinterpret_cast<uint64>(&ph), off, sizeof(ph)) != sizeof(ph)) {
+        if (readi(ip, 0, reinterpret_cast<uint64>(&ph), off, sizeof(ph)) !=
+            sizeof(ph)) {
             goto bad;
         }
         if (ph.type != ELF_PROG_LOAD) {
@@ -75,7 +77,8 @@ int kexec(const char *path, const char **argv) {
         if (ph.vaddr % PGSIZE != 0) {
             goto bad;
         }
-        if ((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz, flags2_perm(ph.flags))) == 0) {
+        if ((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz,
+                            flags2_perm(ph.flags))) == 0) {
             goto bad;
         }
         sz = sz1;
@@ -94,7 +97,8 @@ int kexec(const char *path, const char **argv) {
     // Make the first inaccessible as a stack guard.
     // Use the rest as the user stack.
     sz = PGROUNDUP(sz);
-    if ((sz1 = uvmalloc(pagetable, sz, sz + (USERSTACK + 1) * PGSIZE, PTE_W)) == 0) {
+    if ((sz1 = uvmalloc(pagetable, sz, sz + (USERSTACK + 1) * PGSIZE, PTE_W)) ==
+        0) {
         goto bad;
     }
     sz = sz1;
@@ -126,7 +130,8 @@ int kexec(const char *path, const char **argv) {
     if (sp < stackbase) {
         goto bad;
     }
-    if (copyout(pagetable, sp, reinterpret_cast<char *>(ustack), (argc + 1) * sizeof(uint64)) < 0) {
+    if (copyout(pagetable, sp, reinterpret_cast<char *>(ustack),
+                (argc + 1) * sizeof(uint64)) < 0) {
         goto bad;
     }
 
@@ -168,8 +173,8 @@ bad:
 // va must be page-aligned
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
-static int
-loadseg(const pagetable_t pagetable, const uint64 va, inode *ip, const uint offset, const uint sz) {
+static int loadseg(const pagetable_t pagetable, const uint64 va, inode *ip,
+                   const uint offset, const uint sz) {
     uint n;
 
     for (uint i = 0; i < sz; i += PGSIZE) {

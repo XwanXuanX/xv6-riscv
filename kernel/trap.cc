@@ -24,10 +24,7 @@ extern int devintr();
  * MLFQ per-level allotment
  */
 int allotment[NLEVELS] = {
-    4,
-    8,
-    16,
-    32,
+    4, 8, 16, 32,
     114514 // cannot decrease anymore, placeholder
 };
 
@@ -37,22 +34,17 @@ int allotment[NLEVELS] = {
  */
 int quantum[NLEVELS] = {2, 4, 8, 16, 32};
 
-void trapinit() {
-    tickslock.init_lock("time");
-}
+void trapinit() { tickslock.init_lock("time"); }
 
 // set up to take exceptions and traps while in the kernel.
-void trapinithart() {
-    w_stvec((uint64)kernelvec);
-}
+void trapinithart() { w_stvec((uint64)kernelvec); }
 
 //
 // handle an interrupt, exception, or system call from user space.
 // called from, and returns to, trampoline.S
 // return value is user satp for trampoline.S to switch to.
 //
-uint64
-usertrap() {
+uint64 usertrap() {
     int which_dev = 0;
 
     if ((r_sstatus() & SSTATUS_SPP) != 0) {
@@ -87,10 +79,12 @@ usertrap() {
     } else if ((which_dev = devintr()) != 0) {
         // ok
     } else if ((r_scause() == 15 || r_scause() == 13) &&
-               vmfault(p->pagetable, r_stval(), r_scause() == 13 ? 1 : 0) != 0) {
+               vmfault(p->pagetable, r_stval(), r_scause() == 13 ? 1 : 0) !=
+                   0) {
         // page fault on lazily-allocated page
     } else {
-        printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
+        printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(),
+               p->pid);
         printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
         setkilled(p);
     }
@@ -169,7 +163,8 @@ void prepare_return() {
 
 // interrupts and exceptions from kernel code go here via kernelvec,
 // on whatever the current kernel stack is.
-// NOTE: This function must have C linkage because it's called from assembly (kernelvec.S)
+// NOTE: This function must have C linkage because it's called from assembly
+// (kernelvec.S)
 extern "C" void kerneltrap() {
     int which_dev = 0;
     const uint64 sepc = xv6::r_sepc();
@@ -185,7 +180,8 @@ extern "C" void kerneltrap() {
 
     if ((which_dev = xv6::devintr()) == 0) {
         // interrupt or trap from an unknown source
-        xv6::printf("scause=0x%lx sepc=0x%lx stval=0x%lx\n", scause, xv6::r_sepc(), xv6::r_stval());
+        xv6::printf("scause=0x%lx sepc=0x%lx stval=0x%lx\n", scause,
+                    xv6::r_sepc(), xv6::r_stval());
         xv6::panic("kerneltrap");
     }
 
@@ -228,8 +224,8 @@ void clockintr() {
             ticks++;
             // for every S period, boost the version number of the MLFQ
             // in the scheduler, when we detect that the version of a process
-            // and the MLFQ does not match, we will re-enqueue it at the top level.
-            // This is essentially the same as periodic boosting.
+            // and the MLFQ does not match, we will re-enqueue it at the top
+            // level. This is essentially the same as periodic boosting.
             if (ticks % S == 0) {
                 mlq.lock.lock();
                 mlq.boost_epoch++;

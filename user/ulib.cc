@@ -15,8 +15,7 @@ extern "C" void start(const int argc, char **argv) {
     exit(r);
 }
 
-char *
-strcpy(char *s, const char *t) {
+char *strcpy(char *s, const char *t) {
     char *os = s;
     while ((*s++ = *t++) != 0)
         ;
@@ -38,8 +37,7 @@ uint strlen(const char *s) {
     return n;
 }
 
-void *
-memset(void *dst, const int c, const uint n) {
+void *memset(void *dst, const int c, const uint n) {
     const auto cdst = static_cast<char *>(dst);
     for (uint i = 0; i < n; i++) {
         cdst[i] = c;
@@ -47,8 +45,7 @@ memset(void *dst, const int c, const uint n) {
     return dst;
 }
 
-char *
-strchr(const char *s, const char c) {
+char *strchr(const char *s, const char c) {
     for (; *s; s++) {
         if (*s == c) {
             return const_cast<char *>(s);
@@ -57,8 +54,7 @@ strchr(const char *s, const char c) {
     return nullptr;
 }
 
-char *
-gets(char *buf, const int max) {
+char *gets(char *buf, const int max) {
     int i;
     char c;
 
@@ -94,8 +90,7 @@ int atoi(const char *s) {
     return n;
 }
 
-void *
-memmove(void *vdst, const void *vsrc, int n) {
+void *memmove(void *vdst, const void *vsrc, int n) {
     auto dst = static_cast<char *>(vdst);
     if (auto src = static_cast<const char *>(vsrc); src > dst) {
         while (n-- > 0) {
@@ -123,17 +118,10 @@ int memcmp(const void *s1, const void *s2, uint n) {
     return 0;
 }
 
-void *
-memcpy(void *dst, const void *src, const int n) {
+void *memcpy(void *dst, const void *src, const int n) {
     return memmove(dst, src, n);
 }
 
-char *
-sbrk(const int n) {
-    return sys_sbrk(n, SBRK_EAGER);
-}
+char *sbrk(const int n) { return sys_sbrk(n, SBRK_EAGER); }
 
-char *
-sbrklazy(const int n) {
-    return sys_sbrk(n, SBRK_LAZY);
-}
+char *sbrklazy(const int n) { return sys_sbrk(n, SBRK_LAZY); }

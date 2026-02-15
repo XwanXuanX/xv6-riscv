@@ -9,12 +9,7 @@ namespace xv6 {
 
 struct pipe;
 
-enum file_type {
-    fd_none,
-    fd_pipe,
-    fd_inode,
-    fd_device
-};
+enum file_type { fd_none, fd_pipe, fd_inode, fd_device };
 
 // in-memory copy of an inode
 struct inode {

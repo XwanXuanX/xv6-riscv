@@ -83,8 +83,7 @@ cpu *mycpu() {
 }
 
 // Return the current struct proc *, or zero if none.
-struct proc *
-myproc() {
+struct proc *myproc() {
     push_off();
     const cpu *c = mycpu();
     struct proc *p = c->proc;
@@ -105,8 +104,7 @@ int allocpid() {
 // If found, initialize state required to run in the kernel,
 // and return with p->lock held.
 // If there are no free procs, or a memory allocation fails, return 0.
-static struct proc *
-allocproc() {
+static struct proc *allocproc() {
     struct proc *p;
 
     // prob all the locations, for each location
@@ -174,8 +172,7 @@ found:
 // free a proc structure and the data hanging from it,
 // including user pages.
 // p->lock must be held.
-static void
-freeproc(struct proc *p) {
+static void freeproc(struct proc *p) {
     if (p->trapf) {
         kfree(p->trapf);
     }
@@ -202,8 +199,7 @@ freeproc(struct proc *p) {
 
 // Create a user page table for a given process, with no user memory,
 // but with trampoline and trapframe pages.
-pagetable_t
-proc_pagetable(struct proc *p) {
+pagetable_t proc_pagetable(struct proc *p) {
     // An empty page table.
     const pagetable_t pagetable = uvmcreate();
     if (pagetable == nullptr) {
@@ -214,16 +210,16 @@ proc_pagetable(struct proc *p) {
     // at the highest user virtual address.
     // only the supervisor uses it, on the way
     // to/from user space, so not PTE_U.
-    if (mappages(pagetable, TRAMPOLINE, PGSIZE,
-                 (uint64)trampoline, PTE_R | PTE_X) < 0) {
+    if (mappages(pagetable, TRAMPOLINE, PGSIZE, (uint64)trampoline,
+                 PTE_R | PTE_X) < 0) {
         uvmfree(pagetable, 0);
         return nullptr;
     }
 
     // map the trapframe page just below the trampoline page, for
     // trampoline.S.
-    if (mappages(pagetable, TRAPFRAME, PGSIZE,
-                 (uint64)p->trapf, PTE_R | PTE_W) < 0) {
+    if (mappages(pagetable, TRAPFRAME, PGSIZE, (uint64)p->trapf,
+                 PTE_R | PTE_W) < 0) {
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
         uvmfree(pagetable, 0);
         return nullptr;
@@ -409,8 +405,8 @@ void kexit(const int status) {
     wait_lock.unlock();
 
     // Jump into the scheduler, never to return.
-    // Note that process lock is still held, this is to satisfy the assumption in the scheduler
-    // See comments in scheduler() for more details
+    // Note that process lock is still held, this is to satisfy the assumption
+    // in the scheduler See comments in scheduler() for more details
     sched();
     panic("zombie exit");
 }
@@ -434,8 +430,9 @@ int kwait(const uint64 addr) {
                 if (pp->state == ZOMBIE) {
                     // Found one.
                     const int pid = pp->pid;
-                    if (addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
-                                             sizeof(pp->xstate)) < 0) {
+                    if (addr != 0 &&
+                        copyout(p->pagetable, addr, (char *)&pp->xstate,
+                                sizeof(pp->xstate)) < 0) {
                         pp->lock.unlock();
                         wait_lock.unlock();
                         return -1;
@@ -465,14 +462,16 @@ int kwait(const uint64 addr) {
 // Scheduler never returns.  It loops, doing:
 //  - choose a process to run (a RUNNABLE process).
 //  - swtch to start running that process.
-//  - eventually that process transfers control (via yield/sleep/exit) via swtch back to the scheduler.
+//  - eventually that process transfers control (via yield/sleep/exit) via swtch
+//  back to the scheduler.
 // Ensure correctness with
 //  - process locks (p->lock)
 //  - interrupt enable/disable
 __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
     // the iterator
     struct proc *p;
-    // current CPU's status, including `c->proc`, the CPU's currently running process
+    // current CPU's status, including `c->proc`, the CPU's currently running
+    // process
     cpu *c = mycpu();
 
     // in initialization, the CPU is not running anything
@@ -488,29 +487,37 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
         // intr_on():
         //      * enables external interrupts at the CPU level
         //      * the last process may have disabled the interrupt.
-        //        if all processes are blocked and waiting for interrupts (I/O), then they will not be wakened up and their state will stay in "blocked".
-        //        Thus, the scheduler cannot find a single process which state is "runnable", and scheduler will keep searching, causing deadlock.
+        //        if all processes are blocked and waiting for interrupts (I/O),
+        //        then they will not be wakened up and their state will stay in
+        //        "blocked". Thus, the scheduler cannot find a single process
+        //        which state is "runnable", and scheduler will keep searching,
+        //        causing deadlock.
         //
         // intr_off():
         //      * immediately disable interrupts again
-        //      * assume that you don't do this, then the following sequence of events can happen:
+        //      * assume that you don't do this, then the following sequence of
+        //      events can happen:
         //          1. scan the table, see no RUNNABLE processes
         //          2. before executing wfi, an interrupt fires
         //          3. interrupt handler runs and makes some process RUNNABLE
-        //          4. return from the interrupt and continue... and now you execute wfi anyway
-        //          5. now you may sleep even though work is available, and you might not wake again soon
+        //          4. return from the interrupt and continue... and now you
+        //          execute wfi anyway
+        //          5. now you may sleep even though work is available, and you
+        //          might not wake again soon
         //      * ensures the sleep (wfi) decision doesn’t race with interrupts
         intr_on();
         intr_off();
 
-        // flag to record "did we find at least one runnable process and switched to it?"
-        // if we didn't run anything, put the core to sleep to save CPU
+        // flag to record "did we find at least one runnable process and
+        // switched to it?" if we didn't run anything, put the core to sleep to
+        // save CPU
         int found = 0;
         // simple RR loop
         for (p = proc; p < &proc[NPROC]; p++) {
-            // lock each process before inspecting or modifying it to avoid race condition
-            // without this lock, other CPUs could concurrently modify this process's state
-            // or the process itself could be transitioning states (e.g. blocked -> ready)
+            // lock each process before inspecting or modifying it to avoid race
+            // condition without this lock, other CPUs could concurrently modify
+            // this process's state or the process itself could be transitioning
+            // states (e.g. blocked -> ready)
             p->lock.lock();
             // can we run it?
             if (p->state == RUNNABLE) {
@@ -518,12 +525,15 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
                 //      Switch to chosen process. It is the process's job
                 //      to release its lock and then reacquire it
                 //      before jumping back to us.
-                // we are about to run this process, but the scheduler is holding the lock
-                // after the `swtch()` call, the process starts to run, but its lock is still acquired
-                // so it needs to unlock itself to proceed;
-                // similarly, when the process transfer CPU control to the scheduler, the scheduler still thinks that it holds the process's lock
-                // but in fact it doesn't since the process unlocked itself.
-                // to satisfy scheduler's assumption, the process needs to lock itself before jumping into scheduler
+                // we are about to run this process, but the scheduler is
+                // holding the lock after the `swtch()` call, the process starts
+                // to run, but its lock is still acquired so it needs to unlock
+                // itself to proceed; similarly, when the process transfer CPU
+                // control to the scheduler, the scheduler still thinks that it
+                // holds the process's lock but in fact it doesn't since the
+                // process unlocked itself. to satisfy scheduler's assumption,
+                // the process needs to lock itself before jumping into
+                // scheduler
 
                 // mark as RUNNING since we are about to run it
                 p->state = RUNNING;
@@ -531,19 +541,24 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
                 c->proc = p;
 
                 // THIS IS THE CORE!
-                //      the per-CPU scheduler is also a process, and it has context, saved in `c->context`
-                //      since we are about to switch to a user process, we need to pause the scheduler for a while by saving its context
-                //      and load the about-to-be-run process's context
+                //      the per-CPU scheduler is also a process, and it has
+                //      context, saved in `c->context` since we are about to
+                //      switch to a user process, we need to pause the scheduler
+                //      for a while by saving its context and load the
+                //      about-to-be-run process's context
                 // IMPORTANT NOTE:
-                //      when `swtch()` returns, it means the process later called `swtch()` in the opposite direction
-                //      (likely via yield(), sleep(), or exit()), and gives the CPU control to the scheduler.
-                //      so this is the timeline:
+                //      when `swtch()` returns, it means the process later
+                //      called `swtch()` in the opposite direction (likely via
+                //      yield(), sleep(), or exit()), and gives the CPU control
+                //      to the scheduler. so this is the timeline:
                 //          1. scheduler finds a runnable process
                 //          2. save its context, loads the process's context
                 swtch(&c->ctx, &p->ctx);
                 //          3. the process starts to run
-                //          4. the process calls `swtch()` to save its context and load the scheduler's context
-                //          5. finally we are out of `swtch()`, and we just ran something
+                //          4. the process calls `swtch()` to save its context
+                //          and load the scheduler's context
+                //          5. finally we are out of `swtch()`, and we just ran
+                //          something
 
                 // Process is done running for now.
                 // It should have changed its p->state before coming back.
@@ -552,18 +567,19 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
                 // we did run something in this scan loop
                 found = 1;
             }
-            // whether it's runnable or not, we have to release the previously acquired lock
-            // note that there are two different execution paths:
+            // whether it's runnable or not, we have to release the previously
+            // acquired lock note that there are two different execution paths:
             //      1. sche acq -> sche release
-            //      2. sche acq -> process release -> process acq -> sche release
+            //      2. sche acq -> process release -> process acq -> sche
+            //      release
             // but anyway the scheduler needs to relase here
             p->lock.unlock();
         }
 
         if (found == 0) {
             // nothing to run; stop running on this core until an interrupt.
-            // found == 0 means we've scanned all processes and none of them are runnable
-            // wfi = wait for interruption
+            // found == 0 means we've scanned all processes and none of them are
+            // runnable wfi = wait for interruption
             asm volatile("wfi");
             // when an interrupt arrives:
             //      1. the CPU awakes
@@ -588,7 +604,8 @@ __attribute__((unused)) static int first_non_empty() {
     return -1;
 }
 
-__attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedback_q() {
+__attribute__((unused)) __attribute__((noreturn)) static void
+multi_level_feedback_q() {
     cpu *c = mycpu();
 
     c->proc = nullptr;
@@ -610,13 +627,16 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
 
         // get the first non-empty queue
         rqueue *const rq = &mlq.q[first_non_null];
-        // the queue must contain at least one thing (this is the possible race that we are preventing)
+        // the queue must contain at least one thing (this is the possible race
+        // that we are preventing)
         assert(rq->head && rq->tail, "empty ready queue (possible races)");
-        // the queue is the "ready queue", meaning every process in it is in READY/RUNNABLE state
+        // the queue is the "ready queue", meaning every process in it is in
+        // READY/RUNNABLE state
         struct proc *const p = mlfq_deq_locked(&mlq, first_non_null);
         // snapshot current MLFQ version
         const int cur_epoch = mlq.boost_epoch;
-        // the process is dequeued, and queue is modified, no longer needs protection
+        // the process is dequeued, and queue is modified, no longer needs
+        // protection
         mlq.lock.unlock();
 
         // before any read or any modification to process, protect with lock
@@ -644,11 +664,13 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
             mlq.lock.unlock();
             p->lock.unlock();
             // We've fixed up the priority
-            // next time we are guaranteed to pick this or some other processes from L0 Q
+            // next time we are guaranteed to pick this or some other processes
+            // from L0 Q
             continue;
         }
 
-        // now we've asserted that p is a valid candidate, and we are about to run it
+        // now we've asserted that p is a valid candidate, and we are about to
+        // run it
         p->state = RUNNING;
         c->proc = p;
 
@@ -722,9 +744,10 @@ void yield() {
     p->lock.lock();
     // I'm going to quit running and change to runnable/ready
     p->state = RUNNABLE;
-    // I changed from RUNNING to RUNNABLE because my quanta used up, so need a reset
-    // also I need to clear my need_yield flag (likely cleared already, but doesn't hurt)
-    // also yield is called AFTER timer interrupt, so p->qlevel is already updated
+    // I changed from RUNNING to RUNNABLE because my quanta used up, so need a
+    // reset also I need to clear my need_yield flag (likely cleared already,
+    // but doesn't hurt) also yield is called AFTER timer interrupt, so
+    // p->qlevel is already updated
     p->slice_left = quantum[p->qlevel];
     p->need_yield = 0;
     // but even though I give up CPU volentarily, I can still be scheduled
@@ -732,8 +755,8 @@ void yield() {
     mlq.lock.lock();
     {
         // `yield()` can only be called by timer interrupt preemption
-        // this means the process is running for too long, and its priority is demoted (already)
-        // Thus enqueue it at the demoted level
+        // this means the process is running for too long, and its priority is
+        // demoted (already) Thus enqueue it at the demoted level
         const int lvl = p->qlevel;
         mlfq_enq_locked(&mlq, lvl, p);
         assert(!p->in_ready_q, "double enq");
@@ -805,7 +828,8 @@ void sleep(void *chan, spinlock *lk) {
     assert(!p->in_ready_q, "RUNNING process still in ready queue");
     p->state = SLEEPING;
     // Q: Do you need to explicitly handle remove from ready queue?
-    // A: No, because if I'm running, I must be popped off the ready queue and not in the queue anymore!
+    // A: No, because if I'm running, I must be popped off the ready queue and
+    // not in the queue anymore!
 
     // I'm the process that wants to sleep,
     // and I'll give the CPU to the scheduler
@@ -902,7 +926,8 @@ int killed(struct proc *p) {
 // Copy to either a user address, or kernel address,
 // depending on usr_dst.
 // Returns 0 on success, -1 on error.
-int either_copyout(const int user_dst, const uint64 dst, void *src, const uint64 len) {
+int either_copyout(const int user_dst, const uint64 dst, void *src,
+                   const uint64 len) {
     const struct proc *p = myproc();
     if (user_dst) {
         return copyout(p->pagetable, dst, reinterpret_cast<char *>(src), len);
@@ -914,7 +939,8 @@ int either_copyout(const int user_dst, const uint64 dst, void *src, const uint64
 // Copy from either a user address, or kernel address,
 // depending on usr_src.
 // Returns 0 on success, -1 on error.
-int either_copyin(void *dst, const int user_src, const uint64 src, const uint64 len) {
+int either_copyin(void *dst, const int user_src, const uint64 src,
+                  const uint64 len) {
     const struct proc *p = myproc();
     if (user_src) {
         return copyin(p->pagetable, reinterpret_cast<char *>(dst), src, len);
@@ -950,12 +976,8 @@ static void mlfq_dump_nolock() {
 // No lock to avoid wedging a stuck machine further.
 void procdump() {
     static const char *states[] = {
-        [UNUSED] = "unused",
-        [USED] = "used",
-        [SLEEPING] = "sleep ",
-        [RUNNABLE] = "runble",
-        [RUNNING] = "run   ",
-        [ZOMBIE] = "zombie"};
+        [UNUSED] = "unused",   [USED] = "used",      [SLEEPING] = "sleep ",
+        [RUNNABLE] = "runble", [RUNNING] = "run   ", [ZOMBIE] = "zombie"};
     const char *state;
 
     printf("PID\tSTATE\tNAME\n");

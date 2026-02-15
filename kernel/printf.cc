@@ -20,8 +20,7 @@ static struct {
 
 static char digits[] = "0123456789abcdef";
 
-static void
-printint(const long long xx, const int base, int sign) {
+static void printint(const long long xx, const int base, int sign) {
     char buf[20];
     unsigned long long x;
 
@@ -45,8 +44,7 @@ printint(const long long xx, const int base, int sign) {
     }
 }
 
-static void
-printptr(uint64 x) {
+static void printptr(uint64 x) {
     consputc('0');
     consputc('x');
     for (uint i = 0; i < sizeof(uint64) * 2; i++, x <<= 4) {
@@ -142,8 +140,6 @@ void panic(const char *s) {
         ;
 }
 
-void printfinit() {
-    pr.lock.init_lock("pr");
-}
+void printfinit() { pr.lock.init_lock("pr"); }
 
 } // namespace xv6

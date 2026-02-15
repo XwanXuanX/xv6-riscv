@@ -39,7 +39,8 @@ void copyin(const char *s) {
         }
         int n = write(fd, reinterpret_cast<void *>(addr), 8192);
         if (n >= 0) {
-            printf("write(fd, %p, 8192) returned %d, not -1\n", (void *)addr, n);
+            printf("write(fd, %p, 8192) returned %d, not -1\n", (void *)addr,
+                   n);
             exit(1);
         }
         close(fd);
@@ -47,7 +48,8 @@ void copyin(const char *s) {
 
         n = write(1, reinterpret_cast<char *>(addr), 8192);
         if (n > 0) {
-            printf("write(1, %p, 8192) returned %d, not -1 or 0\n", (void *)addr, n);
+            printf("write(1, %p, 8192) returned %d, not -1 or 0\n",
+                   (void *)addr, n);
             exit(1);
         }
 
@@ -58,7 +60,8 @@ void copyin(const char *s) {
         }
         n = write(fds[1], (char *)addr, 8192);
         if (n > 0) {
-            printf("write(pipe, %p, 8192) returned %d, not -1 or 0\n", (void *)addr, n);
+            printf("write(pipe, %p, 8192) returned %d, not -1 or 0\n",
+                   (void *)addr, n);
             exit(1);
         }
         close(fds[0]);
@@ -69,8 +72,8 @@ void copyin(const char *s) {
 // what if you pass ridiculous pointers to system calls
 // that write user memory with copyout?
 void copyout(const char *s) {
-    constexpr uint64 addrs[] = {0LL, 0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
-                                0xffffffffffffffff};
+    constexpr uint64 addrs[] = {0LL,          0x80000000LL, 0x3fffffe000,
+                                0x3ffffff000, 0x4000000000, 0xffffffffffffffff};
 
     for (unsigned long addr : addrs) {
         const int fd = open("README", 0);
@@ -80,7 +83,8 @@ void copyout(const char *s) {
         }
         int n = read(fd, (void *)addr, 8192);
         if (n > 0) {
-            printf("read(fd, %p, 8192) returned %d, not -1 or 0\n", (void *)addr, n);
+            printf("read(fd, %p, 8192) returned %d, not -1 or 0\n",
+                   (void *)addr, n);
             exit(1);
         }
         close(fd);
@@ -97,7 +101,8 @@ void copyout(const char *s) {
         }
         n = read(fds[0], (void *)addr, 8192);
         if (n > 0) {
-            printf("read(pipe, %p, 8192) returned %d, not -1 or 0\n", (void *)addr, n);
+            printf("read(pipe, %p, 8192) returned %d, not -1 or 0\n",
+                   (void *)addr, n);
             exit(1);
         }
         close(fds[0]);
@@ -107,8 +112,8 @@ void copyout(const char *s) {
 
 // what if you pass ridiculous string pointers to system calls?
 void copyinstr1(const char *s) {
-    constexpr uint64 addrs[] = {0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
-                                0xffffffffffffffff};
+    constexpr uint64 addrs[] = {0x80000000LL, 0x3fffffe000, 0x3ffffff000,
+                                0x4000000000, 0xffffffffffffffff};
 
     for (unsigned long addr : addrs) {
         const int fd = open((char *)addr, O_CREATE | O_WRONLY);
@@ -247,7 +252,8 @@ void rwsbrk(const char *s) {
     }
     int n = write(fd, (void *)(a + PGSIZE), 1024);
     if (n >= 0) {
-        printf("write(fd, %p, 1024) returned %d, not -1\n", (char *)a + PGSIZE, n);
+        printf("write(fd, %p, 1024) returned %d, not -1\n", (char *)a + PGSIZE,
+               n);
         exit(1);
     }
     close(fd);
@@ -502,8 +508,7 @@ void opentest(const char *s) {
 
 void writetest(const char *s) {
     int i;
-    enum { N = 100,
-           SZ = 10 };
+    enum { N = 100, SZ = 10 };
 
     int fd = open("small", O_CREATE | O_RDWR);
     if (fd < 0) {
@@ -579,8 +584,8 @@ void writebig(const char *s) {
             exit(1);
         }
         if (((int *)buf)[0] != n) {
-            printf("%s: read content of block %d is %d\n", s,
-                   n, ((int *)buf)[0]);
+            printf("%s: read content of block %d is %d\n", s, n,
+                   ((int *)buf)[0]);
             exit(1);
         }
         n++;
@@ -692,8 +697,7 @@ void exectest(const char *s) {
 void pipe1(const char *s) {
     int fds[2], xstatus;
     int i, n;
-    enum { N = 5,
-           SZ = 1033 };
+    enum { N = 5, SZ = 1033 };
 
     if (pipe(fds) != 0) {
         printf("%s: pipe() failed\n", s);
@@ -1026,8 +1030,7 @@ void mem(const char *s) {
 // is the offset shared? does inode locking work?
 void sharedfd(const char *s) {
     int i, np;
-    enum { N = 1000,
-           SZ = 10 };
+    enum { N = 1000, SZ = 10 };
     char buf[SZ];
 
     unlink("sharedfd");
@@ -1085,9 +1088,7 @@ void fourfiles(const char *s) {
     int fd, i, n, pi;
     const char *names[] = {"f0", "f1", "f2", "f3"};
     const char *fname;
-    enum { N = 12,
-           NCHILD = 4,
-           SZ = 500 };
+    enum { N = 12, NCHILD = 4, SZ = 500 };
 
     for (pi = 0; pi < NCHILD; pi++) {
         fname = names[pi];
@@ -1149,8 +1150,7 @@ void fourfiles(const char *s) {
 
 // four processes create and delete different files in same directory
 void createdelete(const char *s) {
-    enum { N = 20,
-           NCHILD = 4 };
+    enum { N = 20, NCHILD = 4 };
     int i, fd, pi;
     char name[32];
 
@@ -1393,8 +1393,7 @@ void concreate(const char *s) {
             printf("%s: fork failed\n", s);
             exit(1);
         }
-        if ((i % 3 == 0 && pid == 0) ||
-            (i % 3 == 1 && pid != 0)) {
+        if ((i % 3 == 0 && pid == 0) || (i % 3 == 1 && pid != 0)) {
             close(open(file, 0));
             close(open(file, 0));
             close(open(file, 0));
@@ -1642,8 +1641,7 @@ void bigwrite(const char *s) {
 }
 
 void bigfile(const char *s) {
-    enum { N = 20,
-           SZ = 600 };
+    enum { N = 20, SZ = 600 };
     int i;
 
     unlink("bigfile.dat");
@@ -1707,13 +1705,16 @@ void fourteen(const char *s) {
     }
     int fd = open("123456789012345/123456789012345/123456789012345", O_CREATE);
     if (fd < 0) {
-        printf("%s: create 123456789012345/123456789012345/123456789012345 failed\n", s);
+        printf("%s: create 123456789012345/123456789012345/123456789012345 "
+               "failed\n",
+               s);
         exit(1);
     }
     close(fd);
     fd = open("12345678901234/12345678901234/12345678901234", 0);
     if (fd < 0) {
-        printf("%s: open 12345678901234/12345678901234/12345678901234 failed\n", s);
+        printf("%s: open 12345678901234/12345678901234/12345678901234 failed\n",
+               s);
         exit(1);
     }
     close(fd);
@@ -1972,7 +1973,9 @@ void sbrkmuch(const char *s) {
     const uint64 amt = BIG - (uint64)a;
     const char *p = sbrk(amt);
     if (p != a) {
-        printf("%s: sbrk test failed to grow big address space; enough phys mem?\n", s);
+        printf("%s: sbrk test failed to grow big address space; enough phys "
+               "mem?\n",
+               s);
         exit(1);
     }
 
@@ -1988,7 +1991,8 @@ void sbrkmuch(const char *s) {
     }
     c = sbrk(0);
     if (c != a - PGSIZE) {
-        printf("%s: sbrk deallocation produced wrong address, a %p c %p\n", s, a, c);
+        printf("%s: sbrk deallocation produced wrong address, a %p c %p\n", s,
+               a, c);
         exit(1);
     }
 
@@ -2015,7 +2019,8 @@ void sbrkmuch(const char *s) {
 
 // can we read the kernel's memory?
 void kernmem(const char *s) {
-    for (auto a = (char *)KERNBASE; a < (char *)(KERNBASE + 2000000); a += 50000) {
+    for (auto a = (char *)KERNBASE; a < (char *)(KERNBASE + 2000000);
+         a += 50000) {
         const int pid = fork();
         if (pid < 0) {
             printf("%s: fork failed\n", s);
@@ -2307,7 +2312,11 @@ void stacktest(const char *s) {
 // cause a fault, e.g. process's text and TRAMPOLINE.
 void nowrite(const char *s) {
     int xstatus;
-    constexpr uint64 addrs[] = {0, 0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
+    constexpr uint64 addrs[] = {0,
+                                0x80000000LL,
+                                0x3fffffe000,
+                                0x3ffffff000,
+                                0x4000000000,
                                 0xffffffffffffffff};
 
     for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
@@ -2533,12 +2542,8 @@ void lazy_copy(const char *s) {
 
     // read() and write() to these addresses should fail.
     constexpr unsigned long bad[] = {
-        0x3fffffc000,
-        0x3fffffd000,
-        0x3fffffe000,
-        0x3ffffff000,
-        0x4000000000,
-        0x8000000000,
+        0x3fffffc000, 0x3fffffd000, 0x3fffffe000,
+        0x3ffffff000, 0x4000000000, 0x8000000000,
     };
     for (int i = 0; i < static_cast<int>(sizeof(bad) / sizeof(bad[0])); i++) {
         int fd = open("README", 0);
@@ -2588,8 +2593,10 @@ void lazy_sbrk(const char *s) {
     }
 
     p = sbrk(PGSIZE);
-    if (p == reinterpret_cast<char *>(-1) || reinterpret_cast<uint64>(p) != TRAPFRAME - PGSIZE) {
-        printf("sbrk(%d) returned %p, not expected TRAPFRAME-PGSIZE\n", PGSIZE, p);
+    if (p == reinterpret_cast<char *>(-1) ||
+        reinterpret_cast<uint64>(p) != TRAPFRAME - PGSIZE) {
+        printf("sbrk(%d) returned %p, not expected TRAPFRAME-PGSIZE\n", PGSIZE,
+               p);
         exit(1);
     }
 
@@ -2963,12 +2970,9 @@ void outofinodes(const char *s) {
 }
 
 test slowtests[] = {
-    {bigdir, "bigdir"},
-    {manywrites, "manywrites"},
-    {badwrite, "badwrite"},
-    {execout, "execout"},
-    {diskfull, "diskfull"},
-    {outofinodes, "outofinodes"},
+    {bigdir, "bigdir"},     {manywrites, "manywrites"},
+    {badwrite, "badwrite"}, {execout, "execout"},
+    {diskfull, "diskfull"}, {outofinodes, "outofinodes"},
 
     {nullptr, nullptr},
 };
@@ -3060,7 +3064,8 @@ int drivetests(const int quick, const int continuous, char *justone) {
             }
         }
         if ((free1 = countfree()) < free0) {
-            printf("FAILED -- lost some free pages %d (out of %d)\n", free1, free0);
+            printf("FAILED -- lost some free pages %d (out of %d)\n", free1,
+                   free0);
             if (continuous != 2) {
                 return 1;
             }

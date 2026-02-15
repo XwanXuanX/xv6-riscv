@@ -15,12 +15,13 @@ namespace impl {
 
 // Why do we need "reference counting"?
 // Because lock acquisition can be nested.
-// You can only reenable interrupts when ALL lock acquisition is released, for example:
-// acquire(&A);   // push_off() -> interrupts off
-// acquire(&B);   // push_off() again
+// You can only reenable interrupts when ALL lock acquisition is released, for
+// example: acquire(&A);   // push_off() -> interrupts off acquire(&B);   //
+// push_off() again
 // ...            // do something
 // release(&B);   // pop_off()
-//                // if we turn on interrupts here, then we are facing the same issue of having a deadlock as above!
+//                // if we turn on interrupts here, then we are facing the same
+//                issue of having a deadlock as above!
 // release(&A);   // pop_off()
 
 void push_off() {
@@ -68,8 +69,10 @@ void spinlock::lock() {
     //      * interrupts are enabled
     //      * timer/device interrupts fires
     //      * interrupt handler runs on the same CPU
-    //      * handler tries to acq lock -> spins forever, since lock is already acq by the same CPU
-    //      * but the CPU cannot return to the code to release it, because it's stuck in the handler
+    //      * handler tries to acq lock -> spins forever, since lock is already
+    //      acq by the same CPU
+    //      * but the CPU cannot return to the code to release it, because it's
+    //      stuck in the handler
     //      * the deadlock!
     impl::push_off();
 
@@ -131,12 +134,8 @@ bool spinlock::holding() const {
 }
 
 // Export push_off and pop_off to the xv6 namespace
-void push_off() {
-    impl::push_off();
-}
+void push_off() { impl::push_off(); }
 
-void pop_off() {
-    impl::pop_off();
-}
+void pop_off() { impl::pop_off(); }
 
 } // namespace xv6

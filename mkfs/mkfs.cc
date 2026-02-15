@@ -14,11 +14,11 @@
 using namespace xv6;
 
 #ifndef static_assert
-#define static_assert(a, b) \
-    do {                    \
-        switch (0)          \
-        case 0:             \
-        case (a):;          \
+#define static_assert(a, b)                                                    \
+    do {                                                                       \
+        switch (0)                                                             \
+        case 0:                                                                \
+        case (a):;                                                             \
     } while (0)
 #endif
 
@@ -30,8 +30,8 @@ using namespace xv6;
 int nbitmap = FSSIZE / BPB + 1;
 int ninodeblocks = NINODES / IPB + 1;
 int nlog = LOGBLOCKS + 1; // Header followed by LOGBLOCKS data blocks.
-int nmeta;                // Number of meta blocks (boot, sb, nlog, inode, bitmap)
-int nblocks;              // Number of data blocks
+int nmeta;   // Number of meta blocks (boot, sb, nlog, inode, bitmap)
+int nblocks; // Number of data blocks
 
 int fsfd;
 superblock sb;
@@ -49,8 +49,7 @@ void iappend(uint inum, void *p, int n);
 void die(const char *);
 
 // convert to riscv byte order
-ushort
-xshort(const ushort x) {
+ushort xshort(const ushort x) {
     ushort y;
     const auto a = (uchar *)&y;
     a[0] = x;
@@ -102,7 +101,8 @@ int main(const int argc, char *argv[]) {
     sb.inodestart = xint(2 + nlog);
     sb.bmapstart = xint(2 + nlog + ninodeblocks);
 
-    printf("nmeta %d (boot, super, log blocks %u, inode blocks %u, bitmap blocks %u) blocks %d total %d\n",
+    printf("nmeta %d (boot, super, log blocks %u, inode blocks %u, bitmap "
+           "blocks %u) blocks %d total %d\n",
            nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
 
     freeblock = nmeta; // the first free block that we can allocate

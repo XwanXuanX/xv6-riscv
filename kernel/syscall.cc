@@ -8,10 +8,12 @@ namespace xv6 {
 // Fetch the uint64 at addr from the current process.
 int fetchaddr(const uint64 addr, uint64 *ip) {
     const proc *p = myproc();
-    if (addr >= p->sz || addr + sizeof(uint64) > p->sz) { // both tests needed, in case of overflow
+    if (addr >= p->sz || addr + sizeof(uint64) >
+                             p->sz) { // both tests needed, in case of overflow
         return -1;
     }
-    if (copyin(p->pagetable, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) != 0) {
+    if (copyin(p->pagetable, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) !=
+        0) {
         return -1;
     }
     return 0;
@@ -27,8 +29,7 @@ int fetchstr(const uint64 addr, char *buf, const int max) {
     return strlen(buf);
 }
 
-static uint64
-argraw(const int n) {
+static uint64 argraw(const int n) {
     const proc *p = myproc();
     switch (n) {
     case 0:
@@ -49,16 +50,12 @@ argraw(const int n) {
 }
 
 // Fetch the nth 32-bit system call argument.
-void argint(const int n, int *ip) {
-    *ip = static_cast<int>(argraw(n));
-}
+void argint(const int n, int *ip) { *ip = static_cast<int>(argraw(n)); }
 
 // Retrieve an argument as a pointer.
 // Doesn't check for legality, since
 // copyin/copyout will do that.
-void argaddr(const int n, uint64 *ip) {
-    *ip = argraw(n);
-}
+void argaddr(const int n, uint64 *ip) { *ip = argraw(n); }
 
 // Fetch the nth word-sized system call argument as a null-terminated string.
 // Copies into buf, at most max.
@@ -128,8 +125,7 @@ void syscall() {
         // and store its return value in p->trapframe->a0
         p->trapf->a0 = syscalls[num]();
     } else {
-        printf("%d %s: unknown sys call %ld\n",
-               p->pid, p->name, num);
+        printf("%d %s: unknown sys call %ld\n", p->pid, p->name, num);
         p->trapf->a0 = -1;
     }
 }

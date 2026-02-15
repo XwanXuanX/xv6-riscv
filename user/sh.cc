@@ -203,7 +203,8 @@ cmd *exec_cmd() {
     return reinterpret_cast<struct cmd *>(cmd);
 }
 
-cmd *redir_cmd(cmd *subcmd, char *file, char *efile, const int mode, const int fd) {
+cmd *redir_cmd(cmd *subcmd, char *file, char *efile, const int mode,
+               const int fd) {
     const auto cmd = static_cast<struct redircmd *>(malloc(sizeof(redircmd)));
     memset(cmd, 0, sizeof(*cmd));
     cmd->type = REDIR;

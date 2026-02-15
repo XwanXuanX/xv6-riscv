@@ -49,8 +49,7 @@ void binit() {
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
-static buf *
-bget(const uint dev, const uint blockno) {
+static buf *bget(const uint dev, const uint blockno) {
     buf *b;
 
     bcache.lock.lock();

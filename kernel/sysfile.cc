@@ -18,8 +18,7 @@ namespace xv6 {
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
-static int
-argfd(const int n, int *pfd, file **pf) {
+static int argfd(const int n, int *pfd, file **pf) {
     int fd;
     file *f;
 
@@ -38,8 +37,7 @@ argfd(const int n, int *pfd, file **pf) {
 
 // Allocate a file descriptor for the given file.
 // Takes over file reference from caller on success.
-static int
-fdalloc(file *f) {
+static int fdalloc(file *f) {
     proc *p = myproc();
 
     for (int fd = 0; fd < NOFILE; fd++) {
@@ -51,8 +49,7 @@ fdalloc(file *f) {
     return -1;
 }
 
-uint64
-sys_dup() {
+uint64 sys_dup() {
     file *f;
     int fd;
 
@@ -66,8 +63,7 @@ sys_dup() {
     return fd;
 }
 
-uint64
-sys_read() {
+uint64 sys_read() {
     file *f;
     int n;
     uint64 p;
@@ -80,8 +76,7 @@ sys_read() {
     return fileread(f, p, n);
 }
 
-uint64
-sys_write() {
+uint64 sys_write() {
     file *f;
     int n;
     uint64 p;
@@ -95,8 +90,7 @@ sys_write() {
     return filewrite(f, p, n);
 }
 
-uint64
-sys_close() {
+uint64 sys_close() {
     int fd;
     file *f;
 
@@ -108,8 +102,7 @@ sys_close() {
     return 0;
 }
 
-uint64
-sys_fstat() {
+uint64 sys_fstat() {
     file *f;
     uint64 st; // user pointer to struct stat
 
@@ -121,8 +114,7 @@ sys_fstat() {
 }
 
 // Create the path new as a link to the same inode as old.
-uint64
-sys_link() {
+uint64 sys_link() {
     char name[DIRSIZ] = {}, nw[MAXPATH] = {}, old[MAXPATH] = {};
     inode *dp, *ip;
 
@@ -172,8 +164,7 @@ bad:
 }
 
 // Is the directory dp empty except for "." and ".." ?
-static int
-isdirempty(inode *dp) {
+static int isdirempty(inode *dp) {
     dirent de{};
 
     for (uint off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
@@ -187,8 +178,7 @@ isdirempty(inode *dp) {
     return 1;
 }
 
-uint64
-sys_unlink() {
+uint64 sys_unlink() {
     inode *ip, *dp;
     dirent de{};
     char name[DIRSIZ] = {}, path[MAXPATH] = {};
@@ -310,8 +300,7 @@ fail:
     return nullptr;
 }
 
-uint64
-sys_open() {
+uint64 sys_open() {
     char path[MAXPATH];
     int fd, omode;
     file *f;
@@ -379,13 +368,13 @@ sys_open() {
     return fd;
 }
 
-uint64
-sys_mkdir() {
+uint64 sys_mkdir() {
     char path[MAXPATH];
     inode *ip;
 
     begin_op();
-    if (argstr(0, path, MAXPATH) < 0 || (ip = create(path, T_DIR, 0, 0)) == nullptr) {
+    if (argstr(0, path, MAXPATH) < 0 ||
+        (ip = create(path, T_DIR, 0, 0)) == nullptr) {
         end_op();
         return -1;
     }
@@ -394,8 +383,7 @@ sys_mkdir() {
     return 0;
 }
 
-uint64
-sys_mknod() {
+uint64 sys_mknod() {
     inode *ip;
     char path[MAXPATH];
     int major, minor;
@@ -413,8 +401,7 @@ sys_mknod() {
     return 0;
 }
 
-uint64
-sys_chdir() {
+uint64 sys_chdir() {
     char path[MAXPATH];
     inode *ip;
     proc *p = myproc();
@@ -437,8 +424,7 @@ sys_chdir() {
     return 0;
 }
 
-uint64
-sys_exec() {
+uint64 sys_exec() {
     char path[MAXPATH];
     const char *argv[MAXARG];
     uint i;
@@ -485,8 +471,7 @@ bad:
     return -1;
 }
 
-uint64
-sys_pipe() {
+uint64 sys_pipe() {
     uint64 fdarray; // user pointer to array of two integers
     file *rf, *wf;
     int fd1;
@@ -506,7 +491,8 @@ sys_pipe() {
         return -1;
     }
     if (copyout(p->pagetable, fdarray, (char *)&fd0, sizeof(fd0)) < 0 ||
-        copyout(p->pagetable, fdarray + sizeof(fd0), (char *)&fd1, sizeof(fd1)) < 0) {
+        copyout(p->pagetable, fdarray + sizeof(fd0), (char *)&fd1,
+                sizeof(fd1)) < 0) {
         p->ofile[fd0] = nullptr;
         p->ofile[fd1] = nullptr;
         fileclose(rf);

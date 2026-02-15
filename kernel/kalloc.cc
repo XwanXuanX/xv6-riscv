@@ -30,7 +30,8 @@ void kinit() {
 }
 
 void freerange(void *pa_start, void *pa_end) {
-    auto p = reinterpret_cast<char *>(PGROUNDUP(reinterpret_cast<uint64>(pa_start)));
+    auto p =
+        reinterpret_cast<char *>(PGROUNDUP(reinterpret_cast<uint64>(pa_start)));
     for (; p + PGSIZE <= static_cast<char *>(pa_end); p += PGSIZE) {
         kfree(p);
     }
@@ -41,7 +42,9 @@ void freerange(void *pa_start, void *pa_end) {
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
 void kfree(void *pa) {
-    if (reinterpret_cast<uint64>(pa) % PGSIZE != 0 || static_cast<char *>(pa) < end || reinterpret_cast<uint64>(pa) >= PHYSTOP) {
+    if (reinterpret_cast<uint64>(pa) % PGSIZE != 0 ||
+        static_cast<char *>(pa) < end ||
+        reinterpret_cast<uint64>(pa) >= PHYSTOP) {
         panic("kfree");
     }
 
@@ -59,8 +62,7 @@ void kfree(void *pa) {
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
-void *
-kalloc() {
+void *kalloc() {
     kmem.lock.lock();
     run *r = kmem.freelist;
     if (r) {

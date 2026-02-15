@@ -2,8 +2,7 @@
 
 namespace xv6 {
 
-void *
-memset(void *dst, const int c, const uint n) {
+void *memset(void *dst, const int c, const uint n) {
     const auto cdst = static_cast<char *>(dst);
     for (uint i = 0; i < n; i++) {
         cdst[i] = c;
@@ -24,8 +23,7 @@ int memcmp(const void *v1, const void *v2, uint n) {
     return 0;
 }
 
-void *
-memmove(void *dst, const void *src, uint n) {
+void *memmove(void *dst, const void *src, uint n) {
     if (n == 0) {
         return dst;
     }
@@ -48,8 +46,7 @@ memmove(void *dst, const void *src, uint n) {
 }
 
 // memcpy exists to placate GCC.  Use memmove.
-void *
-memcpy(void *dst, const void *src, const uint n) {
+void *memcpy(void *dst, const void *src, const uint n) {
     return memmove(dst, src, n);
 }
 
@@ -63,8 +60,7 @@ int strncmp(const char *p, const char *q, uint n) {
     return static_cast<uchar>(*p) - static_cast<uchar>(*q);
 }
 
-char *
-strncpy(char *s, const char *t, int n) {
+char *strncpy(char *s, const char *t, int n) {
     char *os = s;
     while (n-- > 0 && (*s++ = *t++) != 0)
         ;
@@ -75,8 +71,7 @@ strncpy(char *s, const char *t, int n) {
 }
 
 // Like strncpy but guaranteed to NUL-terminate.
-char *
-safestrcpy(char *s, const char *t, int n) {
+char *safestrcpy(char *s, const char *t, int n) {
     char *os = s;
     if (n <= 0) {
         return os;

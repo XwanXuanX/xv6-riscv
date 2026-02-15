@@ -43,8 +43,7 @@ void free(void *ap) {
     freep = p;
 }
 
-static header *
-morecore(uint nu) {
+static header *morecore(uint nu) {
     if (nu < 4096) {
         nu = 4096;
     }
@@ -58,8 +57,7 @@ morecore(uint nu) {
     return freep;
 }
 
-void *
-malloc(const uint nbytes) {
+void *malloc(const uint nbytes) {
     header *prevp;
 
     const uint nunits = (nbytes + sizeof(header) - 1) / sizeof(header) + 1;

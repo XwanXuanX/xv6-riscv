@@ -109,76 +109,65 @@ namespace xv6 {
     return x;
 }
 
-[[maybe_unused]] static void
-w_medeleg(uint64 x) {
+[[maybe_unused]] static void w_medeleg(uint64 x) {
     asm volatile("csrw medeleg, %0" : : "r"(x));
 }
 
 // Machine Interrupt Delegation
-[[maybe_unused]] static uint64
-r_mideleg() {
+[[maybe_unused]] static uint64 r_mideleg() {
     uint64 x;
     asm volatile("csrr %0, mideleg" : "=r"(x));
     return x;
 }
 
-[[maybe_unused]] static void
-w_mideleg(uint64 x) {
+[[maybe_unused]] static void w_mideleg(uint64 x) {
     asm volatile("csrw mideleg, %0" : : "r"(x));
 }
 
 // Supervisor Trap-Vector Base Address
 // low two bits are mode.
-[[maybe_unused]] static void
-w_stvec(uint64 x) {
+[[maybe_unused]] static void w_stvec(uint64 x) {
     asm volatile("csrw stvec, %0" : : "r"(x));
 }
 
-[[maybe_unused]] static uint64
-r_stvec() {
+[[maybe_unused]] static uint64 r_stvec() {
     uint64 x;
     asm volatile("csrr %0, stvec" : "=r"(x));
     return x;
 }
 
 // Supervisor Timer Comparison Register
-[[maybe_unused]] static uint64
-r_stimecmp() {
+[[maybe_unused]] static uint64 r_stimecmp() {
     uint64 x;
     // asm volatile("csrr %0, stimecmp" : "=r" (x) );
     asm volatile("csrr %0, 0x14d" : "=r"(x));
     return x;
 }
 
-[[maybe_unused]] static void
-w_stimecmp(uint64 x) {
+[[maybe_unused]] static void w_stimecmp(uint64 x) {
     // asm volatile("csrw stimecmp, %0" : : "r" (x));
     asm volatile("csrw 0x14d, %0" : : "r"(x));
 }
 
 // Machine Environment Configuration Register
-[[maybe_unused]] static uint64
-r_menvcfg() {
+[[maybe_unused]] static uint64 r_menvcfg() {
     uint64 x;
     // asm volatile("csrr %0, menvcfg" : "=r" (x) );
     asm volatile("csrr %0, 0x30a" : "=r"(x));
     return x;
 }
 
-[[maybe_unused]] static void
-w_menvcfg(uint64 x) {
+[[maybe_unused]] static void w_menvcfg(uint64 x) {
     // asm volatile("csrw menvcfg, %0" : : "r" (x));
     asm volatile("csrw 0x30a, %0" : : "r"(x));
 }
 
 // Physical Memory Protection
-[[maybe_unused]] static void
-w_pmpcfg0(uint64 x) {
+[[maybe_unused]] static void w_pmpcfg0(uint64 x) {
     asm volatile("csrw pmpcfg0, %0" : : "r"(x));
 }
 
-[[maybe_unused]] static void
-w_pmpaddr0(uint64 x) {
+[[maybe_unused]] static void w_pmpaddr0(uint64 x) {
     asm volatile("csrw pmpaddr0, %0" : : "r"(x));
 }
 
@@ -189,76 +178,63 @@ w_pmpaddr0(uint64 x) {
 
 // supervisor address translation and protection;
 // holds the address of the page table.
-[[maybe_unused]] static void
-w_satp(uint64 x) {
+[[maybe_unused]] static void w_satp(uint64 x) {
     asm volatile("csrw satp, %0" : : "r"(x));
 }
 
-[[maybe_unused]] static uint64
-r_satp() {
+[[maybe_unused]] static uint64 r_satp() {
     uint64 x;
     asm volatile("csrr %0, satp" : "=r"(x));
     return x;
 }
 
 // Supervisor Trap Cause
-[[maybe_unused]] static uint64
-r_scause() {
+[[maybe_unused]] static uint64 r_scause() {
     uint64 x;
     asm volatile("csrr %0, scause" : "=r"(x));
     return x;
 }
 
 // Supervisor Trap Value
-[[maybe_unused]] static uint64
-r_stval() {
+[[maybe_unused]] static uint64 r_stval() {
     uint64 x;
     asm volatile("csrr %0, stval" : "=r"(x));
     return x;
 }
 
 // Machine-mode Counter-Enable
-[[maybe_unused]] static void
-w_mcounteren(uint64 x) {
+[[maybe_unused]] static void w_mcounteren(uint64 x) {
     asm volatile("csrw mcounteren, %0" : : "r"(x));
 }
 
-[[maybe_unused]] static uint64
-r_mcounteren() {
+[[maybe_unused]] static uint64 r_mcounteren() {
     uint64 x;
     asm volatile("csrr %0, mcounteren" : "=r"(x));
     return x;
 }
 
 // machine-mode cycle counter
-[[maybe_unused]] static uint64
-r_time() {
+[[maybe_unused]] static uint64 r_time() {
     uint64 x;
     asm volatile("csrr %0, time" : "=r"(x));
     return x;
 }
 
 // enable device interrupts
-[[maybe_unused]] static void
-intr_on() {
-    w_sstatus(r_sstatus() | SSTATUS_SIE);
-}
+[[maybe_unused]] static void intr_on() { w_sstatus(r_sstatus() | SSTATUS_SIE); }
 
 // disable device interrupts
-[[maybe_unused]] static void
-intr_off() {
+[[maybe_unused]] static void intr_off() {
     w_sstatus(r_sstatus() & ~SSTATUS_SIE);
 }
 
 // are device interrupts enabled?
-[[maybe_unused]] static int
-intr_get() {
+[[maybe_unused]] static int intr_get() {
     const uint64 x = r_sstatus();
     return (x & SSTATUS_SIE) != 0;
 }
 
-[[maybe_unused]] static uint64
-r_sp() {
+[[maybe_unused]] static uint64 r_sp() {
     uint64 x;
     asm volatile("mv %0, sp" : "=r"(x));
     return x;
@@ -266,28 +242,24 @@ r_sp() {
 
 // read and write tp, the thread pointer, which xv6 uses to hold
 // this core's hartid (core number), the index into cpus[].
-[[maybe_unused]] static uint64
-r_tp() {
+[[maybe_unused]] static uint64 r_tp() {
     uint64 x;
     asm volatile("mv %0, tp" : "=r"(x));
     return x;
 }
 
-[[maybe_unused]] static void
-w_tp(uint64 x) {
+[[maybe_unused]] static void w_tp(uint64 x) {
     asm volatile("mv tp, %0" : : "r"(x));
 }
 
-[[maybe_unused]] static uint64
-r_ra() {
+[[maybe_unused]] static uint64 r_ra() {
     uint64 x;
     asm volatile("mv %0, ra" : "=r"(x));
     return x;
 }
 
 // flush the TLB.
-[[maybe_unused]] static void
-sfence_vma() {
+[[maybe_unused]] static void sfence_vma() {
     // the zero, zero means flush all TLB entries.
     asm volatile("sfence.vma zero, zero");
 }

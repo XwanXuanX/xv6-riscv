@@ -5,10 +5,7 @@
 
 static char digits[] = "0123456789ABCDEF";
 
-static void
-putc(const int fd, const char c) {
-    write(fd, &c, 1);
-}
+static void putc(const int fd, const char c) { write(fd, &c, 1); }
 
 static void
 printint(const int fd, const long long xx, const int base, const int sgn) {
@@ -36,8 +33,7 @@ printint(const int fd, const long long xx, const int base, const int sgn) {
     }
 }
 
-static void
-printptr(const int fd, uint64 x) {
+static void printptr(const int fd, uint64 x) {
     putc(fd, '0');
     putc(fd, 'x');
     for (uint i = 0; i < sizeof(uint64) * 2; i++, x <<= 4) {

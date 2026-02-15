@@ -3,8 +3,7 @@
 #include "kernel/fs.h"
 #include "kernel/fcntl.h"
 
-const char *
-fmtname(const char *path) {
+const char *fmtname(const char *path) {
     static char buf[DIRSIZ + 1];
     const char *p;
 
@@ -43,7 +42,8 @@ void ls(const char *path) {
     switch (st.type) {
     case T_DEVICE:
     case T_FILE:
-        printf("%s %d %d %d\n", fmtname(path), st.type, st.ino, static_cast<int>(st.size));
+        printf("%s %d %d %d\n", fmtname(path), st.type, st.ino,
+               static_cast<int>(st.size));
         break;
 
     case T_DIR:
@@ -64,7 +64,8 @@ void ls(const char *path) {
                 printf("ls: cannot stat %s\n", buf);
                 continue;
             }
-            printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino, static_cast<int>(st.size));
+            printf("%s %d %d %d\n", fmtname(buf), st.type, st.ino,
+                   static_cast<int>(st.size));
         }
         break;
     default:;

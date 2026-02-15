@@ -10,8 +10,7 @@ char buf[BUFSZ];
 
 int main(const int argc, char **argv) {
     int n;
-    enum { N = 250,
-           SZ = 2000 };
+    enum { N = 250, SZ = 2000 };
 
     for (int i = 1; i < argc; i++) {
         const int pid1 = fork();
