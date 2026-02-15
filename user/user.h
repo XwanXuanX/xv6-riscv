@@ -1,17 +1,11 @@
 #pragma once
 
+#include "kernel/stats.h"
 #include "kernel/types.h"
 
 #define SBRK_ERROR ((char *)-1)
 
-#ifdef __cplusplus
-namespace xv6 {
-struct stats;
-}
-using xv6::stats;
-#else
-struct stat;
-#endif
+using stats = xv6::stats;
 
 /**
  * Using <extern "C"> is crucial!
