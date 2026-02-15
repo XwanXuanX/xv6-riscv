@@ -10,7 +10,7 @@ int fetchaddr(const uint64 addr, uint64 *ip) {
     const proc *p = myproc();
     if (addr >= p->sz || addr + sizeof(uint64) > p->sz) // both tests needed, in case of overflow
         return -1;
-    if (copyin(p->pagetable, (char *)ip, addr, sizeof(*ip)) != 0)
+    if (copyin(p->pagetable, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) != 0)
         return -1;
     return 0;
 }
@@ -43,12 +43,11 @@ argraw(const int n) {
     default:;
     }
     panic("argraw");
-    return -1;
 }
 
 // Fetch the nth 32-bit system call argument.
 void argint(const int n, int *ip) {
-    *ip = argraw(n);
+    *ip = static_cast<int>(argraw(n));
 }
 
 // Retrieve an argument as a pointer.

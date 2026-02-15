@@ -16,7 +16,7 @@ fmtname(const char *path) {
     // Return blank-padded name.
     if (strlen(p) >= DIRSIZ)
         return p;
-    memmove(buf, p, strlen(p));
+    memmove(buf, p, static_cast<int>(strlen(p)));
     memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
     buf[sizeof(buf) - 1] = '\0';
     return buf;

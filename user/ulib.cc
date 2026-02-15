@@ -50,7 +50,7 @@ char *
 strchr(const char *s, const char c) {
     for (; *s; s++)
         if (*s == c)
-            return (char *)s;
+            return const_cast<char *>(s);
     return nullptr;
 }
 
@@ -90,8 +90,7 @@ int atoi(const char *s) {
 void *
 memmove(void *vdst, const void *vsrc, int n) {
     auto dst = static_cast<char *>(vdst);
-    const char *src = (char *)vsrc;
-    if (src > dst) {
+    if (const char *src = static_cast<const char *>(vsrc); src > dst) {
         while (n-- > 0)
             *dst++ = *src++;
     } else {
@@ -104,7 +103,7 @@ memmove(void *vdst, const void *vsrc, int n) {
 }
 
 int memcmp(const void *s1, const void *s2, uint n) {
-    const char *p1 = (char *)s1, *p2 = (char *)s2;
+    auto p1 = static_cast<const char *>(s1), p2 = static_cast<const char *>(s2);
     while (n-- > 0) {
         if (*p1 != *p2) {
             return *p1 - *p2;
@@ -116,7 +115,7 @@ int memcmp(const void *s1, const void *s2, uint n) {
 }
 
 void *
-memcpy(void *dst, const void *src, const uint n) {
+memcpy(void *dst, const void *src, const int n) {
     return memmove(dst, src, n);
 }
 

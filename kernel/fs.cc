@@ -203,7 +203,7 @@ ialloc(const uint dev, const short type) {
 // Caller must hold ip->lock.
 void iupdate(inode *ip) {
     buf *bp = bread(ip->dev, IBLOCK(ip->inum, sb));
-    dinode *dip = (struct dinode *)bp->data + ip->inum % IPB;
+    dinode *dip = reinterpret_cast<dinode *>(bp->data) + ip->inum % IPB;
     dip->type = ip->type;
     dip->major = ip->major;
     dip->minor = ip->minor;
@@ -269,7 +269,7 @@ void ilock(inode *ip) {
 
     if (ip->valid == 0) {
         buf *bp = bread(ip->dev, IBLOCK(ip->inum, sb));
-        const dinode *dip = (struct dinode *)bp->data + ip->inum % IPB;
+        const dinode *dip = reinterpret_cast<dinode *>(bp->data) + ip->inum % IPB;
         ip->type = dip->type;
         ip->major = dip->major;
         ip->minor = dip->minor;
@@ -409,7 +409,7 @@ void itrunc(inode *ip) {
 
     if (ip->addrs[NDIRECT]) {
         buf *bp = bread(ip->dev, ip->addrs[NDIRECT]);
-        const uint *a = (uint *)bp->data;
+        const uint *a = reinterpret_cast<uint *>(bp->data);
         for (uint j = 0; j < NINDIRECT; j++) {
             if (a[j])
                 bfree(ip->dev, a[j]);
@@ -517,7 +517,7 @@ dirlookup(inode *dp, const char *name, uint *poff) {
         panic("dirlookup not DIR");
 
     for (uint off = 0; off < dp->size; off += sizeof(de)) {
-        if (readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+        if (readi(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de))
             panic("dirlookup read");
         if (de.inum == 0)
             continue;
@@ -548,7 +548,7 @@ int dirlink(inode *dp, const char *name, const uint inum) {
 
     // Look for an empty dirent.
     for (off = 0; off < dp->size; off += sizeof(de)) {
-        if (readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+        if (readi(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de))
             panic("dirlink read");
         if (de.inum == 0)
             break;
@@ -556,7 +556,7 @@ int dirlink(inode *dp, const char *name, const uint inum) {
 
     strncpy(de.name, name, DIRSIZ);
     de.inum = inum;
-    if (writei(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+    if (writei(dp, 0, reinterpret_cast<uint64>(&de), off, sizeof(de)) != sizeof(de))
         return -1;
 
     return 0;

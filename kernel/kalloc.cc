@@ -12,8 +12,8 @@ namespace xv6 {
 
 void freerange(void *pa_start, void *pa_end);
 
-extern char end[]; // first address after kernel.
-                   // defined by kernel.ld.
+// extern char end[]; // first address after kernel.
+//                    // defined by kernel.ld.
 
 struct run {
     run *next;
@@ -26,11 +26,11 @@ struct {
 
 void kinit() {
     kmem.lock.init_lock("kmem");
-    freerange(end, (void *)PHYSTOP);
+    freerange(end, reinterpret_cast<void *>(PHYSTOP));
 }
 
 void freerange(void *pa_start, void *pa_end) {
-    auto p = (char *)PGROUNDUP((uint64)pa_start);
+    auto p = reinterpret_cast<char *>(PGROUNDUP(reinterpret_cast<uint64>(pa_start)));
     for (; p + PGSIZE <= static_cast<char *>(pa_end); p += PGSIZE)
         kfree(p);
 }
@@ -40,7 +40,7 @@ void freerange(void *pa_start, void *pa_end) {
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
 void kfree(void *pa) {
-    if ((uint64)pa % PGSIZE != 0 || static_cast<char *>(pa) < end || (uint64)pa >= PHYSTOP)
+    if (reinterpret_cast<uint64>(pa) % PGSIZE != 0 || static_cast<char *>(pa) < end || reinterpret_cast<uint64>(pa) >= PHYSTOP)
         panic("kfree");
 
     // Fill with junk to catch dangling refs.
