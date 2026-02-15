@@ -1,11 +1,11 @@
 #pragma once
-typedef unsigned int uint;
-typedef unsigned short ushort;
-typedef unsigned char uchar;
+using uint = unsigned int;
+using ushort = unsigned short;
+using uchar = unsigned char;
 
-typedef unsigned char uint8;
-typedef unsigned short uint16;
-typedef unsigned int uint32;
-typedef unsigned long uint64;
+using uint8 = unsigned char;
+using uint16 = unsigned short;
+using uint32 = unsigned int;
+using uint64 = unsigned long;
 
-typedef uint64 pde_t;
+using pde_t = uint64;

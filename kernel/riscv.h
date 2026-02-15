@@ -292,8 +292,8 @@ sfence_vma() {
     asm volatile("sfence.vma zero, zero");
 }
 
-typedef uint64 pte_t;
-typedef uint64 *pagetable_t; // 512 PTEs
+using pte_t = uint64;
+using pagetable_t = uint64 *; // 512 PTEs
 
 } // namespace xv6
 
