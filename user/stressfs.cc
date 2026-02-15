@@ -8,12 +8,13 @@
 //      asm volatile("");
 
 #include <array>
+#include <string_view>
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
 int main(int argc, char *argv[]) {
     int i;
-    auto path = static_cast<std::array<char, 10>>("stressfs0");
+    constexpr std::string_view path = "stressfs0";
     std::array<char, 512> data{};
 
     printf("stressfs starting\n");
@@ -27,7 +28,8 @@ int main(int argc, char *argv[]) {
 
     printf("write %d\n", i);
 
-    path[8] += i;
+    auto p = const_cast<char *>(path.data());
+    p[8] += i;
     int fd = open(path.data(), O_CREATE | O_RDWR);
     for (i = 0; i < 20; i++) {
         //    printf(fd, "%d\n", i);
