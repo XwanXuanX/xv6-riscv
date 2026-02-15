@@ -12,4 +12,7 @@ IndentPPDirectives: None
 
 # Keep long macro/asm lines intact as much as possible.
 ColumnLimit: 0
+
+# Remove blank lines at the start of blocks (including function bodies)
+KeepEmptyLinesAtTheStartOfBlocks: false
 ---
