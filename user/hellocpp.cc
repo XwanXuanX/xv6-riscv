@@ -106,7 +106,9 @@ int main() {
         printf("r1=%d, r2=%d\n", r1.get(), r2.get());
     }
     {
-        std::string_view sv1("Apple"), sv2("Apple"), sv3("Orange");
+        const std::string_view sv1("Apple");
+        const std::string_view sv2("Apple");
+        const std::string_view sv3("Orange");
         const auto r1 = eq(sv1, sv2), r2 = eq(sv1, sv3);
         std::assert(r1.has_value() && r2.has_value());
         printf("r1=%d, r2=%d\n", r1.get(), r2.get());

@@ -18,12 +18,13 @@
 #include "spinlock.h"
 #include "defs.h"
 #include "buf.h"
+#include <array>
 
 namespace xv6 {
 
 struct {
     spinlock lock;
-    buf buffer[NBUF];
+    std::array<buf, NBUF> buffer;
 
     // Linked list of all buffers, through prev/next.
     // Sorted by how recently the buffer was used.
@@ -37,10 +38,10 @@ void binit() {
     // Create linked list of buffers
     bcache.head.prev = &bcache.head;
     bcache.head.next = &bcache.head;
-    for (buf *b = bcache.buffer; b < bcache.buffer + NBUF; b++) {
+    for (buf *b = bcache.buffer.data(); b < bcache.buffer.data() + NBUF; b++) {
         b->next = bcache.head.next;
         b->prev = &bcache.head;
-        initsleeplock(&b->lock, "buffer");
+        initsleeplock(&b->lock);
         bcache.head.next->prev = b;
         bcache.head.next = b;
     }

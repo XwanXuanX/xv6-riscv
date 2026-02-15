@@ -2,6 +2,7 @@
 #include "proc.h"
 #include "syscall.h"
 #include "defs.h"
+#include <array>
 
 namespace xv6 {
 
@@ -91,7 +92,7 @@ extern uint64 sys_close();
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
-static uint64 (*syscalls[])() = {
+static constexpr std::array<uint64 (*)(), 22> syscalls = {
     nullptr,
     sys_fork,   // 1
     sys_exit,   // 2
@@ -120,12 +121,12 @@ void syscall() {
     proc *p = myproc();
 
     const uint64 num = p->trapf->a7;
-    if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+    if (num > 0 && num < syscalls.size() && syscalls[num]) {
         // Use num to lookup the system call function for num, call it,
         // and store its return value in p->trapframe->a0
         p->trapf->a0 = syscalls[num]();
     } else {
-        printf("%d %s: unknown sys call %ld\n", p->pid, p->name, num);
+        printf("%d %s: unknown sys call %ld\n", p->pid, p->name.data(), num);
         p->trapf->a0 = -1;
     }
 }

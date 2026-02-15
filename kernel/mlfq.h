@@ -3,6 +3,7 @@
 
 #include "param.h"
 #include "spinlock.h"
+#include <array>
 
 namespace xv6 {
 
@@ -15,7 +16,7 @@ struct rqueue {
 };
 
 struct mlfq {
-    rqueue q[NLEVELS];
+    std::array<rqueue, NLEVELS> q;
     spinlock lock;
     // The "version number" of the MLFQ
     // used for periodic priority boosting
@@ -46,7 +47,7 @@ proc *mlfq_deq(mlfq *m, int lvl);
 //  3. periodical priority boost
 // There could be cases where the remove target does not exist in the queue
 //  - return a bool to indicate if the removal is successful
-bool mlfq_rm(mlfq *m, int lvl, proc *p);
+bool mlfq_rm(mlfq *m, int lvl, const proc *p);
 
 //
 // Unsafe APIs (assume locked, used in bulk operation)
@@ -54,7 +55,7 @@ bool mlfq_rm(mlfq *m, int lvl, proc *p);
 
 void mlfq_enq_locked(mlfq *m, int lvl, proc *p);
 proc *mlfq_deq_locked(mlfq *m, int lvl);
-bool mlfq_rm_locked(mlfq *m, int lvl, proc *p);
+bool mlfq_rm_locked(mlfq *m, int lvl, const proc *p);
 
 } // namespace xv6
 

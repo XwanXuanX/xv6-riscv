@@ -5,16 +5,17 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "defs.h"
+#include <span>
 
 namespace xv6 {
 
 // the UART control registers are memory-mapped
 // at address UART0. this macro returns the
 // address of one of the registers.
-#define Reg(reg) ((volatile unsigned char *)(UART0 + (reg)))
+#define REG(reg) ((volatile unsigned char *)(UART0 + (reg)))
 
-#define ReadReg(reg) (*(Reg(reg)))
-#define WriteReg(reg, v) (*(Reg(reg)) = (v))
+#define READ_REG(reg) (*(REG(reg)))
+#define WRITE_REG(reg, v) (*(REG(reg)) = (v))
 
 // the UART control registers.
 // some have different meanings for read vs write.
@@ -45,26 +46,26 @@ extern volatile int panicked;  // from printf.c
 
 void uartinit() {
     // disable interrupts.
-    WriteReg(IER, 0x00);
+    WRITE_REG(IER, 0x00);
 
     // special mode to set baud rate.
-    WriteReg(LCR, LCR_BAUD_LATCH);
+    WRITE_REG(LCR, LCR_BAUD_LATCH);
 
     // LSB for baud rate of 38.4K.
-    WriteReg(0, 0x03);
+    WRITE_REG(0, 0x03);
 
     // MSB for baud rate of 38.4K.
-    WriteReg(1, 0x00);
+    WRITE_REG(1, 0x00);
 
     // leave set-baud mode,
     // and set word length to 8 bits, no parity.
-    WriteReg(LCR, LCR_EIGHT_BITS);
+    WRITE_REG(LCR, LCR_EIGHT_BITS);
 
     // reset and enable FIFOs.
-    WriteReg(FCR, FCR_FIFO_ENABLE | FCR_FIFO_CLEAR);
+    WRITE_REG(FCR, FCR_FIFO_ENABLE | FCR_FIFO_CLEAR);
 
     // enable transmit and receive interrupts.
-    WriteReg(IER, IER_TX_ENABLE | IER_RX_ENABLE);
+    WRITE_REG(IER, IER_TX_ENABLE | IER_RX_ENABLE);
 
     tx_lock.init_lock("uart");
 }
@@ -72,18 +73,18 @@ void uartinit() {
 // transmit buf[] to the uart. it blocks if the
 // uart is busy, so it cannot be called from
 // interrupts, only from write() system calls.
-void uartwrite(char buf[], const int n) {
+void uartwrite(const std::span<char> buf) {
     tx_lock.lock();
 
     int i = 0;
-    while (i < n) {
+    while (i < static_cast<int>(buf.size())) {
         while (tx_busy != 0) {
             // wait for a UART transmit-complete interrupt
             // to set tx_busy to 0.
             sleep(&tx_chan, &tx_lock);
         }
 
-        WriteReg(THR, buf[i]);
+        WRITE_REG(THR, buf[i]);
         i += 1;
         tx_busy = 1;
     }
@@ -106,9 +107,9 @@ void uartputc_sync(const int c) {
     }
 
     // wait for UART to set Transmit Holding Empty in LSR.
-    while ((ReadReg(LSR) & LSR_TX_IDLE) == 0)
+    while ((READ_REG(LSR) & LSR_TX_IDLE) == 0)
         ;
-    WriteReg(THR, c);
+    WRITE_REG(THR, c);
 
     if (panicking == 0) {
         pop_off();
@@ -118,9 +119,9 @@ void uartputc_sync(const int c) {
 // try to read one input character from the UART.
 // return -1 if none is waiting.
 int uartgetc() {
-    if (ReadReg(LSR) & LSR_RX_READY) {
+    if (READ_REG(LSR) & LSR_RX_READY) {
         // input data is ready.
-        return ReadReg(RHR);
+        return READ_REG(RHR);
     }
     return -1;
 }
@@ -129,10 +130,10 @@ int uartgetc() {
 // arrived, or the uart is ready for more output, or
 // both. called from devintr().
 void uartintr() {
-    ReadReg(ISR); // acknowledge the interrupt
+    READ_REG(ISR); // acknowledge the interrupt
 
     tx_lock.lock();
-    if (ReadReg(LSR) & LSR_TX_IDLE) {
+    if (READ_REG(LSR) & LSR_TX_IDLE) {
         // UART finished transmitting; wake up sending thread.
         tx_busy = 0;
         wakeup(&tx_chan);

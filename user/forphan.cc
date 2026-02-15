@@ -1,14 +1,15 @@
 #include "kernel/stats.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include <array>
 
 // Create an orphaned file and check if test-xv6.py recovers it.
 
 #define BUFSZ 500
 
-char buf[BUFSZ];
+std::array<char, BUFSZ> buf;
 
-int main(int argc, char **argv) {
+int main([[maybe_unused]] int argc, char **argv) {
     int fd = 0;
     char *s = argv[0];
     stats st;

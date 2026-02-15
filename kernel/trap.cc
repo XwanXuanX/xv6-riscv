@@ -5,25 +5,21 @@
 #include "proc.h"
 #include "defs.h"
 #include "mlfq.h"
+#include <array>
 
 namespace xv6 {
 
 spinlock tickslock;
 uint ticks;
 
-extern char trampoline[], uservec[];
-
 extern mlfq mlq;
-
-// in kernelvec.S, calls kerneltrap().
-void kernelvec();
 
 extern int devintr();
 
 /**
  * MLFQ per-level allotment
  */
-int allotment[NLEVELS] = {
+std::array allotment = {
     4, 8, 16, 32,
     114514 // cannot decrease anymore, placeholder
 };
@@ -32,7 +28,7 @@ int allotment[NLEVELS] = {
  * MLFQ per-level quantum
  * notice they are half of allotment for that level
  */
-int quantum[NLEVELS] = {2, 4, 8, 16, 32};
+std::array quantum = {2, 4, 8, 16, 32};
 
 void trapinit() { tickslock.init_lock("time"); }
 
@@ -79,8 +75,7 @@ uint64 usertrap() {
     } else if ((which_dev = devintr()) != 0) {
         // ok
     } else if ((r_scause() == 15 || r_scause() == 13) &&
-               vmfault(p->pagetable, r_stval(), r_scause() == 13 ? 1 : 0) !=
-                   0) {
+               vmfault(p->pagetable, r_stval()) != 0) {
         // page fault on lazily-allocated page
     } else {
         printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(),
@@ -238,9 +233,8 @@ void clockintr() {
     }
 
     // per-CPU/process accounting
-    proc *const p = myproc();
     // make sure it's a user process (kernel process is nullptr)
-    if (p) {
+    if (proc *const p = myproc()) {
         p->lock.lock();
         {
             // the user process must be running

@@ -10,13 +10,14 @@
 #include "file.h"
 #include "stats.h"
 #include "proc.h"
+#include <array>
 
 namespace xv6 {
 
-struct devsw devsw[NDEV];
+std::array<devsw, NDEV> dev;
 struct {
     spinlock lock;
-    file files[NFILE];
+    std::array<file, NFILE> files;
 } ftable;
 
 void fileinit() { ftable.lock.init_lock("ftable"); }
@@ -24,7 +25,7 @@ void fileinit() { ftable.lock.init_lock("ftable"); }
 // Allocate a file structure.
 file *filealloc() {
     ftable.lock.lock();
-    for (file *f = ftable.files; f < ftable.files + NFILE; f++) {
+    for (file *f = ftable.files.data(); f < ftable.files.data() + NFILE; f++) {
         if (f->ref == 0) {
             f->ref = 1;
             ftable.lock.unlock();
@@ -72,7 +73,7 @@ void fileclose(file *f) {
 
 // Get metadata about file f.
 // addr is a user virtual address, pointing to a struct stat.
-int filestat(file *f, const uint64 addr) {
+int filestat(const file *f, const uint64 addr) {
     const proc *p = myproc();
     stats st{};
 
@@ -101,10 +102,10 @@ int fileread(file *f, const uint64 addr, const int n) {
     if (f->type == fd_pipe) {
         r = piperead(f->pip, addr, n);
     } else if (f->type == fd_device) {
-        if (f->major < 0 || f->major >= NDEV || !devsw[f->major].read) {
+        if (f->major < 0 || f->major >= NDEV || !dev[f->major].read) {
             return -1;
         }
-        r = devsw[f->major].read(1, addr, n);
+        r = dev[f->major].read(1, addr, n);
     } else if (f->type == fd_inode) {
         ilock(f->ip);
         if ((r = readi(f->ip, 1, addr, f->off, n)) > 0) {
@@ -121,7 +122,7 @@ int fileread(file *f, const uint64 addr, const int n) {
 // Write to file f.
 // addr is a user virtual address.
 int filewrite(file *f, const uint64 addr, const int n) {
-    int r, ret = 0;
+    int ret = 0;
 
     if (f->writable == 0) {
         return -1;
@@ -130,11 +131,12 @@ int filewrite(file *f, const uint64 addr, const int n) {
     if (f->type == fd_pipe) {
         ret = pipewrite(f->pip, addr, n);
     } else if (f->type == fd_device) {
-        if (f->major < 0 || f->major >= NDEV || !devsw[f->major].write) {
+        if (f->major < 0 || f->major >= NDEV || !dev[f->major].write) {
             return -1;
         }
-        ret = devsw[f->major].write(1, addr, n);
+        ret = dev[f->major].write(1, addr, n);
     } else if (f->type == fd_inode) {
+        int r;
         // write a few blocks at a time to avoid exceeding
         // the maximum log transaction size, including
         // i-node, indirect block, allocation blocks,

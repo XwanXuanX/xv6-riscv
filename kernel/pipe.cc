@@ -3,6 +3,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "file.h"
+#include <array>
 
 namespace xv6 {
 
@@ -10,7 +11,7 @@ namespace xv6 {
 
 struct pipe {
     spinlock lock;
-    char data[PIPESIZE];
+    std::array<char, PIPESIZE> data;
     uint nread;    // number of bytes read
     uint nwrite;   // number of bytes written
     int readopen;  // read fd is still open

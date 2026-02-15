@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include "riscv.h"
+#include <span>
 
 namespace xv6 {
 
@@ -34,34 +35,6 @@ void main();
 void kerneltrap();
 }
 
-// /**
-//  * Using <extern "C"> is crucial!
-//  *
-//  * This is due to C++'s compiler "mangle" C++ function names, while C
-//  compiler does not.
-//  * For example, if I call a system call from a C++ file and compiler with C++
-//  compiler
-//  * (such as `printf`), the C++ compiler will assume that `printf` is a C++
-//  function and
-//  * will mangle the name to something like `sajhfgbkadjsrghbk_printf()`, which
-//  will reside
-//  * in the compiled object file.
-//  *
-//  * Then the linker will try to find the definition of that mangled name,
-//  which obviously
-//  * doesn't exists, and thus causing the linker error: `undefined reference to
-//  `printf(char const*, ...)'`
-//  *
-//  * The solution to this problem is explicitly tell the C++ compiler to NOT
-//  mangle names of C functions,
-//  * such as the function calls, using `extern` keyword.
-//  * If the file being compiled is using C++ compiler, then extern "C" block
-//  will kick in.
-//  */
-// #ifdef __cplusplus
-// extern "C" {
-// #endif // __cplusplus
-
 // bio.c
 void binit();
 buf *bread(uint, uint);
@@ -84,7 +57,7 @@ void fileclose(file *);
 file *filedup(file *);
 void fileinit();
 int fileread(file *, uint64, int n);
-int filestat(file *, uint64 addr);
+int filestat(const file *, uint64 addr);
 int filewrite(file *, uint64, int n);
 
 // fs.c
@@ -98,12 +71,12 @@ void ilock(inode *);
 void iput(inode *);
 void iunlock(inode *);
 void iunlockput(inode *);
-void iupdate(inode *);
+void iupdate(const inode *);
 int namecmp(const char *, const char *);
 inode *namei(const char *);
-inode *nameiparent(char *, char *);
+inode *nameiparent(const char *, char *);
 uint readi(inode *, int, uint64, uint, uint);
-void stati(inode *, stats *);
+void stati(const inode *, stats *);
 int writei(inode *, int, uint64, uint, uint);
 void itrunc(inode *);
 void ireclaim(int);
@@ -114,7 +87,7 @@ void kfree(void *);
 void kinit();
 
 // log.c
-void initlog(int, superblock *);
+void initlog(int, const superblock *);
 void log_write(buf *);
 void begin_op();
 void end_op();
@@ -149,7 +122,7 @@ void sched();
 void sleep(void *, spinlock *);
 void userinit();
 int kwait(uint64);
-void wakeup(void *);
+void wakeup(const void *);
 void yield();
 int either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int either_copyin(void *dst, int user_src, uint64 src, uint64 len);
@@ -169,7 +142,7 @@ void pop_off();
 void acquiresleep(sleeplock *);
 void releasesleep(sleeplock *);
 int holdingsleep(sleeplock *);
-void initsleeplock(sleeplock *, const char *);
+void initsleeplock(sleeplock *);
 
 // string.c
 int memcmp(const void *, const void *, uint);
@@ -198,7 +171,7 @@ void prepare_return();
 // uart.c
 void uartinit();
 void uartintr();
-void uartwrite(char[], int);
+void uartwrite(std::span<char>);
 void uartputc_sync(int);
 int uartgetc();
 
@@ -220,7 +193,7 @@ int copyout(pagetable_t, uint64, const char *, uint64);
 int copyin(pagetable_t, char *, uint64, uint64);
 int copyinstr(pagetable_t, char *, uint64, uint64);
 int ismapped(pagetable_t, uint64);
-uint64 vmfault(pagetable_t, uint64, int);
+uint64 vmfault(pagetable_t, uint64);
 
 // plic.c
 void plicinit();
@@ -232,9 +205,5 @@ void plic_complete(int);
 void virtio_disk_init();
 void virtio_disk_rw(buf *, int);
 void virtio_disk_intr();
-
-// #ifdef __cplusplus
-// }
-// #endif // __cplusplus
 
 } // namespace xv6

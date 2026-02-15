@@ -1,9 +1,10 @@
 #pragma once
 
+#include "kernel/param.h"
 #include "kernel/types.h"
 #include "kernel/fs.h"
-#include "kernel/spinlock.h"
 #include "kernel/sleeplock.h"
+#include <array>
 
 namespace xv6 {
 
@@ -24,7 +25,7 @@ struct inode {
     short minor;
     short nlink;
     uint size;
-    uint addrs[NDIRECT + 1];
+    std::array<uint, NDIRECT + 1> addrs;
 };
 
 struct file {
@@ -48,7 +49,7 @@ struct devsw {
     int (*write)(int, uint64, int);
 };
 
-extern devsw devsw[];
+extern std::array<devsw, NDEV> dev;
 
 #define CONSOLE 1
 

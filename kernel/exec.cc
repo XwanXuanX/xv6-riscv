@@ -4,6 +4,7 @@
 #include "proc.h"
 #include "defs.h"
 #include "elf.h"
+#include <array>
 
 namespace xv6 {
 
@@ -27,7 +28,8 @@ int flags2_perm(const int flags) {
 int kexec(const char *path, const char **argv) {
     const char *s, *last;
     int i, off;
-    uint64 argc, sz = 0, sp, ustack[MAXARG], stackbase;
+    std::array<uint64, MAXARG> ustack{};
+    uint64 argc, sz = 0, sp, stackbase;
     uint64 sz1, oldsz;
     elfhdr elf{};
     inode *ip;
@@ -130,7 +132,7 @@ int kexec(const char *path, const char **argv) {
     if (sp < stackbase) {
         goto bad;
     }
-    if (copyout(pagetable, sp, reinterpret_cast<char *>(ustack),
+    if (copyout(pagetable, sp, reinterpret_cast<char *>(ustack.data()),
                 (argc + 1) * sizeof(uint64)) < 0) {
         goto bad;
     }
@@ -146,7 +148,7 @@ int kexec(const char *path, const char **argv) {
             last = s + 1;
         }
     }
-    safestrcpy(p->name, last, sizeof(p->name));
+    safestrcpy(p->name.data(), last, sizeof(p->name));
 
     // Commit to the user image.
     oldpagetable = p->pagetable;

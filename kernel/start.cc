@@ -2,11 +2,12 @@
 #include "param.h"
 #include "riscv.h"
 #include "defs.h"
+#include <array>
 
 using namespace xv6;
 
 // entry.S needs one stack per CPU.
-__attribute__((aligned(16))) char stack0[4096 * NCPU];
+alignas(16) std::array<char, 4096 * NCPU> stack0;
 
 extern "C" {
 void timerinit();
@@ -41,7 +42,7 @@ extern "C" void start() {
     timerinit();
 
     // keep each CPU's hartid in its tp register, for cpuid().
-    int id = r_mhartid();
+    uint64 id = r_mhartid();
     w_tp(id);
 
     // switch to supervisor mode and jump to main().

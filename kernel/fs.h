@@ -4,6 +4,7 @@
 // Both the kernel and user programs use this header file.
 
 #include "types.h"
+#include <array>
 
 namespace xv6 {
 
@@ -35,12 +36,12 @@ struct superblock {
 
 // On-disk inode structure
 struct dinode {
-    short type;              // File type
-    short major;             // Major device number (T_DEVICE only)
-    short minor;             // Minor device number (T_DEVICE only)
-    short nlink;             // Number of links to inode in file system
-    uint size;               // Size of file (bytes)
-    uint addrs[NDIRECT + 1]; // Data block addresses
+    ushort type;  // File type
+    ushort major; // Major device number (T_DEVICE only)
+    ushort minor; // Minor device number (T_DEVICE only)
+    ushort nlink; // Number of links to inode in file system
+    uint size;    // Size of file (bytes)
+    std::array<uint, NDIRECT + 1> addrs; // Data block addresses
 };
 
 // Inodes per block.
@@ -62,7 +63,7 @@ struct dinode {
 // character.
 struct dirent {
     ushort inum;
-    char name[DIRSIZ] __attribute__((nonstring));
+    std::array<char, DIRSIZ> name;
 };
 
 } // namespace xv6

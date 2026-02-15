@@ -1,7 +1,9 @@
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include <array>
+#include <span>
 
-char buf[512];
+std::array<char, 512> buf;
 
 void wc(const int fd, const char *name) {
     int n;
@@ -9,7 +11,7 @@ void wc(const int fd, const char *name) {
 
     int l = w = c = 0;
     int inword = 0;
-    while ((n = read(fd, buf, sizeof(buf))) > 0) {
+    while ((n = read(fd, buf.data(), sizeof(buf))) > 0) {
         for (int i = 0; i < n; i++) {
             c++;
             if (buf[i] == '\n') {
@@ -30,7 +32,7 @@ void wc(const int fd, const char *name) {
     printf("%d %d %d %s\n", l, w, c, name);
 }
 
-int main(const int argc, char *argv[]) {
+int main(const int argc, const std::span<char *> argv) {
     int fd;
 
     if (argc <= 1) {

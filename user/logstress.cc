@@ -1,12 +1,13 @@
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include <array>
 
 // Stress xv6 logging system by having several processes writing
 // concurrently to their own file (e.g., logstress f1 f2 f3 f4)
 
 #define BUFSZ 500
 
-char buf[BUFSZ];
+std::array<char, BUFSZ> buf;
 
 int main(const int argc, char **argv) {
     int n;
@@ -24,9 +25,9 @@ int main(const int argc, char **argv) {
                 printf("%s: create %s failed\n", argv[0], argv[i]);
                 exit(1);
             }
-            memset(buf, '0' + i, SZ);
+            memset(buf.data(), '0' + i, SZ);
             for (i = 0; i < N; i++) {
-                if ((n = write(fd, buf, SZ)) != SZ) {
+                if ((n = write(fd, buf.data(), SZ)) != SZ) {
                     printf("write failed %d\n", n);
                     exit(1);
                 }

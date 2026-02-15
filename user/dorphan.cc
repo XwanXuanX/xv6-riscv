@@ -1,12 +1,13 @@
 #include "user/user.h"
+#include <array>
 
 // Create an orphaned directory and check if test-xv6.py recovers it.
 
-#define BUFSZ 500
+constexpr int bufsz = 500;
 
-char buf[BUFSZ];
+std::array<char, bufsz> buf;
 
-int main(int argc, char **argv) {
+[[noreturn]] int main([[maybe_unused]] int argc, char **argv) {
     char *s = argv[0];
 
     if (mkdir("dd") != 0) {

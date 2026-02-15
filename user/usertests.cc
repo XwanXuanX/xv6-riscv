@@ -5,6 +5,8 @@
 #include "kernel/fcntl.h"
 #include "kernel/memlayout.h"
 #include "kernel/riscv.h"
+#include <array>
+#include <span>
 
 //
 // Tests xv6 system calls.  usertests without arguments runs them all
@@ -27,7 +29,7 @@ char buf[BUFSZ];
 
 // what if you pass ridiculous pointers to system calls
 // that read user memory with copyin?
-void copyin(const char *s) {
+void copyin(const char *) {
     uint64 addrs[] = {0x80000000LL, 0x3fffffe000, 0x3ffffff000, 0x4000000000,
                       0xffffffffffffffff};
 
@@ -71,11 +73,11 @@ void copyin(const char *s) {
 
 // what if you pass ridiculous pointers to system calls
 // that write user memory with copyout?
-void copyout(const char *s) {
+void copyout(const char *) {
     constexpr uint64 addrs[] = {0LL,          0x80000000LL, 0x3fffffe000,
                                 0x3ffffff000, 0x4000000000, 0xffffffffffffffff};
 
-    for (unsigned long addr : addrs) {
+    for (const unsigned long addr : addrs) {
         const int fd = open("README.md", 0);
         if (fd < 0) {
             printf("open(README.md) failed\n");
@@ -111,11 +113,11 @@ void copyout(const char *s) {
 }
 
 // what if you pass ridiculous string pointers to system calls?
-void copyinstr1(const char *s) {
+void copyinstr1(const char *) {
     constexpr uint64 addrs[] = {0x80000000LL, 0x3fffffe000, 0x3ffffff000,
                                 0x4000000000, 0xffffffffffffffff};
 
-    for (unsigned long addr : addrs) {
+    for (const unsigned long addr : addrs) {
         const int fd = open((char *)addr, O_CREATE | O_WRONLY);
         if (fd >= 0) {
             printf("open(%p) returned %d, not -1\n", (void *)addr, fd);
@@ -127,7 +129,7 @@ void copyinstr1(const char *s) {
 // what if a string system call argument is exactly the size
 // of the kernel buffer it is copied into, so that the null
 // would fall just beyond the end of the kernel buffer?
-void copyinstr2(const char *s) {
+void copyinstr2(const char *) {
     char b[MAXPATH + 1];
 
     for (int i = 0; i < MAXPATH; i++) {
@@ -189,7 +191,7 @@ void copyinstr2(const char *s) {
 }
 
 // what if a string argument crosses over the end of last user page?
-void copyinstr3(const char *s) {
+void copyinstr3(const char *) {
     sbrk(8192);
     auto top = reinterpret_cast<uint64>(sbrk(0));
     if (top % PGSIZE != 0) {
@@ -232,7 +234,7 @@ void copyinstr3(const char *s) {
 
 // See if the kernel refuses to read/write user memory that the
 // application doesn't have anymore, because it returned it.
-void rwsbrk(const char *s) {
+void rwsbrk(const char *) {
     const auto a = reinterpret_cast<uint64>(sbrk(8192));
 
     if (a == reinterpret_cast<uint64>(SBRK_ERROR)) {
@@ -598,7 +600,7 @@ void writebig(const char *s) {
 }
 
 // many creates, followed by unlink test
-void createtest(const char *s) {
+void createtest(const char *) {
     int i;
     enum { N = 52 };
 
@@ -974,7 +976,7 @@ void forkforkfork(const char *s) {
 // deadlocks against init's wait()? also used to trigger a "panic:
 // release" due to exit() releasing a different p->parent->lock than
 // it acquired.
-void reparent2(const char *s) {
+void reparent2(const char *) {
     for (int i = 0; i < 800; i++) {
         const int pid1 = fork();
         if (pid1 < 0) {
@@ -2041,7 +2043,7 @@ void kernmem(const char *s) {
 // user code should not be able to write to addresses above MAXVA.
 void MAXVAplus(const char *s) {
     volatile uint64 a = MAXVA;
-    for (; a != 0;) {
+    while (a != 0) {
         const int pid = fork();
         if (pid < 0) {
             printf("%s: fork failed\n", s);
@@ -2075,7 +2077,7 @@ void sbrkfail(const char *s) {
         printf("%s: pipe() failed\n", s);
         exit(1);
     }
-    for (i = 0; i < static_cast<int>(sizeof(pids) / sizeof(pids[0])); i++) {
+    for (i = 0; i < static_cast<int>(std::size(pids)); i++) {
         if ((pids[i] = fork()) == 0) {
             // allocate a lot of memory
             if (sbrk(BIG - (uint64)sbrk(0)) == SBRK_ERROR) {
@@ -2102,7 +2104,7 @@ void sbrkfail(const char *s) {
     // if those failed allocations freed up the pages they did allocate,
     // we'll be able to allocate here
     const char *c = sbrk(PGSIZE);
-    for (i = 0; i < static_cast<int>(sizeof(pids) / sizeof(pids[0])); i++) {
+    for (i = 0; i < static_cast<int>(std::size(pids)); i++) {
         if (pids[i] == -1) {
             continue;
         }
@@ -2319,10 +2321,10 @@ void nowrite(const char *s) {
                                 0x4000000000,
                                 0xffffffffffffffff};
 
-    for (uint ai = 0; ai < sizeof(addrs) / sizeof(addrs[0]); ai++) {
+    for (const unsigned long ai : addrs) {
         const int pid = fork();
         if (pid == 0) {
-            volatile int *addr = (int *)addrs[ai];
+            volatile int *addr = reinterpret_cast<int *>(ai);
             *addr = 10;
             printf("%s: write to %p did not fail!\n", s, addr);
             exit(0);
@@ -2344,7 +2346,7 @@ void nowrite(const char *s) {
 // the virtual page address to uint, which (with certain wild system
 // call arguments) resulted in a kernel page faults.
 auto big = (void *)0xeaeb0b5b00002f5e;
-void pgbug(const char *s) {
+void pgbug(const char *) {
     char *argv[1];
     argv[0] = nullptr;
     exec(static_cast<char *>(big), (const char **)argv);
@@ -2356,7 +2358,7 @@ void pgbug(const char *s) {
 // regression test. does the kernel panic if a process sbrk()s its
 // size to be less than a page, or zero, or reduces the break by an
 // amount too small to cause a page to be freed?
-void sbrkbugs(const char *s) {
+void sbrkbugs(const char *) {
     int pid = fork();
     if (pid < 0) {
         printf("fork failed\n");
@@ -2412,7 +2414,7 @@ void sbrkbugs(const char *s) {
 // if process size was somewhat more than a page boundary, and then
 // shrunk to be somewhat less than that page boundary, can the kernel
 // still copyin() from addresses in the last page?
-void sbrklast(const char *s) {
+void sbrklast(const char *) {
     uint64 top = (uint64)sbrk(0);
     if (top % PGSIZE != 0) {
         sbrk(PGSIZE - top % PGSIZE);
@@ -2437,7 +2439,7 @@ void sbrklast(const char *s) {
 
 // does sbrk handle signed int32 wrap-around with
 // negative arguments?
-void sbrk8000(const char *s) {
+void sbrk8000(const char *) {
     sbrk(0x80000004);
     volatile char *top = sbrk(0);
     *(top - 1) = *(top - 1) + 1;
@@ -2445,7 +2447,7 @@ void sbrk8000(const char *s) {
 
 // regression test. test whether exec() leaks memory if one of the
 // arguments is invalid. the test passes if the kernel doesn't panic.
-void badarg(const char *s) {
+void badarg(const char *) {
     for (int i = 0; i < 50000; i++) {
         char *argv[2];
         argv[0] = (char *)0xffffffff;
@@ -2460,7 +2462,7 @@ void badarg(const char *s) {
 
 // Touch a page every 64 pages, which with lazy allocation
 // causes one page to be allocated.
-void lazy_alloc(const char *s) {
+void lazy_alloc(const char *) {
     char *i;
 
     char *prev_end = sbrklazy(REGION_SZ);
@@ -2487,7 +2489,7 @@ void lazy_alloc(const char *s) {
 // Touch a page every 64 pages in region, which with lazy allocation
 // causes one page to be allocated. Check that freeing the region
 // frees the allocated pages.
-void lazy_unmap(const char *s) {
+void lazy_unmap(const char *) {
     char *i;
 
     char *prev_end = sbrklazy(REGION_SZ);
@@ -2523,7 +2525,7 @@ void lazy_unmap(const char *s) {
     exit(0);
 }
 
-void lazy_copy(const char *s) {
+void lazy_copy(const char *) {
     // copyinstr on lazy page
     {
         const char *p = sbrk(0);
@@ -2545,7 +2547,7 @@ void lazy_copy(const char *s) {
         0x3fffffc000, 0x3fffffd000, 0x3fffffe000,
         0x3ffffff000, 0x4000000000, 0x8000000000,
     };
-    for (int i = 0; i < static_cast<int>(sizeof(bad) / sizeof(bad[0])); i++) {
+    for (int i = 0; i < static_cast<int>(std::size(bad)); i++) {
         int fd = open("README.md", 0);
         if (fd < 0) {
             printf("cannot open README.md\n");
@@ -2571,7 +2573,7 @@ void lazy_copy(const char *s) {
     exit(0);
 }
 
-void lazy_sbrk(const char *s) {
+void lazy_sbrk(const char *) {
     // sbrk() takes just int, so take 2^30-sized steps towards MAXVA
     char *p = sbrk(0);
     while ((uint64)p < MAXVA - (1 << 30)) {
@@ -2739,7 +2741,6 @@ void bigdir(const char *s) {
 // driver.
 void manywrites(const char *s) {
     constexpr int nchildren = 4;
-    constexpr int howmany = 30; // increase to look for deadlock
 
     for (int ci = 0; ci < nchildren; ci++) {
         const int pid = fork();
@@ -2749,6 +2750,7 @@ void manywrites(const char *s) {
         }
 
         if (pid == 0) {
+            constexpr int howmany = 30;
             char name[3];
             name[0] = 'b';
             name[1] = 'a' + ci;
@@ -2793,7 +2795,7 @@ void manywrites(const char *s) {
 // file is deleted? if the kernel has this bug, it will panic: balloc:
 // out of blocks. assumed_free may need to be raised to be more than
 // the number of free blocks. this test takes a long time.
-void badwrite(const char *s) {
+void badwrite(const char *) {
     constexpr int assumed_free = 600;
 
     unlink("junk");
@@ -2826,7 +2828,7 @@ void badwrite(const char *s) {
 // test the exec() code that cleans up if it runs out
 // of memory. it's really a test that such a condition
 // doesn't cause a panic.
-void execout(const char *s) {
+void execout(const char *) {
     for (int avail = 0; avail < 15; avail++) {
         const int pid = fork();
         if (pid < 0) {
@@ -2940,7 +2942,7 @@ void diskfull(const char *s) {
     }
 }
 
-void outofinodes(const char *s) {
+void outofinodes(const char *) {
     constexpr int nzz = 32 * 32;
     for (int i = 0; i < nzz; i++) {
         char name[32];
@@ -3005,7 +3007,7 @@ int run(void f(const char *), const char *s) {
     return xstatus == 0;
 }
 
-int runtests(test *tests, char *justone, const int continuous) {
+int runtests(const test *tests, const char *justone, const int continuous) {
     int ntests = 0;
     for (const test *t = tests; t->s != nullptr; t++) {
         if (justone == nullptr || strcmp(t->s, justone) == 0) {
@@ -3036,7 +3038,7 @@ int countfree() {
     return n;
 }
 
-int drivetests(const int quick, const int continuous, char *justone) {
+int drivetests(const int quick, const int continuous, const char *justone) {
     do {
         printf("usertests starting\n");
         const int free0 = countfree();

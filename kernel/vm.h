@@ -1,3 +1,2 @@
 #pragma once
-#define SBRK_EAGER 1
-#define SBRK_LAZY 2
+enum { SBRK_EAGER = 1, SBRK_LAZY = 2 };

@@ -11,9 +11,9 @@ namespace xv6 {
  */
 pagetable_t kernel_pagetable;
 
-extern char etext[]; // kernel.ld sets this to end of kernel code.
+// extern char etext[]; // kernel.ld sets this to end of kernel code.
 
-extern char trampoline[]; // trampoline.S
+// extern char trampoline[]; // trampoline.S
 
 // Make a direct-map page table for the kernel.
 pagetable_t kvmmake() {
@@ -29,16 +29,18 @@ pagetable_t kvmmake() {
     // PLIC
     kvmmap(kpgtbl, PLIC, PLIC, 0x4000000, PTE_R | PTE_W);
 
+    const auto cetext = reinterpret_cast<uint64>(etext);
+
     // map kernel text executable and read-only.
-    kvmmap(kpgtbl, KERNBASE, KERNBASE, (uint64)etext - KERNBASE, PTE_R | PTE_X);
+    kvmmap(kpgtbl, KERNBASE, KERNBASE, cetext - KERNBASE, PTE_R | PTE_X);
 
     // map kernel data and the physical RAM we'll make use of.
-    kvmmap(kpgtbl, (uint64)etext, (uint64)etext, PHYSTOP - (uint64)etext,
-           PTE_R | PTE_W);
+    kvmmap(kpgtbl, cetext, cetext, PHYSTOP - cetext, PTE_R | PTE_W);
 
     // map the trampoline for trap entry/exit to
     // the highest virtual address in the kernel.
-    kvmmap(kpgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+    kvmmap(kpgtbl, TRAMPOLINE, reinterpret_cast<uint64>(trampoline), PGSIZE,
+           PTE_R | PTE_X);
 
     // allocate and map a kernel stack for each process.
     proc_mapstacks(kpgtbl);
@@ -91,14 +93,14 @@ pte_t *walk(pagetable_t pagetable, const uint64 va, const int alloc) {
     for (int level = 2; level > 0; level--) {
         pte_t *pte = &pagetable[PX(level, va)];
         if (*pte & PTE_V) {
-            pagetable = (pagetable_t)PTE2PA(*pte);
+            pagetable = (pagetable_t)PTE2_PA(*pte);
         } else {
             if (!alloc ||
                 (pagetable = static_cast<pde_t *>(kalloc())) == nullptr) {
                 return nullptr;
             }
             memset(pagetable, 0, PGSIZE);
-            *pte = PA2PTE(pagetable) | PTE_V;
+            *pte = PA2_PTE(pagetable) | PTE_V;
         }
     }
     return &pagetable[PX(0, va)];
@@ -122,7 +124,7 @@ uint64 walkaddr(const pagetable_t pagetable, const uint64 va) {
     if ((*pte & PTE_U) == 0) {
         return 0;
     }
-    const uint64 pa = PTE2PA(*pte);
+    const uint64 pa = PTE2_PA(*pte);
     return pa;
 }
 
@@ -156,7 +158,7 @@ int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size,
         if (*pte & PTE_V) {
             panic("mappages: remap");
         }
-        *pte = PA2PTE(pa) | perm | PTE_V;
+        *pte = PA2_PTE(pa) | perm | PTE_V;
         if (a == last) {
             break;
         }
@@ -197,7 +199,7 @@ void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages,
             continue;
         }
         if (do_free) {
-            const uint64 pa = PTE2PA(*pte);
+            const uint64 pa = PTE2_PA(*pte);
             kfree((void *)pa);
         }
         *pte = 0;
@@ -214,7 +216,7 @@ uint64 uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
 
     oldsz = PGROUNDUP(oldsz);
     for (uint64 a = oldsz; a < newsz; a += PGSIZE) {
-        auto mem = reinterpret_cast<char *>(kalloc());
+        auto mem = static_cast<char *>(kalloc());
         if (mem == nullptr) {
             uvmdealloc(pagetable, a, oldsz);
             return 0;
@@ -256,7 +258,7 @@ void freewalk(const pagetable_t pagetable) {
         const pte_t pte = pagetable[i];
         if (pte & PTE_V && (pte & (PTE_R | PTE_W | PTE_X)) == 0) {
             // this PTE points to a lower-level page table.
-            const uint64 child = PTE2PA(pte);
+            const uint64 child = PTE2_PA(pte);
             freewalk((pagetable_t)child);
             pagetable[i] = 0;
         } else if (pte & PTE_V) {
@@ -294,9 +296,9 @@ int uvmcopy(const pagetable_t old, const pagetable_t nw, const uint64 sz) {
         if ((*pte & PTE_V) == 0) {
             continue; // physical page hasn't been allocated
         }
-        pa = PTE2PA(*pte);
+        pa = PTE2_PA(*pte);
         flags = PTE_FLAGS(*pte);
-        if ((mem = reinterpret_cast<char *>(kalloc())) == nullptr) {
+        if ((mem = static_cast<char *>(kalloc())) == nullptr) {
             goto err;
         }
         memmove(mem, (char *)pa, PGSIZE);
@@ -335,7 +337,7 @@ int copyout(const pagetable_t pagetable, uint64 dstva, const char *src,
 
         uint64 pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0) {
-            if ((pa0 = vmfault(pagetable, va0, 0)) == 0) {
+            if ((pa0 = vmfault(pagetable, va0)) == 0) {
                 return -1;
             }
         }
@@ -367,7 +369,7 @@ int copyin(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
         const uint64 va0 = PGROUNDDOWN(srcva);
         uint64 pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0) {
-            if ((pa0 = vmfault(pagetable, va0, 0)) == 0) {
+            if ((pa0 = vmfault(pagetable, va0)) == 0) {
                 return -1;
             }
         }
@@ -429,7 +431,7 @@ int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva,
 // that was lazily allocated in sys_sbrk().
 // returns 0 if va is invalid or already mapped, or if
 // out of physical memory, and physical address if successful.
-uint64 vmfault(const pagetable_t pagetable, uint64 va, int read) {
+uint64 vmfault(const pagetable_t pagetable, uint64 va) {
     const proc *p = myproc();
 
     if (va >= p->sz) {
@@ -439,13 +441,13 @@ uint64 vmfault(const pagetable_t pagetable, uint64 va, int read) {
     if (ismapped(pagetable, va)) {
         return 0;
     }
-    const uint64 mem = (uint64)kalloc();
+    const auto mem = reinterpret_cast<uint64>(kalloc());
     if (mem == 0) {
         return 0;
     }
-    memset((void *)mem, 0, PGSIZE);
+    memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
     if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
-        kfree((void *)mem);
+        kfree(reinterpret_cast<void *>(mem));
         return 0;
     }
     return mem;

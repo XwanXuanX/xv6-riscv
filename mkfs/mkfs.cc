@@ -1,11 +1,11 @@
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 #include <fcntl.h>
-#include <assert.h>
+#include <cassert>
+#include <array>
 
-#define stat xv6_stat // avoid clash with host struct stat
+#define STAT xv6_stat // avoid clash with host struct stat
 #include "kernel/types.h"
 #include "kernel/fs.h"
 #include "kernel/stats.h"
@@ -13,8 +13,8 @@
 
 using namespace xv6;
 
-#ifndef static_assert
-#define static_assert(a, b)                                                    \
+#ifndef STATIC_ASSERT
+#define STATIC_ASSERT(a, b)                                                    \
     do {                                                                       \
         switch (0)                                                             \
         case 0:                                                                \
@@ -35,23 +35,23 @@ int nblocks; // Number of data blocks
 
 int fsfd;
 superblock sb;
-char zeroes[BSIZE];
+std::array<char, BSIZE> zeroes;
 uint freeinode = 1;
 uint freeblock;
 
 void balloc(int);
-void wsect(uint, void *);
-void winode(uint, dinode *);
+void wsect(uint, const void *);
+void winode(uint, const dinode *);
 void rinode(uint inum, dinode *ip);
 void rsect(uint sec, void *buf);
 uint ialloc(ushort type);
-void iappend(uint inum, void *p, int n);
+void iappend(uint inum, void *xp, int n);
 void die(const char *);
 
 // convert to riscv byte order
 ushort xshort(const ushort x) {
     ushort y;
-    const auto a = (uchar *)&y;
+    const auto a = reinterpret_cast<uchar *>(&y);
     a[0] = x;
     a[1] = x >> 8;
     return y;
@@ -59,7 +59,7 @@ ushort xshort(const ushort x) {
 
 uint xint(const uint x) {
     uint y;
-    const auto a = (uchar *)&y;
+    const auto a = reinterpret_cast<uchar *>(&y);
     a[0] = x;
     a[1] = x >> 8;
     a[2] = x >> 16;
@@ -69,11 +69,11 @@ uint xint(const uint x) {
 
 int main(const int argc, char *argv[]) {
     int i, cc, fd;
-    dirent de;
-    char buf[BSIZE];
-    dinode din;
+    dirent de{};
+    std::array<char, BSIZE> buf{};
+    dinode din{};
 
-    static_assert(sizeof(int) == 4, "Integers must be 4 bytes!");
+    STATIC_ASSERT(sizeof(int) == 4, "Integers must be 4 bytes!");
 
     if (argc < 2) {
         fprintf(stderr, "Usage: mkfs fs.img files...\n");
@@ -108,24 +108,24 @@ int main(const int argc, char *argv[]) {
     freeblock = nmeta; // the first free block that we can allocate
 
     for (i = 0; i < FSSIZE; i++) {
-        wsect(i, zeroes);
+        wsect(i, zeroes.data());
     }
 
-    memset(buf, 0, sizeof(buf));
-    memmove(buf, &sb, sizeof(sb));
-    wsect(1, buf);
+    memset(buf.data(), 0, sizeof(buf));
+    memmove(buf.data(), &sb, sizeof(sb));
+    wsect(1, buf.data());
 
     const uint rootino = ialloc(T_DIR);
     assert(rootino == ROOTINO);
 
     bzero(&de, sizeof(de));
     de.inum = xshort(rootino);
-    strcpy(de.name, ".");
+    strcpy(de.name.data(), ".");
     iappend(rootino, &de, sizeof(de));
 
     bzero(&de, sizeof(de));
     de.inum = xshort(rootino);
-    strcpy(de.name, "..");
+    strcpy(de.name.data(), "..");
     iappend(rootino, &de, sizeof(de));
 
     for (i = 2; i < argc; i++) {
@@ -137,7 +137,7 @@ int main(const int argc, char *argv[]) {
             shortname = argv[i];
         }
 
-        assert(index(shortname, '/') == 0);
+        assert(index(shortname, '/') == nullptr);
 
         if ((fd = open(argv[i], 0)) < 0) {
             die(argv[i]);
@@ -157,11 +157,11 @@ int main(const int argc, char *argv[]) {
 
         bzero(&de, sizeof(de));
         de.inum = xshort(inum);
-        strncpy(de.name, shortname, DIRSIZ);
+        strncpy(de.name.data(), shortname, DIRSIZ);
         iappend(rootino, &de, sizeof(de));
 
-        while ((cc = read(fd, buf, sizeof(buf))) > 0) {
-            iappend(inum, buf, cc);
+        while ((cc = read(fd, buf.data(), sizeof(buf))) > 0) {
+            iappend(inum, buf.data(), cc);
         }
 
         close(fd);
@@ -174,12 +174,12 @@ int main(const int argc, char *argv[]) {
     din.size = xint(off);
     winode(rootino, &din);
 
-    balloc(freeblock);
+    balloc(static_cast<int>(freeblock));
 
     exit(0);
 }
 
-void wsect(const uint sec, void *buf) {
+void wsect(const uint sec, const void *buf) {
     if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE) {
         die("lseek");
     }
@@ -188,22 +188,22 @@ void wsect(const uint sec, void *buf) {
     }
 }
 
-void winode(const uint inum, dinode *ip) {
-    char buf[BSIZE];
+void winode(const uint inum, const dinode *ip) {
+    std::array<char, BSIZE> buf{};
 
     const uint bn = IBLOCK(inum, sb);
-    rsect(bn, buf);
-    dinode *dip = (struct dinode *)buf + inum % IPB;
+    rsect(bn, buf.data());
+    dinode *dip = reinterpret_cast<dinode *>(buf.data()) + inum % IPB;
     *dip = *ip;
-    wsect(bn, buf);
+    wsect(bn, buf.data());
 }
 
 void rinode(const uint inum, dinode *ip) {
-    char buf[BSIZE];
+    std::array<char, BSIZE> buf{};
 
     const uint bn = IBLOCK(inum, sb);
-    rsect(bn, buf);
-    const dinode *dip = (struct dinode *)buf + inum % IPB;
+    rsect(bn, buf.data());
+    const auto dip = reinterpret_cast<dinode *>(buf.data()) + inum % IPB;
     *ip = *dip;
 }
 
@@ -218,7 +218,7 @@ void rsect(const uint sec, void *buf) {
 
 uint ialloc(const ushort type) {
     const uint inum = freeinode++;
-    dinode din;
+    dinode din{};
 
     bzero(&din, sizeof(din));
     din.type = xshort(type);
@@ -229,25 +229,25 @@ uint ialloc(const ushort type) {
 }
 
 void balloc(const int used) {
-    uchar buf[BSIZE];
+    std::array<uchar, BSIZE> buf{};
 
     printf("balloc: first %d blocks have been allocated\n", used);
     assert(used < BPB);
-    bzero(buf, BSIZE);
+    bzero(buf.data(), BSIZE);
     for (int i = 0; i < used; i++) {
         buf[i / 8] = buf[i / 8] | 0x1 << (i % 8);
     }
     printf("balloc: write bitmap block at sector %d\n", sb.bmapstart);
-    wsect(sb.bmapstart, buf);
+    wsect(sb.bmapstart, buf.data());
 }
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 void iappend(const uint inum, void *xp, int n) {
     const char *p = static_cast<char *>(xp);
-    dinode din;
-    char buf[BSIZE];
-    uint indirect[NINDIRECT];
+    dinode din{};
+    std::array<char, BSIZE> buf{};
+    std::array<uint, NINDIRECT> indirect{};
     uint x;
 
     rinode(inum, &din);
@@ -265,17 +265,17 @@ void iappend(const uint inum, void *xp, int n) {
             if (xint(din.addrs[NDIRECT]) == 0) {
                 din.addrs[NDIRECT] = xint(freeblock++);
             }
-            rsect(xint(din.addrs[NDIRECT]), indirect);
+            rsect(xint(din.addrs[NDIRECT]), indirect.data());
             if (indirect[fbn - NDIRECT] == 0) {
                 indirect[fbn - NDIRECT] = xint(freeblock++);
-                wsect(xint(din.addrs[NDIRECT]), indirect);
+                wsect(xint(din.addrs[NDIRECT]), indirect.data());
             }
             x = xint(indirect[fbn - NDIRECT]);
         }
-        const uint n1 = MIN(n, (fbn + 1) * BSIZE - off);
-        rsect(x, buf);
-        bcopy(p, buf + off - fbn * BSIZE, n1);
-        wsect(x, buf);
+        const int n1 = MIN(n, (fbn + 1) * BSIZE - off);
+        rsect(x, buf.data());
+        bcopy(p, buf.data() + off - fbn * BSIZE, n1);
+        wsect(x, buf.data());
         n -= n1;
         off += n1;
         p += n1;

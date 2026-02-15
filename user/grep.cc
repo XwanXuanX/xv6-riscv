@@ -2,8 +2,10 @@
 
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include <array>
+#include <span>
 
-char buf[1024];
+std::array<char, 1024> buf;
 int match(char *, char *);
 
 void grep(char *pattern, const int fd) {
@@ -11,10 +13,10 @@ void grep(char *pattern, const int fd) {
     char *q;
 
     int m = 0;
-    while ((n = read(fd, buf + m, sizeof(buf) - m - 1)) > 0) {
+    while ((n = read(fd, buf.data() + m, sizeof(buf) - m - 1)) > 0) {
         m += n;
         buf[m] = '\0';
-        char *p = buf;
+        char *p = buf.data();
         while ((q = strchr(p, '\n')) != nullptr) {
             *q = 0;
             if (match(pattern, p)) {
@@ -24,13 +26,13 @@ void grep(char *pattern, const int fd) {
             p = q + 1;
         }
         if (m > 0) {
-            m -= p - buf;
-            memmove(buf, p, m);
+            m -= p - buf.data();
+            memmove(buf.data(), p, m);
         }
     }
 }
 
-int main(const int argc, char *argv[]) {
+int main(const int argc, const std::span<char *> argv) {
     int fd;
 
     if (argc <= 1) {

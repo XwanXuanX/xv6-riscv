@@ -1,15 +1,17 @@
 #include "kernel/types.h"
 #include "user/user.h"
 
-#include <stdarg.h>
+#include <array>
+#include <cstdarg>
+#include <string_view>
 
-static char digits[] = "0123456789ABCDEF";
+static constexpr std::string_view digits = "0123456789ABCDEF";
 
 static void putc(const int fd, const char c) { write(fd, &c, 1); }
 
 static void
 printint(const int fd, const long long xx, const int base, const int sgn) {
-    char buf[20];
+    std::array<char, 20> buf{};
     unsigned long long x;
 
     int neg = 0;
@@ -42,7 +44,8 @@ static void printptr(const int fd, uint64 x) {
 }
 
 // Print to the given fd. Only understands %d, %x, %p, %c, %s.
-void vprintf(const int fd, const char *fmt, const va_list ap) {
+// ReSharper disable once CppParameterMayBeConst
+void vprintf(const int fd, const char *fmt, va_list ap) {
     const char *s;
     int c2;
 

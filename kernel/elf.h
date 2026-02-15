@@ -3,10 +3,12 @@
 
 #define ELF_MAGIC 0x464C457FU // "\x7FELF" in little endian
 
+#include <array>
+
 // File header
 struct elfhdr {
     uint magic; // must equal ELF_MAGIC
-    uchar elf[12];
+    std::array<uchar, 12> elf;
     ushort type;
     ushort machine;
     uint version;

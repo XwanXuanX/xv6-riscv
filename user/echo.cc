@@ -1,6 +1,7 @@
 #include "user/user.h"
+#include <span>
 
-int main(const int argc, char *argv[]) {
+int main(const int argc, const std::span<char *> argv) {
     for (int i = 1; i < argc; i++) {
         write(1, argv[i], strlen(argv[i]));
         if (i + 1 < argc) {
