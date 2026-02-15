@@ -342,7 +342,7 @@ cmd *parsepipe(char **ps, char *es) {
     return cmd;
 }
 
-cmd *parseredirs(cmd *cmd, char **ps, char *es) {
+cmd *parseredirs(cmd *cmd, char **ps, const char *es) {
     char *q, *eq;
 
     while (peek(ps, es, "<>")) {

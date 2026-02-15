@@ -7,16 +7,17 @@
 //    for (i = 0; i < 40000; i++)
 //      asm volatile("");
 
+#include <array>
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
 int main(int argc, char *argv[]) {
     int i;
-    char path[] = "stressfs0";
-    char data[512];
+    auto path = static_cast<std::array<char, 10>>("stressfs0");
+    std::array<char, 512> data{};
 
     printf("stressfs starting\n");
-    memset(data, 'a', sizeof(data));
+    memset(data.data(), 'a', sizeof(data));
 
     for (i = 0; i < 4; i++) {
         if (fork() > 0) {
@@ -27,18 +28,18 @@ int main(int argc, char *argv[]) {
     printf("write %d\n", i);
 
     path[8] += i;
-    int fd = open(path, O_CREATE | O_RDWR);
+    int fd = open(path.data(), O_CREATE | O_RDWR);
     for (i = 0; i < 20; i++) {
         //    printf(fd, "%d\n", i);
-        write(fd, data, sizeof(data));
+        write(fd, data.data(), sizeof(data));
     }
     close(fd);
 
     printf("read\n");
 
-    fd = open(path, O_RDONLY);
+    fd = open(path.data(), O_RDONLY);
     for (i = 0; i < 20; i++) {
-        read(fd, data, sizeof(data));
+        read(fd, data.data(), sizeof(data));
     }
     close(fd);
 

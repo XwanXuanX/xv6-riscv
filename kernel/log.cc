@@ -50,7 +50,7 @@ log log;
 static void recover_from_log();
 static void commit();
 
-void initlog(const int dev, superblock *sb) {
+void initlog(const int dev, const superblock *sb) {
     if (sizeof(logheader) >= BSIZE) {
         panic("initlog: too big logheader");
     }

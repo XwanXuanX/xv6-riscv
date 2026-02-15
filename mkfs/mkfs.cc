@@ -40,8 +40,8 @@ uint freeinode = 1;
 uint freeblock;
 
 void balloc(int);
-void wsect(uint, void *);
-void winode(uint, dinode *);
+void wsect(uint, const void *);
+void winode(uint, const dinode *);
 void rinode(uint inum, dinode *ip);
 void rsect(uint sec, void *buf);
 uint ialloc(ushort type);
@@ -179,7 +179,7 @@ int main(const int argc, char *argv[]) {
     exit(0);
 }
 
-void wsect(const uint sec, void *buf) {
+void wsect(const uint sec, const void *buf) {
     if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE) {
         die("lseek");
     }
@@ -188,7 +188,7 @@ void wsect(const uint sec, void *buf) {
     }
 }
 
-void winode(const uint inum, dinode *ip) {
+void winode(const uint inum, const dinode *ip) {
     char buf[BSIZE];
 
     const uint bn = IBLOCK(inum, sb);

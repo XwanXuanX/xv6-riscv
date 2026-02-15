@@ -2739,7 +2739,6 @@ void bigdir(const char *s) {
 // driver.
 void manywrites(const char *s) {
     constexpr int nchildren = 4;
-    constexpr int howmany = 30; // increase to look for deadlock
 
     for (int ci = 0; ci < nchildren; ci++) {
         const int pid = fork();
@@ -2749,6 +2748,7 @@ void manywrites(const char *s) {
         }
 
         if (pid == 0) {
+            constexpr int howmany = 30;
             char name[3];
             name[0] = 'b';
             name[1] = 'a' + ci;
@@ -3005,7 +3005,7 @@ int run(void f(const char *), const char *s) {
     return xstatus == 0;
 }
 
-int runtests(test *tests, char *justone, const int continuous) {
+int runtests(const test *tests, const char *justone, const int continuous) {
     int ntests = 0;
     for (const test *t = tests; t->s != nullptr; t++) {
         if (justone == nullptr || strcmp(t->s, justone) == 0) {

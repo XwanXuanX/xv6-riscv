@@ -120,9 +120,9 @@ void virtio_disk_init() {
     }
 
     // allocate and zero queue memory.
-    disk.desc = reinterpret_cast<virtq_desc *>(kalloc());
-    disk.avail = reinterpret_cast<virtq_avail *>(kalloc());
-    disk.used = reinterpret_cast<virtq_used *>(kalloc());
+    disk.desc = static_cast<virtq_desc *>(kalloc());
+    disk.avail = static_cast<virtq_avail *>(kalloc());
+    disk.used = static_cast<virtq_used *>(kalloc());
     if (!disk.desc || !disk.avail || !disk.used) {
         panic("virtio disk kalloc");
     }

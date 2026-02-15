@@ -214,7 +214,7 @@ uint64 uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
 
     oldsz = PGROUNDUP(oldsz);
     for (uint64 a = oldsz; a < newsz; a += PGSIZE) {
-        auto mem = reinterpret_cast<char *>(kalloc());
+        auto mem = static_cast<char *>(kalloc());
         if (mem == nullptr) {
             uvmdealloc(pagetable, a, oldsz);
             return 0;
@@ -296,7 +296,7 @@ int uvmcopy(const pagetable_t old, const pagetable_t nw, const uint64 sz) {
         }
         pa = PTE2PA(*pte);
         flags = PTE_FLAGS(*pte);
-        if ((mem = reinterpret_cast<char *>(kalloc())) == nullptr) {
+        if ((mem = static_cast<char *>(kalloc())) == nullptr) {
             goto err;
         }
         memmove(mem, (char *)pa, PGSIZE);

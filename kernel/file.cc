@@ -72,7 +72,7 @@ void fileclose(file *f) {
 
 // Get metadata about file f.
 // addr is a user virtual address, pointing to a struct stat.
-int filestat(file *f, const uint64 addr) {
+int filestat(const file *f, const uint64 addr) {
     const proc *p = myproc();
     stats st{};
 
@@ -121,7 +121,7 @@ int fileread(file *f, const uint64 addr, const int n) {
 // Write to file f.
 // addr is a user virtual address.
 int filewrite(file *f, const uint64 addr, const int n) {
-    int r, ret = 0;
+    int ret = 0;
 
     if (f->writable == 0) {
         return -1;
@@ -135,6 +135,7 @@ int filewrite(file *f, const uint64 addr, const int n) {
         }
         ret = devsw[f->major].write(1, addr, n);
     } else if (f->type == fd_inode) {
+        int r;
         // write a few blocks at a time to avoid exceeding
         // the maximum log transaction size, including
         // i-node, indirect block, allocation blocks,

@@ -198,7 +198,7 @@ inode *ialloc(const uint dev, const short type) {
 // Must be called after every change to an ip->xxx field
 // that lives on disk.
 // Caller must hold ip->lock.
-void iupdate(inode *ip) {
+void iupdate(const inode *ip) {
     buf *bp = bread(ip->dev, IBLOCK(ip->inum, sb));
     dinode *dip = reinterpret_cast<dinode *>(bp->data) + ip->inum % IPB;
     dip->type = ip->type;
@@ -431,7 +431,7 @@ void itrunc(inode *ip) {
 
 // Copy stat information from inode.
 // Caller must hold ip->lock.
-void stati(inode *ip, stats *st) {
+void stati(const inode *ip, stats *st) {
     st->dev = ip->dev;
     st->ino = ip->inum;
     st->type = ip->type;
@@ -663,6 +663,6 @@ inode *namei(const char *path) {
     return namex(path, 0, name);
 }
 
-inode *nameiparent(char *path, char *name) { return namex(path, 1, name); }
+inode *nameiparent(const char *path, char *name) { return namex(path, 1, name); }
 
 } // namespace xv6

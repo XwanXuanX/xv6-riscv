@@ -46,7 +46,7 @@ spinlock wait_lock;
 // guard page.
 void proc_mapstacks(const pagetable_t kpgtbl) {
     for (const struct proc *p = proc; p < &proc[NPROC]; p++) {
-        auto pa = reinterpret_cast<char *>(kalloc());
+        auto pa = static_cast<char *>(kalloc());
         if (pa == nullptr) {
             panic("kalloc");
         }
@@ -848,7 +848,7 @@ void sleep(void *chan, spinlock *lk) {
 
 // Wake up all processes sleeping on channel chan.
 // Caller should hold the condition lock.
-void wakeup(void *chan) {
+void wakeup(const void *chan) {
     for (struct proc *p = proc; p < &proc[NPROC]; p++) {
         if (p != myproc()) {
             p->lock.lock();
@@ -930,7 +930,7 @@ int either_copyout(const int user_dst, const uint64 dst, void *src,
                    const uint64 len) {
     const struct proc *p = myproc();
     if (user_dst) {
-        return copyout(p->pagetable, dst, reinterpret_cast<char *>(src), len);
+        return copyout(p->pagetable, dst, static_cast<char *>(src), len);
     }
     memmove((char *)dst, src, len);
     return 0;
@@ -943,7 +943,7 @@ int either_copyin(void *dst, const int user_src, const uint64 src,
                   const uint64 len) {
     const struct proc *p = myproc();
     if (user_src) {
-        return copyin(p->pagetable, reinterpret_cast<char *>(dst), src, len);
+        return copyin(p->pagetable, static_cast<char *>(dst), src, len);
     }
     memmove(dst, (char *)src, len);
     return 0;

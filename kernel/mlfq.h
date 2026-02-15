@@ -54,7 +54,7 @@ bool mlfq_rm(mlfq *m, int lvl, proc *p);
 
 void mlfq_enq_locked(mlfq *m, int lvl, proc *p);
 proc *mlfq_deq_locked(mlfq *m, int lvl);
-bool mlfq_rm_locked(mlfq *m, int lvl, proc *p);
+bool mlfq_rm_locked(mlfq *m, int lvl, const proc *p);
 
 } // namespace xv6
 

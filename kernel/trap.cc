@@ -238,9 +238,8 @@ void clockintr() {
     }
 
     // per-CPU/process accounting
-    proc *const p = myproc();
     // make sure it's a user process (kernel process is nullptr)
-    if (p) {
+    if (proc *const p = myproc()) {
         p->lock.lock();
         {
             // the user process must be running
