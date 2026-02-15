@@ -1,5 +1,7 @@
 #pragma once
 
+#include "spinlock.h"
+
 namespace xv6 {
 
 // Long-term locks for processes

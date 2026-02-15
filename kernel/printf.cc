@@ -24,7 +24,7 @@ static void printint(const long long xx, const int base, int sign) {
     char buf[20];
     unsigned long long x;
 
-    if (sign && (sign = xx < 0)) {
+    if (sign && ((sign = xx < 0))) {
         x = -xx;
     } else {
         x = xx;
