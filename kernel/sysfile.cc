@@ -114,7 +114,7 @@ sys_fstat() {
 // Create the path new as a link to the same inode as old.
 uint64
 sys_link() {
-    char name[DIRSIZ] = {0}, nw[MAXPATH] = {0}, old[MAXPATH] = {0};
+    char name[DIRSIZ] = {}, nw[MAXPATH] = {}, old[MAXPATH] = {};
     inode *dp, *ip;
 
     if (argstr(0, old, MAXPATH) < 0 || argstr(1, nw, MAXPATH) < 0)
@@ -178,7 +178,7 @@ uint64
 sys_unlink() {
     inode *ip, *dp;
     dirent de;
-    char name[DIRSIZ] = {0}, path[MAXPATH] = {0};
+    char name[DIRSIZ] = {}, path[MAXPATH] = {};
     uint off;
 
     if (argstr(0, path, MAXPATH) < 0)
@@ -233,7 +233,7 @@ bad:
 static inode *
 create(char *path, const short type, const short major, const short minor) {
     inode *ip, *dp;
-    char name[DIRSIZ] = {0};
+    char name[DIRSIZ] = {};
 
     if ((dp = nameiparent(path, name)) == nullptr)
         return nullptr;
