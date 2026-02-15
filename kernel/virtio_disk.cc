@@ -58,7 +58,7 @@ static struct disk {
 
 } disk;
 
-void virtio_disk_init(void) {
+void virtio_disk_init() {
     uint32 status = 0;
 
     disk.vdisk_lock.init_lock("virtio_disk");

@@ -132,7 +132,7 @@ void panic(const char *s) {
         ;
 }
 
-void printfinit(void) {
+void printfinit() {
     pr.lock.init_lock("pr");
 }
 

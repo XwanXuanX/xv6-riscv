@@ -26,7 +26,7 @@ void ls(const char *path) {
     char buf[512], *p;
     int fd;
     xv6::dirent de{};
-    struct stats st{};
+    stats st{};
 
     if ((fd = open(path, O_RDONLY)) < 0) {
         fprintf(2, "ls: cannot open %s\n", path);

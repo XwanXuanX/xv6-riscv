@@ -55,7 +55,7 @@ void proc_mapstacks(const pagetable_t kpgtbl) {
 }
 
 // initialize the proc table.
-void procinit(void) {
+void procinit() {
     pid_lock.init_lock("nextpid");
     wait_lock.init_lock("wait_lock");
     for (struct proc *p = proc; p < &proc[NPROC]; p++) {
@@ -75,7 +75,7 @@ int cpuid() {
 
 // Return this CPU's cpu struct.
 // Interrupts must be disabled.
-cpu *mycpu(void) {
+cpu *mycpu() {
     const int id = cpuid();
     cpu *c = &cpus[id];
     return c;
@@ -83,7 +83,7 @@ cpu *mycpu(void) {
 
 // Return the current struct proc *, or zero if none.
 struct proc *
-myproc(void) {
+myproc() {
     push_off();
     const cpu *c = mycpu();
     struct proc *p = c->proc;
@@ -105,7 +105,7 @@ int allocpid() {
 // and return with p->lock held.
 // If there are no free procs, or a memory allocation fails, return 0.
 static struct proc *
-allocproc(void) {
+allocproc() {
     struct proc *p;
 
     // prob all the locations, for each location
@@ -237,7 +237,7 @@ void proc_freepagetable(const pagetable_t pagetable, const uint64 sz) {
 }
 
 // Set up first user process.
-void userinit(void) {
+void userinit() {
     struct proc *p = allocproc();
     // Process lock is still held
     initproc = p;
@@ -285,7 +285,7 @@ int growproc(const int n) {
 
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
-int kfork(void) {
+int kfork() {
     struct proc *np;
     struct proc *p = myproc();
 
@@ -462,7 +462,7 @@ int kwait(const uint64 addr) {
 // Ensure correctness with
 //  - process locks (p->lock)
 //  - interrupt enable/disable
-__attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) {
+__attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
     // the iterator
     struct proc *p;
     // current CPU's status, including `c->proc`, the CPU's currently running process
@@ -567,7 +567,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin(void) 
     }
 }
 
-__attribute__((unused)) static int first_non_empty(void) {
+__attribute__((unused)) static int first_non_empty() {
     for (int i = 0; i < NLEVELS; ++i) {
         const rqueue *rq = &mlq.q[i];
         // We should do some validation to ensure queue integrity
@@ -581,7 +581,7 @@ __attribute__((unused)) static int first_non_empty(void) {
     return -1;
 }
 
-__attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedback_q(void) {
+__attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedback_q() {
     cpu *c = mycpu();
 
     c->proc = nullptr;
@@ -662,7 +662,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void multi_level_feedba
 }
 
 // scheduler wrapper (RR or MLFQ scheduling policy)
-__attribute__((noreturn)) void scheduler(void) {
+__attribute__((noreturn)) void scheduler() {
 #if defined(RR) && defined(MLFQ)
 #error "Exactly one of RR or MLFQ must be defined"
 #elif defined(RR)
@@ -683,7 +683,7 @@ __attribute__((noreturn)) void scheduler(void) {
 // be proc->intena and proc->noff, but that would
 // break in the few places where a lock is held but
 // there's no process.
-void sched(void) {
+void sched() {
     // I'm the process calling this
     struct proc *p = myproc();
 
@@ -706,7 +706,7 @@ void sched(void) {
 
 // Give up the CPU for one scheduling round.
 // This function will always be run after every timer interrupt
-void yield(void) {
+void yield() {
     struct proc *p = myproc(); // This is me!
     p->lock.lock();
     // I'm going to quit running and change to runnable/ready
@@ -739,7 +739,7 @@ void yield(void) {
 
 // A fork child's very first scheduling by scheduler()
 // will swtch to forkret.
-void forkret(void) {
+void forkret() {
     extern char userret[];
     static int first = 1;
     struct proc *p = myproc();
@@ -914,7 +914,7 @@ int either_copyin(void *dst, const int user_src, const uint64 src, const uint64 
 
 // Print the status of MLFQ for debugging
 // Triggered by ^P in sh
-static void mlfq_dump_nolock(void) {
+static void mlfq_dump_nolock() {
     printf("MLFQ:\n");
     for (int lvl = 0; lvl < NLEVELS; lvl++) {
         printf("  L%d:", lvl);
@@ -936,7 +936,7 @@ static void mlfq_dump_nolock(void) {
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
-void procdump(void) {
+void procdump() {
     static const char *states[] = {
         [UNUSED] = "unused",
         [USED] = "used",

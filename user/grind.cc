@@ -199,7 +199,7 @@ void go(const int which_child) {
                 printf("grind: write c failed\n");
                 exit(1);
             }
-            struct stats st;
+            stats st;
             if (fstat(fd1, &st) != 0) {
                 printf("grind: fstat failed\n");
                 exit(1);

@@ -8,13 +8,13 @@ namespace xv6 {
 // the riscv Platform Level Interrupt Controller (PLIC).
 //
 
-void plicinit(void) {
+void plicinit() {
     // set desired IRQ priorities non-zero (otherwise disabled).
     *(uint32 *)(PLIC + UART0_IRQ * 4) = 1;
     *(uint32 *)(PLIC + VIRTIO0_IRQ * 4) = 1;
 }
 
-void plicinithart(void) {
+void plicinithart() {
     const int hart = cpuid();
 
     // set enable bits for this hart's S-mode
@@ -26,7 +26,7 @@ void plicinithart(void) {
 }
 
 // ask the PLIC what interrupt we should serve.
-int plic_claim(void) {
+int plic_claim() {
     const int hart = cpuid();
     const int irq = *(uint32 *)PLIC_SCLAIM(hart);
     return irq;

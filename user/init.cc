@@ -7,7 +7,7 @@
 
 const char *argv[] = {"sh", nullptr};
 
-int main(void) {
+int main() {
     if (open("console", O_RDWR) < 0) {
         mknod("console", CONSOLE, 0);
         open("console", O_RDWR);

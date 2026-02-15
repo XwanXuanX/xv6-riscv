@@ -62,7 +62,7 @@ sys_dup() {
 }
 
 uint64
-sys_read(void) {
+sys_read() {
     file *f;
     int n;
     uint64 p;
@@ -75,7 +75,7 @@ sys_read(void) {
 }
 
 uint64
-sys_write(void) {
+sys_write() {
     file *f;
     int n;
     uint64 p;
@@ -89,7 +89,7 @@ sys_write(void) {
 }
 
 uint64
-sys_close(void) {
+sys_close() {
     int fd;
     file *f;
 
@@ -101,7 +101,7 @@ sys_close(void) {
 }
 
 uint64
-sys_fstat(void) {
+sys_fstat() {
     file *f;
     uint64 st; // user pointer to struct stat
 
@@ -113,7 +113,7 @@ sys_fstat(void) {
 
 // Create the path new as a link to the same inode as old.
 uint64
-sys_link(void) {
+sys_link() {
     char name[DIRSIZ] = {0}, nw[MAXPATH] = {0}, old[MAXPATH] = {0};
     inode *dp, *ip;
 
@@ -175,7 +175,7 @@ isdirempty(inode *dp) {
 }
 
 uint64
-sys_unlink(void) {
+sys_unlink() {
     inode *ip, *dp;
     dirent de;
     char name[DIRSIZ] = {0}, path[MAXPATH] = {0};
@@ -289,7 +289,7 @@ fail:
 }
 
 uint64
-sys_open(void) {
+sys_open() {
     char path[MAXPATH];
     int fd, omode;
     file *f;
@@ -357,7 +357,7 @@ sys_open(void) {
 }
 
 uint64
-sys_mkdir(void) {
+sys_mkdir() {
     char path[MAXPATH];
     inode *ip;
 
@@ -372,7 +372,7 @@ sys_mkdir(void) {
 }
 
 uint64
-sys_mknod(void) {
+sys_mknod() {
     inode *ip;
     char path[MAXPATH];
     int major, minor;
@@ -391,7 +391,7 @@ sys_mknod(void) {
 }
 
 uint64
-sys_chdir(void) {
+sys_chdir() {
     char path[MAXPATH];
     inode *ip;
     proc *p = myproc();
@@ -415,7 +415,7 @@ sys_chdir(void) {
 }
 
 uint64
-sys_exec(void) {
+sys_exec() {
     char path[MAXPATH];
     const char *argv[MAXARG];
     uint i;
@@ -459,7 +459,7 @@ bad:
 }
 
 uint64
-sys_pipe(void) {
+sys_pipe() {
     uint64 fdarray; // user pointer to array of two integers
     file *rf, *wf;
     int fd1;

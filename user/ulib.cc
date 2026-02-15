@@ -71,7 +71,7 @@ gets(char *buf, const int max) {
     return buf;
 }
 
-int stat(const char *n, xv6::stats *st) {
+int stat(const char *n, stats *st) {
     const int fd = open(n, O_RDONLY);
     if (fd < 0)
         return -1;

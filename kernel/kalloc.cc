@@ -58,7 +58,7 @@ void kfree(void *pa) {
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 void *
-kalloc(void) {
+kalloc() {
     kmem.lock.lock();
     run *r = kmem.freelist;
     if (r)

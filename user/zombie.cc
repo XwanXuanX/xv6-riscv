@@ -3,7 +3,7 @@
 
 #include "user/user.h"
 
-int main(void) {
+int main() {
     if (fork() > 0)
         pause(5); // Let child exit before parent.
     exit(0);

@@ -102,7 +102,7 @@ auto eq(const T &a, const T &b) -> std::optional<bool> {
     }
 }
 
-int main(void) {
+int main() {
     // Test the eq() function
     {
         const auto r1 = eq(1, 2), r2 = eq(2, 2);

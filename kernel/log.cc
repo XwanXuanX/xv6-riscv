@@ -47,7 +47,7 @@ struct log {
 };
 log log;
 
-static void recover_from_log(void);
+static void recover_from_log();
 static void commit();
 
 void initlog(const int dev, superblock *sb) {
@@ -80,7 +80,7 @@ install_trans(const int recovering) {
 
 // Read the log header from disk into the in-memory log header
 static void
-read_head(void) {
+read_head() {
     buf *buf = bread(log.dev, log.start);
     const logheader *lh = (struct logheader *)buf->data;
     log.lh.n = lh->n;
@@ -94,7 +94,7 @@ read_head(void) {
 // This is the true point at which the
 // current transaction commits.
 static void
-write_head(void) {
+write_head() {
     buf *buf = bread(log.dev, log.start);
     const auto hb = (struct logheader *)buf->data;
     hb->n = log.lh.n;
@@ -106,7 +106,7 @@ write_head(void) {
 }
 
 static void
-recover_from_log(void) {
+recover_from_log() {
     read_head();
     install_trans(1); // if committed, copy from log to disk
     log.lh.n = 0;
@@ -114,7 +114,7 @@ recover_from_log(void) {
 }
 
 // called at the start of each FS system call.
-void begin_op(void) {
+void begin_op() {
     log.lock.lock();
     while (1) {
         if (log.committing) {
@@ -132,7 +132,7 @@ void begin_op(void) {
 
 // called at the end of each FS system call.
 // commits if this was the last outstanding operation.
-void end_op(void) {
+void end_op() {
     int do_commit = 0;
 
     log.lock.lock();
@@ -163,7 +163,7 @@ void end_op(void) {
 
 // Copy modified blocks from cache to log.
 static void
-write_log(void) {
+write_log() {
     for (int tail = 0; tail < log.lh.n; tail++) {
         buf *to = bread(log.dev, log.start + tail + 1); // log block
         buf *from = bread(log.dev, log.lh.block[tail]); // cache block

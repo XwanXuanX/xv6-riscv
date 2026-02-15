@@ -48,7 +48,7 @@ struct backcmd {
     cmd *command;
 };
 
-int fork1(void); // Fork but panics on failure.
+int fork1(); // Fork but panics on failure.
 void panic(const char *);
 cmd *parsecmd(char *);
 void runcmd(cmd *) __attribute__((noreturn));
@@ -137,7 +137,7 @@ int getcmd(char *buf, const int nbuf) {
     return 0;
 }
 
-int main(void) {
+int main() {
     static char buf[100];
     int fd;
 
@@ -175,7 +175,7 @@ void panic(const char *s) {
     exit(1);
 }
 
-int fork1(void) {
+int fork1() {
     const int pid = fork();
     if (pid == -1)
         panic("fork");

@@ -17,7 +17,7 @@ extern char trampoline[]; // trampoline.S
 
 // Make a direct-map page table for the kernel.
 pagetable_t
-kvmmake(void) {
+kvmmake() {
     const auto kpgtbl = static_cast<pagetable_t>(kalloc());
     memset(kpgtbl, 0, PGSIZE);
 
@@ -55,7 +55,7 @@ void kvmmap(const pagetable_t kpgtbl, const uint64 va, const uint64 pa, const ui
 }
 
 // Initialize the kernel_pagetable, shared by all CPUs.
-void kvminit(void) {
+void kvminit() {
     kernel_pagetable = kvmmake();
 }
 

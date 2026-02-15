@@ -11,7 +11,7 @@ char buf[BUFSZ];
 int main(int argc, char **argv) {
     int fd = 0;
     char *s = argv[0];
-    struct stats st;
+    stats st;
     const auto ff = "file0";
 
     if ((fd = open(ff, O_CREATE | O_WRONLY)) < 0) {

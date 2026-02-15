@@ -42,7 +42,7 @@ void forktest() {
     print("fork test OK\n");
 }
 
-int main(void) {
+int main() {
     forktest();
     exit(0);
 }
