@@ -12,19 +12,14 @@ namespace xv6 {
 spinlock tickslock;
 uint ticks;
 
-extern char trampoline[], uservec[];
-
 extern mlfq mlq;
-
-// in kernelvec.S, calls kerneltrap().
-void kernelvec();
 
 extern int devintr();
 
 /**
  * MLFQ per-level allotment
  */
-std::array<int, NLEVELS> allotment = {
+std::array allotment = {
     4, 8, 16, 32,
     114514 // cannot decrease anymore, placeholder
 };
@@ -33,7 +28,7 @@ std::array<int, NLEVELS> allotment = {
  * MLFQ per-level quantum
  * notice they are half of allotment for that level
  */
-std::array<int, NLEVELS> quantum = {2, 4, 8, 16, 32};
+std::array quantum = {2, 4, 8, 16, 32};
 
 void trapinit() { tickslock.init_lock("time"); }
 
