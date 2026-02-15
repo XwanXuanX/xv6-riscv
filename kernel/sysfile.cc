@@ -242,8 +242,8 @@ bad:
     return -1;
 }
 
-static inode *
-create(const char *path, const short type, const short major, const short minor) {
+static inode *create(const char *path, const short type, const short major,
+                     const short minor) {
     inode *ip, *dp;
     std::array<char, DIRSIZ> name{};
 
