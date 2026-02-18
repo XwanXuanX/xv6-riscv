@@ -767,7 +767,7 @@ void yield() {
 // A fork child's very first scheduling by scheduler()
 // will swtch to forkret.
 void forkret() {
-    extern char userret[];
+    // extern char userret[];
     static int first = 1;
     proc *p = myproc();
 
