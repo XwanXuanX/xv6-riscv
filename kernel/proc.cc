@@ -5,17 +5,12 @@
 #include "proc.h"
 #include "defs.h"
 #include "mlfq.h"
+#include "utility/assert.h"
+
 #include <array>
 #include "utility/lock_guard.h"
 
 namespace xv6 {
-
-// little helper
-static void assert(const bool cond, const char *msg) {
-    if (!cond) {
-        panic(msg);
-    }
-}
 
 std::array<cpu, NCPU> cpus;
 

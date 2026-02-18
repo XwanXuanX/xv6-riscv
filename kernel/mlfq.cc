@@ -2,15 +2,9 @@
 #include "defs.h"
 #include "proc.h"
 #include "mlfq.h"
+#include "utility/assert.h"
 
 namespace xv6 {
-
-// little helper
-static void assert(const bool cond, const char *msg) {
-    if (!cond) {
-        panic(msg);
-    }
-}
 
 // Initialize all level queues to be empty at first
 void mlfq_init(mlfq *m) {
