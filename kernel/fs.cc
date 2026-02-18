@@ -175,7 +175,7 @@ void iinit() {
 static inode *iget(uint dev, uint inum);
 
 // Allocate an inode on device dev.
-// Mark it as allocated by  giving it type.
+// Mark it as allocated by setting its type.
 // Returns an unlocked but allocated and referenced inode,
 // or NULL if there is no free inode.
 inode *ialloc(const uint dev, const short type) {

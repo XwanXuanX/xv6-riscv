@@ -884,7 +884,7 @@ int kkill(const int pid) {
                 p->need_yield = 0;
                 // Enqueue!
                 {
-                    util::lock_guard lk(mlq.lock);
+                    util::lock_guard mlq_lk(mlq.lock);
                     // Wake the process ASAP so it can die quickly
                     // Thus put it at the top
                     mlfq_enq_locked(&mlq, 0, p);
