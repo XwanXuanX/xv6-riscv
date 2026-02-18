@@ -11,6 +11,7 @@
 #include "stats.h"
 #include "proc.h"
 #include <array>
+#include "utility/lock_guard.h"
 
 namespace xv6 {
 
@@ -24,43 +25,46 @@ void fileinit() { ftable.lock.init_lock("ftable"); }
 
 // Allocate a file structure.
 file *filealloc() {
-    ftable.lock.lock();
-    for (file *f = ftable.files.data(); f < ftable.files.data() + NFILE; f++) {
-        if (f->ref == 0) {
-            f->ref = 1;
-            ftable.lock.unlock();
-            return f;
+    {
+        util::lock_guard lk(ftable.lock);
+        for (file *f = ftable.files.data(); f < ftable.files.data() + NFILE;
+             f++) {
+            if (f->ref == 0) {
+                f->ref = 1;
+                return f;
+            }
         }
     }
-    ftable.lock.unlock();
     return nullptr;
 }
 
 // Increment ref count for file f.
 file *filedup(file *f) {
-    ftable.lock.lock();
-    if (f->ref < 1) {
-        panic("filedup");
+    {
+        util::lock_guard lk(ftable.lock);
+        if (f->ref < 1) {
+            panic("filedup");
+        }
+        f->ref++;
     }
-    f->ref++;
-    ftable.lock.unlock();
     return f;
 }
 
 // Close file f.  (Decrement ref count, close when reaches 0.)
 void fileclose(file *f) {
-    ftable.lock.lock();
-    if (f->ref < 1) {
-        panic("fileclose");
+    file ff{};
+    {
+        util::lock_guard lk(ftable.lock);
+        if (f->ref < 1) {
+            panic("fileclose");
+        }
+        if (--f->ref > 0) {
+            return;
+        }
+        ff = *f;
+        f->ref = 0;
+        f->type = fd_none;
     }
-    if (--f->ref > 0) {
-        ftable.lock.unlock();
-        return;
-    }
-    const file ff = *f;
-    f->ref = 0;
-    f->type = fd_none;
-    ftable.lock.unlock();
 
     if (ff.type == fd_pipe) {
         pipeclose(ff.pip, ff.writable);
