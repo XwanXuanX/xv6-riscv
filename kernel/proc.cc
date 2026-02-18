@@ -5,16 +5,12 @@
 #include "proc.h"
 #include "defs.h"
 #include "mlfq.h"
+#include "utility/assert.h"
+
 #include <array>
+#include "utility/lock_guard.h"
 
 namespace xv6 {
-
-// little helper
-static void assert(const bool cond, const char *msg) {
-    if (!cond) {
-        panic(msg);
-    }
-}
 
 std::array<cpu, NCPU> cpus;
 
@@ -34,7 +30,7 @@ extern void forkret();
 static void freeproc(proc *p);
 
 extern std::array<int, NLEVELS> quantum; // trap.c
-extern char trampoline[];                // trampoline.S
+// extern char trampoline[];                // trampoline.S
 
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
@@ -71,7 +67,7 @@ void procinit() {
 // to prevent race with process being moved
 // to a different CPU.
 int cpuid() {
-    const int id = r_tp();
+    const int id = static_cast<int>(r_tp());
     return id;
 }
 
@@ -93,11 +89,9 @@ proc *myproc() {
 }
 
 int allocpid() {
-    pid_lock.lock();
+    util::lock_guard lk(pid_lock);
     const int pid = nextpid;
     nextpid = nextpid + 1;
-    pid_lock.unlock();
-
     return pid;
 }
 
@@ -252,14 +246,13 @@ void userinit() {
     p->need_yield = 0;
 
     // Enqueue!
-    mlq.lock.lock();
     {
+        util::lock_guard lk(mlq.lock);
         // New job enters, put at the top
         mlfq_enq_locked(&mlq, 0, p);
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
-    mlq.lock.unlock();
 
     p->lock.unlock();
 }
@@ -323,12 +316,14 @@ int kfork() {
 
     np->lock.unlock();
 
-    wait_lock.lock();
-    np->parent = p;
-    wait_lock.unlock();
-
-    np->lock.lock();
     {
+        util::lock_guard lk(wait_lock);
+        np->parent = p;
+    }
+
+    {
+        util::lock_guard lk(np->lock);
+
         // set the new process state as runnable
         np->state = RUNNABLE;
         np->qlevel = np->qticks = 0;
@@ -336,16 +331,14 @@ int kfork() {
         np->slice_left = quantum[np->qlevel];
         np->need_yield = 0;
         // Enqueue!
-        mlq.lock.lock();
         {
+            util::lock_guard mlq_lk(mlq.lock);
             // New job enters, put at the top
             mlfq_enq_locked(&mlq, 0, np);
             assert(!np->in_ready_q, "double enq");
             np->in_ready_q++;
         }
-        mlq.lock.unlock();
     }
-    np->lock.unlock();
 
     return pid;
 }
@@ -387,23 +380,24 @@ void kexit(const int status) {
     end_op();
     p->cwd = nullptr;
 
-    // acq wait_lock to manipulate the parent and child relations
-    wait_lock.lock();
+    {
+        // acq wait_lock to manipulate the parent and child relations
+        util::lock_guard lk(wait_lock);
 
-    // Give any children to init (for reap later).
-    reparent(p);
+        // Give any children to init (for reap later).
+        reparent(p);
 
-    // Parent might be sleeping in wait().
-    wakeup(p->parent);
+        // Parent might be sleeping in wait().
+        wakeup(p->parent);
 
-    // acq process lock to modify process status
-    p->lock.lock();
+        // acq process lock to modify process status
+        p->lock.lock();
 
-    p->xstate = status;
-    p->state = ZOMBIE;
+        p->xstate = status;
+        p->state = ZOMBIE;
 
-    // parent child relation stable, safe to unlock
-    wait_lock.unlock();
+        // parent child relation stable, safe to unlock
+    }
 
     // Jump into the scheduler, never to return.
     // Note that process lock is still held, this is to satisfy the assumption
@@ -425,25 +419,22 @@ int kwait(const uint64 addr) {
         for (proc *pp = proc_list.data(); pp < &proc_list[NPROC]; pp++) {
             if (pp->parent == p) {
                 // make sure the child isn't still in exit() or swtch().
-                pp->lock.lock();
-
+                util::lock_guard plock(pp->lock);
                 havekids = 1;
                 if (pp->state == ZOMBIE) {
                     // Found one.
                     const int pid = pp->pid;
                     if (addr != 0 &&
-                        copyout(p->pagetable, addr, (char *)&pp->xstate,
+                        copyout(p->pagetable, addr,
+                                reinterpret_cast<char *>(&pp->xstate),
                                 sizeof(pp->xstate)) < 0) {
-                        pp->lock.unlock();
                         wait_lock.unlock();
                         return -1;
                     }
                     freeproc(pp);
-                    pp->lock.unlock();
                     wait_lock.unlock();
                     return pid;
                 }
-                pp->lock.unlock();
             }
         }
 
@@ -656,13 +647,12 @@ multi_level_feedback_q() {
             p->epoch = cur_epoch;
             p->qlevel = p->qticks = 0;
             // Re-enqueue at top priority.
-            mlq.lock.lock();
             {
+                util::lock_guard lk(mlq.lock);
                 mlfq_enq_locked(&mlq, 0, p);
                 assert(!p->in_ready_q, "double enq");
                 p->in_ready_q++;
             }
-            mlq.lock.unlock();
             p->lock.unlock();
             // We've fixed up the priority
             // next time we are guaranteed to pick this or some other processes
@@ -753,8 +743,8 @@ void yield() {
     p->need_yield = 0;
     // but even though I give up CPU volentarily, I can still be scheduled
     // Enqueue!
-    mlq.lock.lock();
     {
+        util::lock_guard lk(mlq.lock);
         // `yield()` can only be called by timer interrupt preemption
         // this means the process is running for too long, and its priority is
         // demoted (already) Thus enqueue it at the demoted level
@@ -763,7 +753,6 @@ void yield() {
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
-    mlq.lock.unlock();
 
     // I'm the process, and I want to switch to scheduler
     sched(); // scheduler doing its stuff...
@@ -855,7 +844,7 @@ void sleep(void *chan, spinlock *lk) {
 void wakeup(const void *chan) {
     for (proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
         if (p != myproc()) {
-            p->lock.lock();
+            util::lock_guard lk(p->lock);
             if (p->state == SLEEPING && p->chan == chan) {
                 // I was sleeping, but now I've been wakened up,
                 // and I'm ready to run!
@@ -865,17 +854,15 @@ void wakeup(const void *chan) {
                 p->slice_left = quantum[p->qlevel];
                 p->need_yield = 0;
                 // Enqueue!
-                mlq.lock.lock();
                 {
+                    util::lock_guard mlq_lk(mlq.lock);
                     // Typically, a wake-up process needs immediate treatment
                     // for better response time, thus put it at the top
                     mlfq_enq_locked(&mlq, 0, p);
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
-                mlq.lock.unlock();
             }
-            p->lock.unlock();
         }
     }
 }
@@ -885,7 +872,7 @@ void wakeup(const void *chan) {
 // to user space (see usertrap() in trap.c).
 int kkill(const int pid) {
     for (proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        p->lock.lock();
+        util::lock_guard lk(p->lock);
         if (p->pid == pid) {
             p->killed = 1;
             if (p->state == SLEEPING) {
@@ -896,34 +883,32 @@ int kkill(const int pid) {
                 p->slice_left = quantum[p->qlevel];
                 p->need_yield = 0;
                 // Enqueue!
-                mlq.lock.lock();
                 {
+                    util::lock_guard mlq_lk(mlq.lock);
                     // Wake the process ASAP so it can die quickly
                     // Thus put it at the top
                     mlfq_enq_locked(&mlq, 0, p);
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
-                mlq.lock.unlock();
             }
-            p->lock.unlock();
+            // p->lock automatically unlocked here
             return 0;
         }
-        p->lock.unlock();
     }
     return -1;
 }
 
 void setkilled(proc *p) {
-    p->lock.lock();
+    util::lock_guard lk(p->lock);
     p->killed = 1;
-    p->lock.unlock();
 }
 
 int killed(proc *p) {
-    p->lock.lock();
-    const int k = p->killed;
-    p->lock.unlock();
+    const int k = [p] {
+        util::lock_guard lk(p->lock);
+        return p->killed;
+    }();
     return k;
 }
 

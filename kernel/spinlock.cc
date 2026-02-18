@@ -7,8 +7,6 @@
 
 namespace xv6 {
 
-namespace impl {
-
 // push_off/pop_off are like intr_off()/intr_on() except that they are matched:
 // it takes two pop_off()s to undo two push_off()s.  Also, if interrupts
 // are initially off, then push_off, pop_off leaves them off.
@@ -51,8 +49,6 @@ void pop_off() {
     }
 }
 
-} // namespace impl
-
 void spinlock::init_lock(const char *name) {
     this->name_ = name;
     locked_ = 0;
@@ -74,7 +70,7 @@ void spinlock::lock() {
     //      * but the CPU cannot return to the code to release it, because it's
     //      stuck in the handler
     //      * the deadlock!
-    impl::push_off();
+    push_off();
 
     // the current CPU cannot acquire the same lock twice
     if (holding()) {
@@ -123,7 +119,7 @@ void spinlock::unlock() {
     //   amoswap.w zero, zero, (s1)
     __sync_lock_release(&locked_);
 
-    impl::pop_off();
+    pop_off();
 }
 
 // Check whether this cpu is holding the lock.
@@ -132,10 +128,5 @@ bool spinlock::holding() const {
     const int r = locked_ && cpu_ == mycpu();
     return r;
 }
-
-// Export push_off and pop_off to the xv6 namespace
-void push_off() { impl::push_off(); }
-
-void pop_off() { impl::pop_off(); }
 
 } // namespace xv6

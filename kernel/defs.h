@@ -14,7 +14,7 @@ struct inode;
 struct pipe;
 struct proc;
 class spinlock;
-struct sleeplock;
+class sleeplock;
 struct stats;
 struct superblock;
 
@@ -131,18 +131,8 @@ void procdump();
 // swtch.S - already declared above in extern "C"
 
 // spinlock.c
-void acquire(spinlock *);
-int holding(spinlock *);
-void initlock(spinlock *, const char *);
-void release(spinlock *);
 void push_off();
 void pop_off();
-
-// sleeplock.c
-void acquiresleep(sleeplock *);
-void releasesleep(sleeplock *);
-int holdingsleep(sleeplock *);
-void initsleeplock(sleeplock *);
 
 // string.c
 int memcmp(const void *, const void *, uint);

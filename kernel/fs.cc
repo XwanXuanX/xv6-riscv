@@ -1,6 +1,6 @@
 // File system implementation.  Five layers:
 //   + Blocks: allocator for raw disk blocks.
-//   + Log: crash recovery for multi-step updates.
+//   + Log: crash recovery for multistep updates.
 //   + Files: inode allocator, reading, writing, metadata.
 //   + Directories: inode with special contents (list of other inodes!)
 //   + Names: paths like /usr/rtm/xv6/fs.c for convenient naming.
@@ -103,7 +103,7 @@ static void bfree(const int dev, const uint b) {
 // The kernel keeps a table of in-use inodes in memory
 // to provide a place for synchronizing access
 // to inodes used by multiple processes. The in-memory
-// inodes include book-keeping information that is
+// inodes include bookkeeping information that is
 // not stored on disk: ip->ref and ip->valid.
 //
 // An inode and its in-memory representation go through a
@@ -115,7 +115,7 @@ static void bfree(const int dev, const uint b) {
 //   the reference and link counts have fallen to zero.
 //
 // * Referencing in table: an entry in the inode table
-//   is free if ip->ref is zero. Otherwise ip->ref tracks
+//   is free if ip->ref is zero. Otherwise, ip->ref tracks
 //   the number of in-memory pointers to the entry (open
 //   files and current directories). iget() finds or
 //   creates a table entry and increments its ref; iput()
@@ -131,7 +131,7 @@ static void bfree(const int dev, const uint b) {
 //   the information in an inode and its content if it
 //   has first locked the inode.
 //
-// Thus a typical sequence is:
+// Thus, a typical sequence is:
 //   ip = iget(dev, inum)
 //   ilock(ip)
 //   ... examine and modify ip->xxx ...
@@ -147,7 +147,7 @@ static void bfree(const int dev, const uint b) {
 //
 // Many internal file system functions expect the caller to
 // have locked the inodes involved; this lets callers create
-// multi-step atomic operations.
+// multistep atomic operations.
 //
 // The itable.lock spin-lock protects the allocation of itable
 // entries. Since ip->ref indicates whether an entry is free,
@@ -168,14 +168,14 @@ void iinit() {
 
     itable.lock.init_lock("itable");
     for (i = 0; i < NINODE; i++) {
-        initsleeplock(&itable.node[i].lock);
+        itable.node[i].lock.init_lock();
     }
 }
 
 static inode *iget(uint dev, uint inum);
 
 // Allocate an inode on device dev.
-// Mark it as allocated by  giving it type type.
+// Mark it as allocated by setting its type.
 // Returns an unlocked but allocated and referenced inode,
 // or NULL if there is no free inode.
 inode *ialloc(const uint dev, const short type) {
@@ -265,7 +265,7 @@ void ilock(inode *ip) {
         panic("ilock");
     }
 
-    acquiresleep(&ip->lock);
+    ip->lock.lock();
 
     if (ip->valid == 0) {
         buf *bp = bread(ip->dev, IBLOCK(ip->inum, sb));
@@ -287,11 +287,11 @@ void ilock(inode *ip) {
 
 // Unlock the given inode.
 void iunlock(inode *ip) {
-    if (ip == nullptr || !holdingsleep(&ip->lock) || ip->ref < 1) {
+    if (ip == nullptr || !ip->lock.holding() || ip->ref < 1) {
         panic("iunlock");
     }
 
-    releasesleep(&ip->lock);
+    ip->lock.unlock();
 }
 
 // Drop a reference to an in-memory inode.
@@ -309,7 +309,7 @@ void iput(inode *ip) {
 
         // ip->ref == 1 means no other process can have ip locked,
         // so this acquiresleep() won't block (or deadlock).
-        acquiresleep(&ip->lock);
+        ip->lock.lock();
 
         itable.lock.unlock();
 
@@ -318,7 +318,7 @@ void iput(inode *ip) {
         iupdate(ip);
         ip->valid = 0;
 
-        releasesleep(&ip->lock);
+        ip->lock.unlock();
 
         itable.lock.lock();
     }
@@ -525,7 +525,7 @@ int namecmp(const char *s, const char *t) { return strncmp(s, t, DIRSIZ); }
 // Look for a directory entry in a directory.
 // If found, set *poff to byte offset of entry.
 inode *dirlookup(inode *dp, const char *name, uint *poff) {
-    dirent de;
+    dirent de{};
 
     if (dp->type != T_DIR) {
         panic("dirlookup not DIR");
@@ -556,11 +556,10 @@ inode *dirlookup(inode *dp, const char *name, uint *poff) {
 // Returns 0 on success, -1 on failure (e.g. out of disk blocks).
 int dirlink(inode *dp, const char *name, const uint inum) {
     uint off;
-    dirent de;
-    inode *ip;
+    dirent de{};
 
     // Check that name is not present.
-    if ((ip = dirlookup(dp, name, nullptr)) != nullptr) {
+    if (inode *ip; (ip = dirlookup(dp, name, nullptr)) != nullptr) {
         iput(ip);
         return -1;
     }

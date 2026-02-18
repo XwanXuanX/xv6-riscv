@@ -2,15 +2,10 @@
 #include "defs.h"
 #include "proc.h"
 #include "mlfq.h"
+#include "utility/assert.h"
+#include "utility/lock_guard.h"
 
 namespace xv6 {
-
-// little helper
-static void assert(const bool cond, const char *msg) {
-    if (!cond) {
-        panic(msg);
-    }
-}
 
 // Initialize all level queues to be empty at first
 void mlfq_init(mlfq *m) {
@@ -48,10 +43,10 @@ void mlfq_enq(mlfq *m, const int lvl, proc *p) {
     if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
-    m->lock.lock();
-    mlfq_enq_locked(m, lvl, p);
-    // we are done with queue, release the lock
-    m->lock.unlock();
+    {
+        util::lock_guard lk(m->lock);
+        mlfq_enq_locked(m, lvl, p);
+    }
 }
 
 proc *mlfq_deq_locked(mlfq *m, const int lvl) {
@@ -88,9 +83,10 @@ proc *mlfq_deq(mlfq *m, const int lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
 
-    m->lock.lock();
-    proc *p = mlfq_deq_locked(m, lvl);
-    m->lock.unlock();
+    proc *const p = [&] {
+        util::lock_guard lk(m->lock);
+        return mlfq_deq_locked(m, lvl);
+    }();
 
     return p;
 }
@@ -152,9 +148,10 @@ bool mlfq_rm(mlfq *m, const int lvl, const proc *p) {
         return false;
     }
 
-    m->lock.lock();
-    const bool ok = mlfq_rm_locked(m, lvl, p);
-    m->lock.unlock();
+    const bool ok = [&] {
+        util::lock_guard lk(m->lock);
+        return mlfq_rm_locked(m, lvl, p);
+    }();
 
     return ok;
 }

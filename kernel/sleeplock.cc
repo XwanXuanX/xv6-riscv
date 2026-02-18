@@ -1,36 +1,37 @@
 // Sleeping locks
 
 #include "defs.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "sleeplock.h"
+#include "utility/lock_guard.h"
 
 namespace xv6 {
 
-void initsleeplock(sleeplock *lk) { lk->lk.init_lock("sleep lock"); }
+void sleeplock::init_lock() { lk_.init_lock("sleep lock"); }
 
-void acquiresleep(sleeplock *lk) {
-    lk->lk.lock();
-    while (lk->locked) {
-        sleep(lk, &lk->lk);
+void sleeplock::lock() {
+    lk_.lock();
+    while (locked_) {
+        sleep(this, &lk_);
     }
-    lk->locked = 1;
-    lk->pid = myproc()->pid;
-    lk->lk.unlock();
+    locked_ = 1;
+    pid_ = myproc()->pid;
+    lk_.unlock();
 }
 
-void releasesleep(sleeplock *lk) {
-    lk->lk.lock();
-    lk->locked = 0;
-    lk->pid = 0;
-    wakeup(lk);
-    lk->lk.unlock();
+void sleeplock::unlock() {
+    lk_.lock();
+    locked_ = 0;
+    pid_ = 0;
+    wakeup(this);
+    lk_.unlock();
 }
 
-int holdingsleep(sleeplock *lk) {
-    lk->lk.lock();
-    const int r = lk->locked && lk->pid == myproc()->pid;
-    lk->lk.unlock();
+bool sleeplock::holding() {
+    const int r = [this] {
+        util::lock_guard lk(lk_);
+        return locked_ && pid_ == myproc()->pid;
+    }();
     return r;
 }
 
