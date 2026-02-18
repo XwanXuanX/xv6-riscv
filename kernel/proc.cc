@@ -41,7 +41,7 @@ spinlock wait_lock;
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
-void proc_mapstacks(const pagetable_t kpgtbl) {
+void proc_mapstacks(pte_t *const kpgtbl) {
     for (const proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
         auto pa = static_cast<char *>(kalloc());
         if (pa == nullptr) {
@@ -196,7 +196,7 @@ static void freeproc(proc *p) {
 // but with trampoline and trapframe pages.
 pagetable_t proc_pagetable(proc *p) {
     // An empty page table.
-    const pagetable_t pagetable = uvmcreate();
+    pte_t *const pagetable = uvmcreate();
     if (pagetable == nullptr) {
         return nullptr;
     }
@@ -225,7 +225,7 @@ pagetable_t proc_pagetable(proc *p) {
 
 // Free a process's page table, and free the
 // physical memory it refers to.
-void proc_freepagetable(const pagetable_t pagetable, const uint64 sz) {
+void proc_freepagetable(pte_t *const pagetable, const uint64 sz) {
     uvmunmap(pagetable, TRAMPOLINE, 1, 0);
     uvmunmap(pagetable, TRAPFRAME, 1, 0);
     uvmfree(pagetable, sz);
