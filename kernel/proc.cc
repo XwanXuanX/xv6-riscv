@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "mlfq.h"
 #include <array>
+#include "utility/lock_guard.h"
 
 namespace xv6 {
 
@@ -93,11 +94,9 @@ proc *myproc() {
 }
 
 int allocpid() {
-    pid_lock.lock();
+    util::lock_guard lk(pid_lock);
     const int pid = nextpid;
     nextpid = nextpid + 1;
-    pid_lock.unlock();
-
     return pid;
 }
 
