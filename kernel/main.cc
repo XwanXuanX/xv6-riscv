@@ -1,11 +1,15 @@
 #include "defs.h"
 #include "mlfq.h"
+#include "kalloc.h"
 
 namespace xv6 {
 
 volatile static int started = 0;
 
 extern mlfq mlq;
+
+// physical memory page allocator
+page_allocateor page_alloc;
 
 // start() jumps here in supervisor mode on all CPUs.
 void main() {
@@ -15,7 +19,7 @@ void main() {
         printf("\n");
         printf("xv6 kernel is booting\n");
         printf("\n");
-        kinit();            // physical page allocator
+        page_alloc.init();  // physical page allocator
         kvminit();          // create kernel page table
         kvminithart();      // turn on paging
         procinit();         // process table

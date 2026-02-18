@@ -6,11 +6,14 @@
 #include "defs.h"
 #include "mlfq.h"
 #include "utility/assert.h"
+#include "kalloc.h"
 
 #include <array>
 #include "utility/lock_guard.h"
 
 namespace xv6 {
+
+extern page_allocateor page_alloc;
 
 std::array<cpu, NCPU> cpus;
 
@@ -43,12 +46,12 @@ spinlock wait_lock;
 // guard page.
 void proc_mapstacks(pagetable_t kpgtbl) {
     for (const proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        auto pa = static_cast<char *>(kalloc());
+        auto pa = static_cast<char *>(page_alloc.alloc());
         if (pa == nullptr) {
             panic("kalloc");
         }
         const uint64 va = KSTACK(static_cast<int>(p - proc_list.data()));
-        kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+        kvmmap(kpgtbl, va, reinterpret_cast<uint64>(pa), PGSIZE, PTE_R | PTE_W);
     }
 }
 
@@ -124,7 +127,7 @@ found:
     p->state = USED;
 
     // Allocate a trapframe page.
-    if ((p->trapf = static_cast<trapframe *>(kalloc())) == nullptr) {
+    if ((p->trapf = static_cast<trapframe *>(page_alloc.alloc())) == nullptr) {
         freeproc(p);
         p->lock.unlock();
         return nullptr;
@@ -169,7 +172,7 @@ found:
 // p->lock must be held.
 static void freeproc(proc *p) {
     if (p->trapf) {
-        kfree(p->trapf);
+        page_alloc.free(p->trapf);
     }
     p->trapf = nullptr;
     if (p->pagetable) {

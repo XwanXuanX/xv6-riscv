@@ -81,11 +81,6 @@ int writei(inode *, int, uint64, uint, uint);
 void itrunc(inode *);
 void ireclaim(int);
 
-// kalloc.c
-void *kalloc();
-void kfree(void *);
-void kinit();
-
 // log.c
 void initlog(int, const superblock *);
 void log_write(buf *);
