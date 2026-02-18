@@ -17,6 +17,10 @@ template <lockable Mutex> class lock_guard {
 
     ~lock_guard() { m_.unlock(); }
 
+    // prevent accidental copying that leads to double unlock bugs
+    lock_guard(const lock_guard &) = delete;
+    lock_guard &operator=(const lock_guard &) = delete;
+
   private:
     Mutex &m_;
 };
