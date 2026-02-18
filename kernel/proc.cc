@@ -157,7 +157,7 @@ found:
     // Set up new context to start executing at forkret,
     // which returns to user space.
     memset(&p->ctx, 0, sizeof(p->ctx));
-    p->ctx.ra = (uint64)forkret;
+    p->ctx.ra = reinterpret_cast<uint64>(forkret);
     p->ctx.sp = p->kstack + PGSIZE;
 
     //
