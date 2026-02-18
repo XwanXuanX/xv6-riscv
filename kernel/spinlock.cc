@@ -86,7 +86,7 @@ void spinlock::lock() {
 
     // Tell the C compiler and the processor to not move loads or stores
     // past this point, to ensure that the critical section's memory
-    // references happen strictly after the lock is acquired.
+    // references to happen strictly after the lock is acquired.
     // On RISC-V, this emits a fence instruction.
     __sync_synchronize();
 
