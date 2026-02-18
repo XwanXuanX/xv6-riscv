@@ -652,13 +652,12 @@ multi_level_feedback_q() {
             p->epoch = cur_epoch;
             p->qlevel = p->qticks = 0;
             // Re-enqueue at top priority.
-            mlq.lock.lock();
             {
+                util::lock_guard lk(mlq.lock);
                 mlfq_enq_locked(&mlq, 0, p);
                 assert(!p->in_ready_q, "double enq");
                 p->in_ready_q++;
             }
-            mlq.lock.unlock();
             p->lock.unlock();
             // We've fixed up the priority
             // next time we are guaranteed to pick this or some other processes
@@ -749,8 +748,8 @@ void yield() {
     p->need_yield = 0;
     // but even though I give up CPU volentarily, I can still be scheduled
     // Enqueue!
-    mlq.lock.lock();
     {
+        util::lock_guard lk(mlq.lock);
         // `yield()` can only be called by timer interrupt preemption
         // this means the process is running for too long, and its priority is
         // demoted (already) Thus enqueue it at the demoted level
@@ -759,7 +758,6 @@ void yield() {
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
-    mlq.lock.unlock();
 
     // I'm the process, and I want to switch to scheduler
     sched(); // scheduler doing its stuff...
@@ -851,7 +849,7 @@ void sleep(void *chan, spinlock *lk) {
 void wakeup(const void *chan) {
     for (proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
         if (p != myproc()) {
-            p->lock.lock();
+            util::lock_guard lk(p->lock);
             if (p->state == SLEEPING && p->chan == chan) {
                 // I was sleeping, but now I've been wakened up,
                 // and I'm ready to run!
@@ -861,17 +859,15 @@ void wakeup(const void *chan) {
                 p->slice_left = quantum[p->qlevel];
                 p->need_yield = 0;
                 // Enqueue!
-                mlq.lock.lock();
                 {
+                    util::lock_guard mlq_lk(mlq.lock);
                     // Typically, a wake-up process needs immediate treatment
                     // for better response time, thus put it at the top
                     mlfq_enq_locked(&mlq, 0, p);
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
-                mlq.lock.unlock();
             }
-            p->lock.unlock();
         }
     }
 }
@@ -881,7 +877,7 @@ void wakeup(const void *chan) {
 // to user space (see usertrap() in trap.c).
 int kkill(const int pid) {
     for (proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        p->lock.lock();
+        util::lock_guard lk(p->lock);
         if (p->pid == pid) {
             p->killed = 1;
             if (p->state == SLEEPING) {
@@ -892,34 +888,32 @@ int kkill(const int pid) {
                 p->slice_left = quantum[p->qlevel];
                 p->need_yield = 0;
                 // Enqueue!
-                mlq.lock.lock();
                 {
+                    util::lock_guard lk(mlq.lock);
                     // Wake the process ASAP so it can die quickly
                     // Thus put it at the top
                     mlfq_enq_locked(&mlq, 0, p);
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
-                mlq.lock.unlock();
             }
-            p->lock.unlock();
+            // p->lock automatically unlocked here
             return 0;
         }
-        p->lock.unlock();
     }
     return -1;
 }
 
 void setkilled(proc *p) {
-    p->lock.lock();
+    util::lock_guard lk(p->lock);
     p->killed = 1;
-    p->lock.unlock();
 }
 
 int killed(proc *p) {
-    p->lock.lock();
-    const int k = p->killed;
-    p->lock.unlock();
+    const int k = [p] {
+        util::lock_guard lk(p->lock);
+        return p->killed;
+    }();
     return k;
 }
 
