@@ -35,7 +35,7 @@ extern void forkret();
 static void freeproc(proc *p);
 
 extern std::array<int, NLEVELS> quantum; // trap.c
-extern char trampoline[];                // trampoline.S
+// extern char trampoline[];                // trampoline.S
 
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
@@ -72,7 +72,7 @@ void procinit() {
 // to prevent race with process being moved
 // to a different CPU.
 int cpuid() {
-    const int id = r_tp();
+    const int id = static_cast<int>(r_tp());
     return id;
 }
 
@@ -251,14 +251,13 @@ void userinit() {
     p->need_yield = 0;
 
     // Enqueue!
-    mlq.lock.lock();
     {
+        util::lock_guard lk(mlq.lock);
         // New job enters, put at the top
         mlfq_enq_locked(&mlq, 0, p);
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
-    mlq.lock.unlock();
 
     p->lock.unlock();
 }
@@ -322,12 +321,14 @@ int kfork() {
 
     np->lock.unlock();
 
-    wait_lock.lock();
-    np->parent = p;
-    wait_lock.unlock();
-
-    np->lock.lock();
     {
+        util::lock_guard lk(wait_lock);
+        np->parent = p;
+    }
+
+    {
+        util::lock_guard lk(np->lock);
+
         // set the new process state as runnable
         np->state = RUNNABLE;
         np->qlevel = np->qticks = 0;
@@ -335,16 +336,14 @@ int kfork() {
         np->slice_left = quantum[np->qlevel];
         np->need_yield = 0;
         // Enqueue!
-        mlq.lock.lock();
         {
+            util::lock_guard mlq_lk(mlq.lock);
             // New job enters, put at the top
             mlfq_enq_locked(&mlq, 0, np);
             assert(!np->in_ready_q, "double enq");
             np->in_ready_q++;
         }
-        mlq.lock.unlock();
     }
-    np->lock.unlock();
 
     return pid;
 }
@@ -386,23 +385,24 @@ void kexit(const int status) {
     end_op();
     p->cwd = nullptr;
 
-    // acq wait_lock to manipulate the parent and child relations
-    wait_lock.lock();
+    {
+        // acq wait_lock to manipulate the parent and child relations
+        util::lock_guard lk(wait_lock);
 
-    // Give any children to init (for reap later).
-    reparent(p);
+        // Give any children to init (for reap later).
+        reparent(p);
 
-    // Parent might be sleeping in wait().
-    wakeup(p->parent);
+        // Parent might be sleeping in wait().
+        wakeup(p->parent);
 
-    // acq process lock to modify process status
-    p->lock.lock();
+        // acq process lock to modify process status
+        p->lock.lock();
 
-    p->xstate = status;
-    p->state = ZOMBIE;
+        p->xstate = status;
+        p->state = ZOMBIE;
 
-    // parent child relation stable, safe to unlock
-    wait_lock.unlock();
+        // parent child relation stable, safe to unlock
+    }
 
     // Jump into the scheduler, never to return.
     // Note that process lock is still held, this is to satisfy the assumption
@@ -424,25 +424,22 @@ int kwait(const uint64 addr) {
         for (proc *pp = proc_list.data(); pp < &proc_list[NPROC]; pp++) {
             if (pp->parent == p) {
                 // make sure the child isn't still in exit() or swtch().
-                pp->lock.lock();
-
+                util::lock_guard plock(pp->lock);
                 havekids = 1;
                 if (pp->state == ZOMBIE) {
                     // Found one.
                     const int pid = pp->pid;
                     if (addr != 0 &&
-                        copyout(p->pagetable, addr, (char *)&pp->xstate,
+                        copyout(p->pagetable, addr,
+                                reinterpret_cast<char *>(&pp->xstate),
                                 sizeof(pp->xstate)) < 0) {
-                        pp->lock.unlock();
                         wait_lock.unlock();
                         return -1;
                     }
                     freeproc(pp);
-                    pp->lock.unlock();
                     wait_lock.unlock();
                     return pid;
                 }
-                pp->lock.unlock();
             }
         }
 

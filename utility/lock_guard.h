@@ -3,19 +3,14 @@
 
 namespace xv6::util {
 
-template <typename Mutex>
-class lock_guard {
-public:
-    explicit lock_guard(Mutex& m) : m_(m) {
-        m_.lock();
-    }
+template <typename Mutex> class lock_guard {
+  public:
+    explicit lock_guard(Mutex &m) : m_(m) { m_.lock(); }
 
-    ~lock_guard() {
-        m_.unlock();
-    }
+    ~lock_guard() { m_.unlock(); }
 
-private:
-    Mutex& m_;
+  private:
+    Mutex &m_;
 };
 
-}
+} // namespace xv6::util
