@@ -8,7 +8,7 @@
 
 namespace xv6 {
 
-extern page_allocateor page_alloc;
+extern page_allocator page_alloc;
 
 #define PIPESIZE 512
 

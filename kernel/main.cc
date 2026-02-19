@@ -9,7 +9,7 @@ volatile static int started = 0;
 extern mlfq mlq;
 
 // physical memory page allocator
-page_allocateor page_alloc;
+page_allocator page_alloc;
 
 // start() jumps here in supervisor mode on all CPUs.
 void main() {

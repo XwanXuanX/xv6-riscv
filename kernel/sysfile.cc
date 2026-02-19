@@ -18,7 +18,7 @@
 
 namespace xv6 {
 
-extern page_allocateor page_alloc;
+extern page_allocator page_alloc;
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.

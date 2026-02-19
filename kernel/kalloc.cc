@@ -15,13 +15,13 @@ namespace xv6 {
 // extern char end[]; // first address after kernel.
 //                    // defined by kernel.ld.
 
-void page_allocateor::init() {
-    lock_.init_lock("page_allocateor");
+void page_allocator::init() {
+    lock_.init_lock("page_allocator");
     // mark all physical pages between `end` and `PHYSTOP` as available
     freerange(end, reinterpret_cast<void *>(PHYSTOP));
 }
 
-void page_allocateor::freerange(void *pa_start, void *pa_end) {
+void page_allocator::freerange(void *pa_start, void *pa_end) {
     auto p =
         reinterpret_cast<char *>(PGROUNDUP(reinterpret_cast<uint64>(pa_start)));
     for (; p + PGSIZE <= static_cast<char *>(pa_end); p += PGSIZE) {
@@ -29,7 +29,7 @@ void page_allocateor::freerange(void *pa_start, void *pa_end) {
     }
 }
 
-void page_allocateor::free(void *pa) {
+void page_allocator::free(void *pa) {
     // since we always allocate on page size
     // the starting pointer to a page should always be page-size aligned
     const bool alignment = reinterpret_cast<uint64>(pa) % PGSIZE == 0;
@@ -39,7 +39,7 @@ void page_allocateor::free(void *pa) {
     const bool exceed_phys = reinterpret_cast<uint64>(pa) >= PHYSTOP;
 
     if (!alignment || in_kernel || exceed_phys) {
-        panic("page_allocateor::free");
+        panic("page_allocator::free");
     }
 
     // Fill with junk to catch dangling refs.
@@ -55,7 +55,7 @@ void page_allocateor::free(void *pa) {
     }
 }
 
-void *page_allocateor::alloc() {
+void *page_allocator::alloc() {
     run *const r = [this] {
         util::lock_guard lk(lock_);
         // pop from list head

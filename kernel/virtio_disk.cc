@@ -19,7 +19,7 @@
 
 namespace xv6 {
 
-extern page_allocateor page_alloc;
+extern page_allocator page_alloc;
 
 // the address of virtio mmio register r.
 #define R(r) ((volatile uint32 *)(VIRTIO0 + (r)))

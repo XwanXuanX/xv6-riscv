@@ -16,7 +16,7 @@ pagetable_t kernel_pagetable;
 
 // extern char trampoline[]; // trampoline.S
 
-extern page_allocateor page_alloc;
+extern page_allocator page_alloc;
 
 // Make a direct-map page table for the kernel.
 pagetable_t kvmmake() {
