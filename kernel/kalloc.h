@@ -36,7 +36,7 @@ class page_allocator {
     // mutex to protect the list of free phys pages
     spinlock lock_;
     // the list of free phys pages
-    run *freelist_;
+    run *freelist_ = nullptr;
 };
 
 } // namespace xv6
