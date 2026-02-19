@@ -3,6 +3,7 @@
 #include "param.h"
 #include "spinlock.h"
 #include <array>
+#include "utility/assert.h"
 
 namespace xv6 {
 
@@ -53,6 +54,13 @@ class mlfq {
 
     // Get the current MLFQ version
     [[nodiscard]] int get_epoch() const { return boost_epoch_; }
+
+    // Increment the epoch number
+    // Must be called with lock held
+    void inc_epoch() {
+        assert(lock_.holding(), "lock not held when inc epoch");
+        boost_epoch_++;
+    }
 
     // Get the index of the first non-empty queue
     [[nodiscard]] int first_non_empty() const;

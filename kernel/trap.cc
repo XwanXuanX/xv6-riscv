@@ -223,9 +223,8 @@ void clockintr() {
             // and the MLFQ does not match, we will re-enqueue it at the top
             // level. This is essentially the same as periodic boosting.
             if (ticks % S == 0) {
-                mlq.lock.lock();
-                mlq.boost_epoch++;
-                mlq.lock.unlock();
+                util::lock_guard lk(mlq.get_lock());
+                mlq.inc_epoch();
             }
             // wakeup any processes waiting for the tick to advance
             wakeup(&ticks);
