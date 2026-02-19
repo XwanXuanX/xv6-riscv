@@ -15,8 +15,9 @@ class page_allocator {
 
     // Free the page of physical memory pointed at by pa,
     // which normally should have been returned by a
-    // call to kalloc().  (The exception is when
-    // initializing the allocator; see kinit above.)
+    // call to page_allocator::alloc(). (The exception is when
+    // initializing the allocator; page_allocator::init() and its
+    // helpers may call free() directly to populate the free list.)
     void free(void *pa);
 
     // Allocate one 4096-byte page of physical memory.
