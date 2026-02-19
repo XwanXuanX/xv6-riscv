@@ -129,7 +129,7 @@ void virtio_disk_init() {
     disk.avail = static_cast<virtq_avail *>(page_alloc.alloc());
     disk.used = static_cast<virtq_used *>(page_alloc.alloc());
     if (!disk.desc || !disk.avail || !disk.used) {
-        panic("virtio disk kalloc");
+        panic("virtio disk page_alloc");
     }
     memset(disk.desc, 0, PGSIZE);
     memset(disk.avail, 0, PGSIZE);

@@ -48,7 +48,7 @@ void proc_mapstacks(pagetable_t kpgtbl) {
     for (const proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
         auto pa = static_cast<char *>(page_alloc.alloc());
         if (pa == nullptr) {
-            panic("kalloc");
+            panic("page_alloc.alloc");
         }
         const uint64 va = KSTACK(static_cast<int>(p - proc_list.data()));
         kvmmap(kpgtbl, va, reinterpret_cast<uint64>(pa), PGSIZE, PTE_R | PTE_W);

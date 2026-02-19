@@ -6,9 +6,9 @@
 #include "spinlock.h"
 
 namespace xv6 {
-class page_allocateor {
+class page_allocator {
   public:
-    page_allocateor() = default;
+    page_allocator() = default;
 
     // initialize page allocator on boot
     void init();
