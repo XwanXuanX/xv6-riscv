@@ -250,9 +250,9 @@ void userinit() {
 
     // Enqueue!
     {
-        util::lock_guard lk(mlq.lock);
+        util::lock_guard lk(mlq.get_lock());
         // New job enters, put at the top
-        mlfq_enq_locked(&mlq, 0, p);
+        mlq.enq_locked(0, p);
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
@@ -335,9 +335,9 @@ int kfork() {
         np->need_yield = 0;
         // Enqueue!
         {
-            util::lock_guard mlq_lk(mlq.lock);
+            util::lock_guard mlq_lk(mlq.get_lock());
             // New job enters, put at the top
-            mlfq_enq_locked(&mlq, 0, np);
+            mlq.enq_locked(0, np);
             assert(!np->in_ready_q, "double enq");
             np->in_ready_q++;
         }
@@ -585,20 +585,6 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
     }
 }
 
-__attribute__((unused)) static int first_non_empty() {
-    for (int i = 0; i < NLEVELS; ++i) {
-        const rqueue *rq = &mlq.q[i];
-        // We should do some validation to ensure queue integrity
-        if ((rq->head && !rq->tail) || (!rq->head && rq->tail)) {
-            panic("inconsistent head and tail");
-        }
-        if (rq->head && rq->tail) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 __attribute__((unused)) __attribute__((noreturn)) static void
 multi_level_feedback_q() {
     cpu *c = mycpu();
@@ -609,30 +595,29 @@ multi_level_feedback_q() {
         intr_off();
 
         // lock the entire MLFQ structure to prevent possible races
-        mlq.lock.lock();
+        mlq.get_lock().lock();
 
         // find a non-empty ready queue
-        int first_non_null = first_non_empty();
+        int first_non_null = mlq.first_non_empty();
         // there is nothing ready, use wfi to wait for interrupt
         if (first_non_null == -1) {
-            mlq.lock.unlock();
+            mlq.get_lock().unlock();
             asm volatile("wfi");
             continue;
         }
 
-        // get the first non-empty queue
-        rqueue *const rq = &mlq.q[first_non_null];
         // the queue must contain at least one thing (this is the possible race
         // that we are preventing)
-        assert(rq->head && rq->tail, "empty ready queue (possible races)");
+        assert(!mlq.empty(first_non_null),
+               "empty ready queue (possible races)");
         // the queue is the "ready queue", meaning every process in it is in
         // READY/RUNNABLE state
-        proc *const p = mlfq_deq_locked(&mlq, first_non_null);
+        proc *const p = mlq.deq_locked(first_non_null);
         // snapshot current MLFQ version
-        const int cur_epoch = mlq.boost_epoch;
+        const int cur_epoch = mlq.get_epoch();
         // the process is dequeued, and queue is modified, no longer needs
         // protection
-        mlq.lock.unlock();
+        mlq.get_lock().unlock();
 
         // before any read or any modification to process, protect with lock
         p->lock.lock();
@@ -651,8 +636,8 @@ multi_level_feedback_q() {
             p->qlevel = p->qticks = 0;
             // Re-enqueue at top priority.
             {
-                util::lock_guard lk(mlq.lock);
-                mlfq_enq_locked(&mlq, 0, p);
+                util::lock_guard lk(mlq.get_lock());
+                mlq.enq_locked(0, p);
                 assert(!p->in_ready_q, "double enq");
                 p->in_ready_q++;
             }
@@ -747,12 +732,12 @@ void yield() {
     // but even though I give up CPU volentarily, I can still be scheduled
     // Enqueue!
     {
-        util::lock_guard lk(mlq.lock);
+        util::lock_guard lk(mlq.get_lock());
         // `yield()` can only be called by timer interrupt preemption
         // this means the process is running for too long, and its priority is
         // demoted (already) Thus enqueue it at the demoted level
         const int lvl = p->qlevel;
-        mlfq_enq_locked(&mlq, lvl, p);
+        mlq.enq_locked(lvl, p);
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
@@ -858,10 +843,10 @@ void wakeup(const void *chan) {
                 p->need_yield = 0;
                 // Enqueue!
                 {
-                    util::lock_guard mlq_lk(mlq.lock);
+                    util::lock_guard mlq_lk(mlq.get_lock());
                     // Typically, a wake-up process needs immediate treatment
                     // for better response time, thus put it at the top
-                    mlfq_enq_locked(&mlq, 0, p);
+                    mlq.enq_locked(0, p);
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
@@ -887,10 +872,10 @@ int kkill(const int pid) {
                 p->need_yield = 0;
                 // Enqueue!
                 {
-                    util::lock_guard mlq_lk(mlq.lock);
+                    util::lock_guard mlq_lk(mlq.get_lock());
                     // Wake the process ASAP so it can die quickly
                     // Thus put it at the top
-                    mlfq_enq_locked(&mlq, 0, p);
+                    mlq.enq_locked(0, p);
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
@@ -941,28 +926,6 @@ int either_copyin(void *dst, const int user_src, const uint64 src,
     return 0;
 }
 
-// Print the status of MLFQ for debugging
-// Triggered by ^P in sh
-static void mlfq_dump_nolock() {
-    printf("MLFQ:\n");
-    for (int lvl = 0; lvl < NLEVELS; lvl++) {
-        printf("  L%d:", lvl);
-        int cnt = 0;
-        const proc *p = mlq.q[lvl].head;
-
-        // Print at most 30 entries per level to avoid flooding.
-        while (p && cnt < 30) {
-            printf(" %d", p->pid);
-            p = p->rqnext;
-            cnt++;
-        }
-        if (p) {
-            printf(" ...");
-        }
-        printf("\n");
-    }
-}
-
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
@@ -986,7 +949,7 @@ void procdump() {
     }
 
     // Print MLFQ queue status
-    mlfq_dump_nolock();
+    mlq.dump();
 }
 
 } // namespace xv6
