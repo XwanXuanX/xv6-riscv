@@ -13,9 +13,12 @@
 #include "fs.h"
 #include "file.h"
 #include "fcntl.h"
+#include "kalloc.h"
 #include <array>
 
 namespace xv6 {
+
+extern page_allocator page_alloc;
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -396,7 +399,8 @@ uint64 sys_mknod() {
     argint(1, &major);
     argint(2, &minor);
     if (argstr(0, path.data(), MAXPATH) < 0 ||
-        (ip = create(path.data(), T_DEVICE, major, minor)) == nullptr) {
+        (ip = create(path.data(), T_DEVICE, static_cast<short>(major),
+                     static_cast<short>(minor))) == nullptr) {
         end_op();
         return -1;
     }
@@ -452,7 +456,7 @@ uint64 sys_exec() {
             argv[i] = nullptr;
             break;
         }
-        argv[i] = static_cast<char *>(kalloc());
+        argv[i] = static_cast<char *>(page_alloc.alloc());
         if (argv[i] == nullptr) {
             goto bad;
         }
@@ -464,14 +468,14 @@ uint64 sys_exec() {
     ret = kexec(path.data(), argv.data());
 
     for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++) {
-        kfree((void *)argv[i]);
+        page_alloc.free((void *)argv[i]);
     }
 
     return ret;
 
 bad:
     for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++) {
-        kfree((void *)argv[i]);
+        page_alloc.free((void *)argv[i]);
     }
     return -1;
 }

@@ -6,6 +6,7 @@
 #include "defs.h"
 #include "mlfq.h"
 #include <array>
+#include "utility/lock_guard.h"
 
 namespace xv6 {
 
@@ -93,18 +94,18 @@ uint64 usertrap() {
         if (!p) {
             panic("p nullptr");
         }
+
         int do_yield = 0;
-
-        p->lock.lock();
-        if (p->state != RUNNING) {
-            panic("myproc() is not running");
+        {
+            util::lock_guard lk(p->lock);
+            if (p->state != RUNNING) {
+                panic("myproc() is not running");
+            }
+            if (p->need_yield) {
+                do_yield = 1;
+                p->need_yield = 0;
+            }
         }
-        if (p->need_yield) {
-            do_yield = 1;
-            p->need_yield = 0;
-        }
-        p->lock.unlock();
-
         if (do_yield) {
             yield();
         }
@@ -186,18 +187,18 @@ extern "C" void kerneltrap() {
         if (!p) {
             xv6::panic("p nullptr");
         }
+
         int do_yield = 0;
-
-        p->lock.lock();
-        if (p->state != xv6::RUNNING) {
-            xv6::panic("myproc() is not running");
+        {
+            xv6::util::lock_guard lk(p->lock);
+            if (p->state != xv6::RUNNING) {
+                xv6::panic("myproc() is not running");
+            }
+            if (p->need_yield) {
+                do_yield = 1;
+                p->need_yield = 0;
+            }
         }
-        if (p->need_yield) {
-            do_yield = 1;
-            p->need_yield = 0;
-        }
-        p->lock.unlock();
-
         if (do_yield) {
             xv6::yield();
         }
@@ -222,9 +223,8 @@ void clockintr() {
             // and the MLFQ does not match, we will re-enqueue it at the top
             // level. This is essentially the same as periodic boosting.
             if (ticks % S == 0) {
-                mlq.lock.lock();
-                mlq.boost_epoch++;
-                mlq.lock.unlock();
+                util::lock_guard lk(mlq.get_lock());
+                mlq.inc_epoch();
             }
             // wakeup any processes waiting for the tick to advance
             wakeup(&ticks);

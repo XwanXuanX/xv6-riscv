@@ -3,6 +3,7 @@
 #include "riscv.h"
 #include "defs.h"
 #include "proc.h"
+#include "kalloc.h"
 
 namespace xv6 {
 
@@ -15,9 +16,11 @@ pagetable_t kernel_pagetable;
 
 // extern char trampoline[]; // trampoline.S
 
+extern page_allocator page_alloc;
+
 // Make a direct-map page table for the kernel.
 pagetable_t kvmmake() {
-    const auto kpgtbl = static_cast<pagetable_t>(kalloc());
+    const auto kpgtbl = static_cast<pagetable_t>(page_alloc.alloc());
     memset(kpgtbl, 0, PGSIZE);
 
     // uart registers
@@ -51,7 +54,7 @@ pagetable_t kvmmake() {
 // add a mapping to the kernel page table.
 // only used when booting.
 // does not flush TLB or enable paging.
-void kvmmap(const pagetable_t kpgtbl, const uint64 va, const uint64 pa,
+void kvmmap(pagetable_t kpgtbl, const uint64 va, const uint64 pa,
             const uint64 sz, const int perm) {
     if (mappages(kpgtbl, va, sz, pa, perm) != 0) {
         panic("kvmmap");
@@ -95,8 +98,8 @@ pte_t *walk(pagetable_t pagetable, const uint64 va, const int alloc) {
         if (*pte & PTE_V) {
             pagetable = (pagetable_t)PTE2_PA(*pte);
         } else {
-            if (!alloc ||
-                (pagetable = static_cast<pde_t *>(kalloc())) == nullptr) {
+            if (!alloc || (pagetable = static_cast<pde_t *>(
+                               page_alloc.alloc())) == nullptr) {
                 return nullptr;
             }
             memset(pagetable, 0, PGSIZE);
@@ -109,7 +112,7 @@ pte_t *walk(pagetable_t pagetable, const uint64 va, const int alloc) {
 // Look up a virtual address, return the physical address,
 // or 0 if not mapped.
 // Can only be used to look up user pages.
-uint64 walkaddr(const pagetable_t pagetable, const uint64 va) {
+uint64 walkaddr(pagetable_t pagetable, const uint64 va) {
     if (va >= MAXVA) {
         return 0;
     }
@@ -133,7 +136,7 @@ uint64 walkaddr(const pagetable_t pagetable, const uint64 va) {
 // va and size MUST be page-aligned.
 // Returns 0 on success, -1 if walk() couldn't
 // allocate a needed page-table page.
-int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size,
+int mappages(pagetable_t pagetable, const uint64 va, const uint64 size,
              uint64 pa, const int perm) {
     pte_t *pte;
 
@@ -171,7 +174,7 @@ int mappages(const pagetable_t pagetable, const uint64 va, const uint64 size,
 // create an empty user page table.
 // returns 0 if out of memory.
 pagetable_t uvmcreate() {
-    const auto pagetable = static_cast<pagetable_t>(kalloc());
+    const auto pagetable = static_cast<pagetable_t>(page_alloc.alloc());
     if (pagetable == nullptr) {
         return nullptr;
     }
@@ -182,7 +185,7 @@ pagetable_t uvmcreate() {
 // Remove npages of mappings starting from va. va must be
 // page-aligned. It's OK if the mappings don't exist.
 // Optionally free the physical memory.
-void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages,
+void uvmunmap(pagetable_t pagetable, const uint64 va, const uint64 npages,
               const int do_free) {
     pte_t *pte;
 
@@ -200,7 +203,7 @@ void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages,
         }
         if (do_free) {
             const uint64 pa = PTE2_PA(*pte);
-            kfree((void *)pa);
+            page_alloc.free(reinterpret_cast<void *>(pa));
         }
         *pte = 0;
     }
@@ -208,7 +211,7 @@ void uvmunmap(const pagetable_t pagetable, const uint64 va, const uint64 npages,
 
 // Allocate PTEs and physical memory to grow a process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
-uint64 uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
+uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
                 const int xperm) {
     if (newsz < oldsz) {
         return oldsz;
@@ -216,7 +219,7 @@ uint64 uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
 
     oldsz = PGROUNDUP(oldsz);
     for (uint64 a = oldsz; a < newsz; a += PGSIZE) {
-        auto mem = static_cast<char *>(kalloc());
+        auto mem = static_cast<char *>(page_alloc.alloc());
         if (mem == nullptr) {
             uvmdealloc(pagetable, a, oldsz);
             return 0;
@@ -224,7 +227,7 @@ uint64 uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
         memset(mem, 0, PGSIZE);
         if (mappages(pagetable, a, PGSIZE, (uint64)mem,
                      PTE_R | PTE_U | xperm) != 0) {
-            kfree(mem);
+            page_alloc.free(mem);
             uvmdealloc(pagetable, a, oldsz);
             return 0;
         }
@@ -236,14 +239,14 @@ uint64 uvmalloc(const pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
-uint64 uvmdealloc(const pagetable_t pagetable, const uint64 oldsz,
-                  const uint64 newsz) {
+uint64
+uvmdealloc(pagetable_t pagetable, const uint64 oldsz, const uint64 newsz) {
     if (newsz >= oldsz) {
         return oldsz;
     }
 
     if (PGROUNDUP(newsz) < PGROUNDUP(oldsz)) {
-        const int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
+        const uint64 npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
         uvmunmap(pagetable, PGROUNDUP(newsz), npages, 1);
     }
 
@@ -252,25 +255,25 @@ uint64 uvmdealloc(const pagetable_t pagetable, const uint64 oldsz,
 
 // Recursively free page-table pages.
 // All leaf mappings must already have been removed.
-void freewalk(const pagetable_t pagetable) {
+void freewalk(pagetable_t pagetable) {
     // there are 2^9 = 512 PTEs in a page table.
     for (int i = 0; i < 512; i++) {
         const pte_t pte = pagetable[i];
         if (pte & PTE_V && (pte & (PTE_R | PTE_W | PTE_X)) == 0) {
             // this PTE points to a lower-level page table.
             const uint64 child = PTE2_PA(pte);
-            freewalk((pagetable_t)child);
+            freewalk(reinterpret_cast<pagetable_t>(child));
             pagetable[i] = 0;
         } else if (pte & PTE_V) {
             panic("freewalk: leaf");
         }
     }
-    kfree(pagetable);
+    page_alloc.free(pagetable);
 }
 
 // Free user memory pages,
 // then free page-table pages.
-void uvmfree(const pagetable_t pagetable, const uint64 sz) {
+void uvmfree(pagetable_t pagetable, const uint64 sz) {
     if (sz > 0) {
         uvmunmap(pagetable, 0, PGROUNDUP(sz) / PGSIZE, 1);
     }
@@ -283,7 +286,7 @@ void uvmfree(const pagetable_t pagetable, const uint64 sz) {
 // physical memory.
 // returns 0 on success, -1 on failure.
 // frees any allocated pages on failure.
-int uvmcopy(const pagetable_t old, const pagetable_t nw, const uint64 sz) {
+int uvmcopy(pagetable_t old, pagetable_t nw, const uint64 sz) {
     pte_t *pte;
     uint64 pa, i;
     uint flags;
@@ -298,12 +301,13 @@ int uvmcopy(const pagetable_t old, const pagetable_t nw, const uint64 sz) {
         }
         pa = PTE2_PA(*pte);
         flags = PTE_FLAGS(*pte);
-        if ((mem = static_cast<char *>(kalloc())) == nullptr) {
+        if ((mem = static_cast<char *>(page_alloc.alloc())) == nullptr) {
             goto err;
         }
-        memmove(mem, (char *)pa, PGSIZE);
-        if (mappages(nw, i, PGSIZE, (uint64)mem, flags) != 0) {
-            kfree(mem);
+        memmove(mem, reinterpret_cast<char *>(pa), PGSIZE);
+        if (mappages(nw, i, PGSIZE, reinterpret_cast<uint64>(mem),
+                     static_cast<int>(flags)) != 0) {
+            page_alloc.free(mem);
             goto err;
         }
     }
@@ -316,7 +320,7 @@ err:
 
 // mark a PTE invalid for user access.
 // used by exec for the user stack guard page.
-void uvmclear(const pagetable_t pagetable, const uint64 va) {
+void uvmclear(pagetable_t pagetable, const uint64 va) {
     pte_t *pte = walk(pagetable, va, 0);
     if (pte == nullptr) {
         panic("uvmclear");
@@ -327,8 +331,7 @@ void uvmclear(const pagetable_t pagetable, const uint64 va) {
 // Copy from kernel to user.
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
-int copyout(const pagetable_t pagetable, uint64 dstva, const char *src,
-            uint64 len) {
+int copyout(pagetable_t pagetable, uint64 dstva, const char *src, uint64 len) {
     while (len > 0) {
         const uint64 va0 = PGROUNDDOWN(dstva);
         if (va0 >= MAXVA) {
@@ -364,7 +367,7 @@ int copyout(const pagetable_t pagetable, uint64 dstva, const char *src,
 // Copy from user to kernel.
 // Copy len bytes to dst from virtual address srcva in a given page table.
 // Return 0 on success, -1 on error.
-int copyin(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
+int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
     while (len > 0) {
         const uint64 va0 = PGROUNDDOWN(srcva);
         uint64 pa0 = walkaddr(pagetable, va0);
@@ -390,8 +393,7 @@ int copyin(const pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
 // Copy bytes to dst from virtual address srcva in a given page table,
 // until a '\0', or max.
 // Return 0 on success, -1 on error.
-int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva,
-              uint64 max) {
+int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {
     int got_null = 0;
 
     while (got_null == 0 && max > 0) {
@@ -431,7 +433,7 @@ int copyinstr(const pagetable_t pagetable, char *dst, uint64 srcva,
 // that was lazily allocated in sys_sbrk().
 // returns 0 if va is invalid or already mapped, or if
 // out of physical memory, and physical address if successful.
-uint64 vmfault(const pagetable_t pagetable, uint64 va) {
+uint64 vmfault(pagetable_t pagetable, uint64 va) {
     const proc *p = myproc();
 
     if (va >= p->sz) {
@@ -441,19 +443,19 @@ uint64 vmfault(const pagetable_t pagetable, uint64 va) {
     if (ismapped(pagetable, va)) {
         return 0;
     }
-    const auto mem = reinterpret_cast<uint64>(kalloc());
+    const auto mem = reinterpret_cast<uint64>(page_alloc.alloc());
     if (mem == 0) {
         return 0;
     }
     memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
     if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
-        kfree(reinterpret_cast<void *>(mem));
+        page_alloc.free(reinterpret_cast<void *>(mem));
         return 0;
     }
     return mem;
 }
 
-int ismapped(const pagetable_t pagetable, const uint64 va) {
+int ismapped(pagetable_t pagetable, const uint64 va) {
     const pte_t *pte = walk(pagetable, va, 0);
     if (pte == nullptr) {
         return 0;

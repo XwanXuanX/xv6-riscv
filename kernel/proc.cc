@@ -6,11 +6,14 @@
 #include "defs.h"
 #include "mlfq.h"
 #include "utility/assert.h"
+#include "kalloc.h"
 
 #include <array>
 #include "utility/lock_guard.h"
 
 namespace xv6 {
+
+extern page_allocator page_alloc;
 
 std::array<cpu, NCPU> cpus;
 
@@ -41,14 +44,14 @@ spinlock wait_lock;
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
-void proc_mapstacks(const pagetable_t kpgtbl) {
+void proc_mapstacks(pagetable_t kpgtbl) {
     for (const proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        auto pa = static_cast<char *>(kalloc());
+        auto pa = static_cast<char *>(page_alloc.alloc());
         if (pa == nullptr) {
-            panic("kalloc");
+            panic("page_alloc.alloc");
         }
         const uint64 va = KSTACK(static_cast<int>(p - proc_list.data()));
-        kvmmap(kpgtbl, va, (uint64)pa, PGSIZE, PTE_R | PTE_W);
+        kvmmap(kpgtbl, va, reinterpret_cast<uint64>(pa), PGSIZE, PTE_R | PTE_W);
     }
 }
 
@@ -124,7 +127,7 @@ found:
     p->state = USED;
 
     // Allocate a trapframe page.
-    if ((p->trapf = static_cast<trapframe *>(kalloc())) == nullptr) {
+    if ((p->trapf = static_cast<trapframe *>(page_alloc.alloc())) == nullptr) {
         freeproc(p);
         p->lock.unlock();
         return nullptr;
@@ -154,7 +157,7 @@ found:
     // Set up new context to start executing at forkret,
     // which returns to user space.
     memset(&p->ctx, 0, sizeof(p->ctx));
-    p->ctx.ra = (uint64)forkret;
+    p->ctx.ra = reinterpret_cast<uint64>(forkret);
     p->ctx.sp = p->kstack + PGSIZE;
 
     //
@@ -169,7 +172,7 @@ found:
 // p->lock must be held.
 static void freeproc(proc *p) {
     if (p->trapf) {
-        kfree(p->trapf);
+        page_alloc.free(p->trapf);
     }
     p->trapf = nullptr;
     if (p->pagetable) {
@@ -196,7 +199,7 @@ static void freeproc(proc *p) {
 // but with trampoline and trapframe pages.
 pagetable_t proc_pagetable(proc *p) {
     // An empty page table.
-    const pagetable_t pagetable = uvmcreate();
+    pagetable_t pagetable = uvmcreate();
     if (pagetable == nullptr) {
         return nullptr;
     }
@@ -225,7 +228,7 @@ pagetable_t proc_pagetable(proc *p) {
 
 // Free a process's page table, and free the
 // physical memory it refers to.
-void proc_freepagetable(const pagetable_t pagetable, const uint64 sz) {
+void proc_freepagetable(pagetable_t pagetable, const uint64 sz) {
     uvmunmap(pagetable, TRAMPOLINE, 1, 0);
     uvmunmap(pagetable, TRAPFRAME, 1, 0);
     uvmfree(pagetable, sz);
@@ -247,9 +250,9 @@ void userinit() {
 
     // Enqueue!
     {
-        util::lock_guard lk(mlq.lock);
+        util::lock_guard lk(mlq.get_lock());
         // New job enters, put at the top
-        mlfq_enq_locked(&mlq, 0, p);
+        mlq.enq_locked(0, p);
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
@@ -332,9 +335,9 @@ int kfork() {
         np->need_yield = 0;
         // Enqueue!
         {
-            util::lock_guard mlq_lk(mlq.lock);
+            util::lock_guard mlq_lk(mlq.get_lock());
             // New job enters, put at the top
-            mlfq_enq_locked(&mlq, 0, np);
+            mlq.enq_locked(0, np);
             assert(!np->in_ready_q, "double enq");
             np->in_ready_q++;
         }
@@ -582,20 +585,6 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
     }
 }
 
-__attribute__((unused)) static int first_non_empty() {
-    for (int i = 0; i < NLEVELS; ++i) {
-        const rqueue *rq = &mlq.q[i];
-        // We should do some validation to ensure queue integrity
-        if ((rq->head && !rq->tail) || (!rq->head && rq->tail)) {
-            panic("inconsistent head and tail");
-        }
-        if (rq->head && rq->tail) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 __attribute__((unused)) __attribute__((noreturn)) static void
 multi_level_feedback_q() {
     cpu *c = mycpu();
@@ -606,30 +595,29 @@ multi_level_feedback_q() {
         intr_off();
 
         // lock the entire MLFQ structure to prevent possible races
-        mlq.lock.lock();
+        mlq.get_lock().lock();
 
         // find a non-empty ready queue
-        int first_non_null = first_non_empty();
+        int first_non_null = mlq.first_non_empty();
         // there is nothing ready, use wfi to wait for interrupt
         if (first_non_null == -1) {
-            mlq.lock.unlock();
+            mlq.get_lock().unlock();
             asm volatile("wfi");
             continue;
         }
 
-        // get the first non-empty queue
-        rqueue *const rq = &mlq.q[first_non_null];
         // the queue must contain at least one thing (this is the possible race
         // that we are preventing)
-        assert(rq->head && rq->tail, "empty ready queue (possible races)");
+        assert(!mlq.empty(first_non_null),
+               "empty ready queue (possible races)");
         // the queue is the "ready queue", meaning every process in it is in
         // READY/RUNNABLE state
-        proc *const p = mlfq_deq_locked(&mlq, first_non_null);
+        proc *const p = mlq.deq_locked(first_non_null);
         // snapshot current MLFQ version
-        const int cur_epoch = mlq.boost_epoch;
+        const int cur_epoch = mlq.get_epoch();
         // the process is dequeued, and queue is modified, no longer needs
         // protection
-        mlq.lock.unlock();
+        mlq.get_lock().unlock();
 
         // before any read or any modification to process, protect with lock
         p->lock.lock();
@@ -648,8 +636,8 @@ multi_level_feedback_q() {
             p->qlevel = p->qticks = 0;
             // Re-enqueue at top priority.
             {
-                util::lock_guard lk(mlq.lock);
-                mlfq_enq_locked(&mlq, 0, p);
+                util::lock_guard lk(mlq.get_lock());
+                mlq.enq_locked(0, p);
                 assert(!p->in_ready_q, "double enq");
                 p->in_ready_q++;
             }
@@ -744,12 +732,12 @@ void yield() {
     // but even though I give up CPU volentarily, I can still be scheduled
     // Enqueue!
     {
-        util::lock_guard lk(mlq.lock);
+        util::lock_guard lk(mlq.get_lock());
         // `yield()` can only be called by timer interrupt preemption
         // this means the process is running for too long, and its priority is
         // demoted (already) Thus enqueue it at the demoted level
         const int lvl = p->qlevel;
-        mlfq_enq_locked(&mlq, lvl, p);
+        mlq.enq_locked(lvl, p);
         assert(!p->in_ready_q, "double enq");
         p->in_ready_q++;
     }
@@ -764,7 +752,7 @@ void yield() {
 // A fork child's very first scheduling by scheduler()
 // will swtch to forkret.
 void forkret() {
-    extern char userret[];
+    // extern char userret[];
     static int first = 1;
     proc *p = myproc();
 
@@ -855,10 +843,10 @@ void wakeup(const void *chan) {
                 p->need_yield = 0;
                 // Enqueue!
                 {
-                    util::lock_guard mlq_lk(mlq.lock);
+                    util::lock_guard mlq_lk(mlq.get_lock());
                     // Typically, a wake-up process needs immediate treatment
                     // for better response time, thus put it at the top
-                    mlfq_enq_locked(&mlq, 0, p);
+                    mlq.enq_locked(0, p);
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
@@ -884,10 +872,10 @@ int kkill(const int pid) {
                 p->need_yield = 0;
                 // Enqueue!
                 {
-                    util::lock_guard mlq_lk(mlq.lock);
+                    util::lock_guard mlq_lk(mlq.get_lock());
                     // Wake the process ASAP so it can die quickly
                     // Thus put it at the top
-                    mlfq_enq_locked(&mlq, 0, p);
+                    mlq.enq_locked(0, p);
                     assert(!p->in_ready_q, "double enq");
                     p->in_ready_q++;
                 }
@@ -938,28 +926,6 @@ int either_copyin(void *dst, const int user_src, const uint64 src,
     return 0;
 }
 
-// Print the status of MLFQ for debugging
-// Triggered by ^P in sh
-static void mlfq_dump_nolock() {
-    printf("MLFQ:\n");
-    for (int lvl = 0; lvl < NLEVELS; lvl++) {
-        printf("  L%d:", lvl);
-        int cnt = 0;
-        const proc *p = mlq.q[lvl].head;
-
-        // Print at most 30 entries per level to avoid flooding.
-        while (p && cnt < 30) {
-            printf(" %d", p->pid);
-            p = p->rqnext;
-            cnt++;
-        }
-        if (p) {
-            printf(" ...");
-        }
-        printf("\n");
-    }
-}
-
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.
 // No lock to avoid wedging a stuck machine further.
@@ -983,7 +949,7 @@ void procdump() {
     }
 
     // Print MLFQ queue status
-    mlfq_dump_nolock();
+    mlq.dump();
 }
 
 } // namespace xv6

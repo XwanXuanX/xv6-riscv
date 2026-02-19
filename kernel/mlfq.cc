@@ -7,64 +7,58 @@
 
 namespace xv6 {
 
-// Initialize all level queues to be empty at first
-void mlfq_init(mlfq *m) {
-    if (!m) {
-        panic("invalid_null_pointer");
-    }
-
+void mlfq::init() {
     // For initialization, we don't lock
-    m->lock.init_lock("MLFQ_lock");
+    lock_.init_lock("MLFQ_lock");
     for (int i = 0; i < NLEVELS; ++i) {
-        m->q[i].head = m->q[i].tail = nullptr;
+        q_[i].head = q_[i].tail = nullptr;
     }
     // start from version 0
-    m->boost_epoch = 0;
+    boost_epoch_ = 0;
 }
 
-void mlfq_enq_locked(mlfq *m, const int lvl, proc *p) {
-    if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
+void mlfq::enq_locked(const int lvl, proc *p) {
+    if (!p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
-    assert(m->lock.holding(), "mlfq_enq_locked m_lock");
+    assert(lock_.holding(), "mlfq_enq_locked m_lock");
     assert(p->lock.holding(), "mlfq_enq_locked p->lock");
 
     p->rqnext = nullptr;
-    if (m->q[lvl].tail) {
-        m->q[lvl].tail->rqnext = p;
-        m->q[lvl].tail = p;
+    if (q_[lvl].tail) {
+        q_[lvl].tail->rqnext = p;
+        q_[lvl].tail = p;
     } else {
-        m->q[lvl].head = m->q[lvl].tail = p;
+        q_[lvl].head = q_[lvl].tail = p;
     }
 }
 
-// Enqueue a process to a specific level queue
-void mlfq_enq(mlfq *m, const int lvl, proc *p) {
-    if (!m || !p || lvl < 0 || NLEVELS <= lvl) {
+void mlfq::enq(const int lvl, proc *p) {
+    if (!p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
     {
-        util::lock_guard lk(m->lock);
-        mlfq_enq_locked(m, lvl, p);
+        util::lock_guard lk(lock_);
+        enq_locked(lvl, p);
     }
 }
 
-proc *mlfq_deq_locked(mlfq *m, const int lvl) {
-    if (!m || lvl < 0 || NLEVELS <= lvl) {
+proc *mlfq::deq_locked(const int lvl) {
+    if (lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
-    assert(m->lock.holding(), "mlfq_deq_locked m->lock");
+    assert(lock_.holding(), "mlfq_deq_locked m->lock");
 
-    proc *p = m->q[lvl].head;
+    proc *p = q_[lvl].head;
     if (!p) {
         // return nullptr when the current queue is empty
         return nullptr;
     }
 
     // modify the queue with lock hold is fine
-    m->q[lvl].head = p->rqnext;
-    if (m->q[lvl].head == nullptr) {
-        m->q[lvl].tail = nullptr;
+    q_[lvl].head = p->rqnext;
+    if (q_[lvl].head == nullptr) {
+        q_[lvl].tail = nullptr;
     }
 
     // IMPORTANT:
@@ -72,31 +66,31 @@ proc *mlfq_deq_locked(mlfq *m, const int lvl) {
     //  WITHOUT holding the process lock, is this even valid???
     // answer is: Yes. Because `p->rqnext` is NOT a process state,
     // it's actually the MLFQ's state, which is protected by the m->lock!
-    // Thus since we are holding m->lock, this is valid.
+    // Thus, since we are holding m->lock, this is valid.
     p->rqnext = nullptr;
     return p;
 }
 
 // Deque a process from a specific level queue
-proc *mlfq_deq(mlfq *m, const int lvl) {
-    if (!m || lvl < 0 || NLEVELS <= lvl) {
+proc *mlfq::deq(const int lvl) {
+    if (lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
 
     proc *const p = [&] {
-        util::lock_guard lk(m->lock);
-        return mlfq_deq_locked(m, lvl);
+        util::lock_guard lk(lock_);
+        return deq_locked(lvl);
     }();
 
     return p;
 }
 
 // Remove a process from a specific level queue
-bool mlfq_rm_locked(mlfq *m, const int lvl, const proc *p) {
-    if (!m || lvl < 0 || NLEVELS <= lvl) {
+bool mlfq::rm_locked(const int lvl, const proc *p) {
+    if (lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
-    assert(m->lock.holding(), "mlfq_rm_locked m->lock");
+    assert(lock_.holding(), "mlfq_rm_locked m->lock");
 
     if (!p) {
         // nothing to be done
@@ -104,7 +98,7 @@ bool mlfq_rm_locked(mlfq *m, const int lvl, const proc *p) {
     }
 
     assert(p->lock.holding(), "mlfq_rm_locked p->lock");
-    rqueue *rq = &m->q[lvl];
+    rqueue *rq = &q_[lvl];
     proc *cur = rq->head;
     proc *prev = nullptr;
 
@@ -140,8 +134,8 @@ bool mlfq_rm_locked(mlfq *m, const int lvl, const proc *p) {
     return false;
 }
 
-bool mlfq_rm(mlfq *m, const int lvl, const proc *p) {
-    if (!m || lvl < 0 || NLEVELS <= lvl) {
+bool mlfq::rm(const int lvl, const proc *p) {
+    if (lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
     if (!p) {
@@ -149,11 +143,49 @@ bool mlfq_rm(mlfq *m, const int lvl, const proc *p) {
     }
 
     const bool ok = [&] {
-        util::lock_guard lk(m->lock);
-        return mlfq_rm_locked(m, lvl, p);
+        util::lock_guard lk(lock_);
+        return rm_locked(lvl, p);
     }();
 
     return ok;
+}
+
+void mlfq::dump() const {
+    printf("MLFQ:\n");
+    for (int lvl = 0; lvl < NLEVELS; lvl++) {
+        printf("  L%d:", lvl);
+        int cnt = 0;
+        const proc *p = q_[lvl].head;
+
+        // Print at most 30 entries per level to avoid flooding.
+        while (p && cnt < 30) {
+            printf(" %d", p->pid);
+            p = p->rqnext;
+            cnt++;
+        }
+        if (p) {
+            printf(" ...");
+        }
+        printf("\n");
+    }
+}
+
+int mlfq::first_non_empty() const {
+    // IMPORTANT NOTE: the method does not lock itself
+    // it assumes that the caller will lock before call it
+    assert(lock_.holding(), "lock not held when searching");
+
+    for (int i = 0; i < NLEVELS; ++i) {
+        const rqueue *rq = &q_[i];
+        // We should do some validation to ensure queue integrity
+        if ((rq->head && !rq->tail) || (!rq->head && rq->tail)) {
+            panic("inconsistent head and tail");
+        }
+        if (rq->head && rq->tail) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 } // namespace xv6

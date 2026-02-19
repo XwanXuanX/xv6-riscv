@@ -175,7 +175,7 @@ bad:
 // va must be page-aligned
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
-static int loadseg(const pagetable_t pagetable, const uint64 va, inode *ip,
+static int loadseg(pagetable_t pagetable, const uint64 va, inode *ip,
                    const uint offset, const uint sz) {
     uint n;
 

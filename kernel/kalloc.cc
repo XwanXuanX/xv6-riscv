@@ -7,68 +7,64 @@
 #include "spinlock.h"
 #include "riscv.h"
 #include "defs.h"
+#include "kalloc.h"
+#include "utility/lock_guard.h"
 
 namespace xv6 {
-
-void freerange(void *pa_start, void *pa_end);
 
 // extern char end[]; // first address after kernel.
 //                    // defined by kernel.ld.
 
-struct run {
-    run *next;
-};
-
-struct {
-    spinlock lock;
-    run *freelist;
-} kmem;
-
-void kinit() {
-    kmem.lock.init_lock("kmem");
+void page_allocator::init() {
+    lock_.init_lock("page_allocator");
+    // mark all physical pages between `end` and `PHYSTOP` as available
     freerange(end, reinterpret_cast<void *>(PHYSTOP));
 }
 
-void freerange(void *pa_start, void *pa_end) {
+void page_allocator::freerange(void *pa_start, void *pa_end) {
     auto p =
         reinterpret_cast<char *>(PGROUNDUP(reinterpret_cast<uint64>(pa_start)));
     for (; p + PGSIZE <= static_cast<char *>(pa_end); p += PGSIZE) {
-        kfree(p);
+        free(p);
     }
 }
 
-// Free the page of physical memory pointed at by pa,
-// which normally should have been returned by a
-// call to kalloc().  (The exception is when
-// initializing the allocator; see kinit above.)
-void kfree(void *pa) {
-    if (reinterpret_cast<uint64>(pa) % PGSIZE != 0 ||
-        static_cast<char *>(pa) < end ||
-        reinterpret_cast<uint64>(pa) >= PHYSTOP) {
-        panic("kfree");
+void page_allocator::free(void *pa) {
+    // since we always allocate on page size
+    // the starting pointer to a page should always be page-size aligned
+    const bool alignment = reinterpret_cast<uint64>(pa) % PGSIZE == 0;
+    // start of physical page cannot invade kernel reserved memory space
+    const bool in_kernel = static_cast<char *>(pa) < end;
+    // start of physical page exceed maximum physical address available
+    const bool exceed_phys = reinterpret_cast<uint64>(pa) >= PHYSTOP;
+
+    if (!alignment || in_kernel || exceed_phys) {
+        panic("page_allocator::free");
     }
 
     // Fill with junk to catch dangling refs.
     memset(pa, 1, PGSIZE);
-
-    const auto r = static_cast<struct run *>(pa);
-
-    kmem.lock.lock();
-    r->next = kmem.freelist;
-    kmem.freelist = r;
-    kmem.lock.unlock();
+    // Add the physical page to freelist
+    {
+        // note that you use the first few bytes in the page as list node
+        // to embed a free list within the free space
+        const auto r = static_cast<run *>(pa);
+        util::lock_guard lk(lock_);
+        r->next = freelist_;
+        freelist_ = r;
+    }
 }
 
-// Allocate one 4096-byte page of physical memory.
-// Returns a pointer that the kernel can use.
-// Returns 0 if the memory cannot be allocated.
-void *kalloc() {
-    kmem.lock.lock();
-    run *r = kmem.freelist;
-    if (r) {
-        kmem.freelist = r->next;
-    }
-    kmem.lock.unlock();
+void *page_allocator::alloc() {
+    run *const r = [this] {
+        util::lock_guard lk(lock_);
+        // pop from list head
+        run *const ret = freelist_;
+        if (ret) {
+            freelist_ = ret->next;
+        }
+        return ret;
+    }();
 
     if (r) {
         memset(r, 5, PGSIZE); // fill with junk

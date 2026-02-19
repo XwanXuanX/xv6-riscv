@@ -3,9 +3,12 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "file.h"
+#include "kalloc.h"
 #include <array>
 
 namespace xv6 {
+
+extern page_allocator page_alloc;
 
 #define PIPESIZE 512
 
@@ -24,7 +27,7 @@ int pipealloc(file **f0, file **f1) {
     if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr) {
         goto bad;
     }
-    if ((pi = static_cast<pipe *>(kalloc())) == nullptr) {
+    if ((pi = static_cast<pipe *>(page_alloc.alloc())) == nullptr) {
         goto bad;
     }
     pi->readopen = 1;
@@ -44,7 +47,7 @@ int pipealloc(file **f0, file **f1) {
 
 bad:
     if (pi) {
-        kfree(pi);
+        page_alloc.free(pi);
     }
     if (*f0) {
         fileclose(*f0);
@@ -66,7 +69,7 @@ void pipeclose(pipe *pi, const int writable) {
     }
     if (pi->readopen == 0 && pi->writeopen == 0) {
         pi->lock.unlock();
-        kfree(pi);
+        page_alloc.free(pi);
     } else {
         pi->lock.unlock();
     }
