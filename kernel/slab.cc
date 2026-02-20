@@ -6,6 +6,13 @@
 
 namespace xv6 {
 
+static void mem_fill(void *p, const int v, const uint64 n) {
+    auto *c = static_cast<unsigned char *>(p);
+    for (uint64 i = 0; i < n; i++) {
+        c[i] = static_cast<unsigned char>(v);
+    }
+}
+
 template <uint64 size> void slab_allocator<size>::reclaim() {
     util::lock_guard lk(lock_);
 
@@ -144,6 +151,7 @@ template <uint64 size> void slab_allocator<size>::free(void *pa) {
     assert0(ok);
 
     // the actual freeing
+    mem_fill(pa, 0xAA, size);
     auto *n = static_cast<node *>(pa);
     n->next = freelist_;
     freelist_ = n;
@@ -156,6 +164,7 @@ template <uint64 size> void *slab_allocator<size>::alloc() {
         if (freelist_ != nullptr) {
             node *n = freelist_;
             freelist_ = freelist_->next;
+            mem_fill(n, 0xCC, size);
             return n;
         }
     }
@@ -189,6 +198,7 @@ template <uint64 size> void *slab_allocator<size>::alloc() {
     }
     node *n = freelist_;
     freelist_ = freelist_->next;
+    mem_fill(n, 0xCC, size);
     return n;
 }
 
