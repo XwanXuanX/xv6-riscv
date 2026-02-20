@@ -13,8 +13,6 @@ namespace xv6 {
 spinlock tickslock;
 uint ticks;
 
-extern mlfq mlq;
-
 extern int devintr();
 
 /**
@@ -223,8 +221,9 @@ void clockintr() {
             // and the MLFQ does not match, we will re-enqueue it at the top
             // level. This is essentially the same as periodic boosting.
             if (ticks % S == 0) {
-                util::lock_guard lk(mlq.get_lock());
-                mlq.inc_epoch();
+                auto &feedback_q = multi_lvl_feedback_q::instance();
+                util::lock_guard lk(feedback_q.get_lock());
+                feedback_q.inc_epoch();
             }
             // wakeup any processes waiting for the tick to advance
             wakeup(&ticks);
