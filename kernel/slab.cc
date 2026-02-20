@@ -13,6 +13,19 @@ static void mem_fill(void *p, const int v, const uint64 n) {
     }
 }
 
+template <uint64 size> bool slab_allocator<size>::has_cycle(node *head) {
+    auto *slow = head;
+    auto *fast = head;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+        if (slow == fast) {
+            return true;
+        }
+    }
+    return false;
+}
+
 template <uint64 size> void slab_allocator<size>::reclaim() {
     util::lock_guard lk(lock_);
 
@@ -150,6 +163,16 @@ template <uint64 size> void slab_allocator<size>::free(void *pa) {
     }
     assert0(ok);
 
+    if ((++ops_ & PERIOD) == 0) {
+        assert0(lock_.holding());
+        if (has_cycle(freelist_)) {
+            panic("slab: freelist cycle");
+        }
+        if (has_cycle(pagelist_)) {
+            panic("slab: pagelist cycle");
+        }
+    }
+
     // the actual freeing
     mem_fill(pa, 0xAA, size);
     auto *n = static_cast<node *>(pa);
@@ -158,6 +181,18 @@ template <uint64 size> void slab_allocator<size>::free(void *pa) {
 }
 
 template <uint64 size> void *slab_allocator<size>::alloc() {
+    // periodically do cycle detection
+    if ((++ops_ & PERIOD) == 0) {
+        util::lock_guard lk(lock_);
+        assert0(lock_.holding());
+        if (has_cycle(freelist_)) {
+            panic("slab: freelist cycle");
+        }
+        if (has_cycle(pagelist_)) {
+            panic("slab: pagelist cycle");
+        }
+    }
+
     // fast path: try under lock
     {
         util::lock_guard lk(lock_);

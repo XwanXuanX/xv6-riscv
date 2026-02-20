@@ -45,6 +45,9 @@ class slab_allocator : public util::singleton<slab_allocator<size>> {
     // same as `make_free()` but build a local free list for installation latter
     bool make_free_local(node *&local_free_head, void *&page);
 
+    // Floyd cycle detection
+    static bool has_cycle(node *head);
+
     // two types of linked-list:
     // 1. list of allocated physical pages
     // 2. free list of carved, fixed-sized objects
@@ -65,6 +68,10 @@ class slab_allocator : public util::singleton<slab_allocator<size>> {
     spinlock lock_{};
     node *pagelist_ = nullptr;
     node *freelist_ = nullptr;
+
+    // counter to periodically run cycle detection algorithm
+    static constexpr uint64 PERIOD = 0x3FF;
+    uint64 ops_ = 0;
 };
 
 } // namespace xv6
