@@ -84,7 +84,7 @@ template <uint64 size> void slab_allocator<size>::free(void *pa) {
     }
 
     const auto a = reinterpret_cast<uint64>(pa);
-    assert0((a & alignof(node) - 1) == 0);
+    assert0((a & (alignof(node) - 1)) == 0);
 
     // hold the lock while doing the rest of validation
     util::lock_guard lk(lock_);
@@ -119,7 +119,7 @@ template <uint64 size> void *slab_allocator<size>::alloc() {
     {
         util::lock_guard lk(lock_);
         if (freelist_ != nullptr) {
-            const node *n = freelist_;
+            node *n = freelist_;
             freelist_ = freelist_->next;
             return n;
         }
@@ -156,5 +156,11 @@ template <uint64 size> void *slab_allocator<size>::alloc() {
     freelist_ = freelist_->next;
     return n;
 }
+
+template class slab_allocator<32>;
+template class slab_allocator<64>;
+template class slab_allocator<128>;
+template class slab_allocator<256>;
+template class slab_allocator<512>;
 
 } // namespace xv6
