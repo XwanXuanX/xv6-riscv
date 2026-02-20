@@ -127,7 +127,7 @@ void virtio_disk_init() {
     disk.avail = static_cast<virtq_avail *>(page_allocator::instance().alloc());
     disk.used = static_cast<virtq_used *>(page_allocator::instance().alloc());
     if (!disk.desc || !disk.avail || !disk.used) {
-        panic("virtio disk page_allocator::instance()");
+        panic("virtio disk: page allocation failed");
     }
     memset(disk.desc, 0, PGSIZE);
     memset(disk.avail, 0, PGSIZE);

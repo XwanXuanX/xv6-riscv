@@ -29,10 +29,6 @@ template <class T> class singleton : do_not_copy, do_not_move {
     constexpr singleton() = default;
     ~singleton() = default;
 
-    singleton(const singleton &) = delete;
-    singleton &operator=(const singleton &) = delete;
-    singleton(singleton &&) = delete;
-    singleton &operator=(singleton &&) = delete;
 
   private:
     friend T;

@@ -42,7 +42,7 @@ class slab_allocator : public util::singleton<slab_allocator<size>> {
     // return if the physical page is allocated, the caller should handle errors
     bool make_free();
 
-    // same as `make_free()` but build a local free list for installation latter
+    // same as `make_free()` but build a local free list for installation later
     bool make_free_local(node *&local_free_head, void *&page);
 
     // Floyd cycle detection
@@ -61,7 +61,8 @@ class slab_allocator : public util::singleton<slab_allocator<size>> {
     static_assert(sizeof(node) <= size, "free obj cannot contain a node");
     static_assert((size & (alignof(node) - 1)) == 0,
                   "slab size must be node-aligned");
-    static_assert(size <= PGSIZE - sizeof(node),
+    static_assert(size <= PGSIZE - ((sizeof(node) + (alignof(node) - 1)) &
+                                    ~(alignof(node) - 1)),
                   "slab size too large to fit any object in a page");
 
     // mutex to protect both lists
