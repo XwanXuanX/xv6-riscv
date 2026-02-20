@@ -29,7 +29,6 @@ template <class T> class singleton : do_not_copy, do_not_move {
     constexpr singleton() = default;
     ~singleton() = default;
 
-
   private:
     friend T;
 };

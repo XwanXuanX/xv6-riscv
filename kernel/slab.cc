@@ -229,7 +229,7 @@ template <uint64 size> void *slab_allocator<size>::alloc() {
 
     // now try to allocate again
     if (freelist_ == nullptr) {
-        // Defensive: roll back the page allocation to avoid leaking a page
+        // roll back the page allocation to avoid leaking a page
         if (pagelist_ == pn) {
             pagelist_ = pagelist_->next;
         }
