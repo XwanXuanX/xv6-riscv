@@ -4,23 +4,14 @@
 #pragma once
 
 #include "spinlock.h"
+#include "utility/singletony.h"
 
 namespace xv6 {
 
-class page_allocator {
+class page_allocator : public util::singleton<page_allocator> {
+    friend class singleton;
+
   public:
-    // page allocator should be a singleton class
-    static page_allocator &instance() {
-        static page_allocator inst;
-        return inst;
-    }
-
-    // copy or moving is not allowed
-    page_allocator(const page_allocator &) = delete;
-    page_allocator &operator=(const page_allocator &) = delete;
-    page_allocator(page_allocator &&) = delete;
-    page_allocator &operator=(page_allocator &&) = delete;
-
     // initialize page allocator on boot
     void init();
 
@@ -37,9 +28,7 @@ class page_allocator {
     void *alloc();
 
   private:
-    // hide ctor and dtor for construction and destruction
     page_allocator() = default;
-    ~page_allocator() = default;
 
     // helper to add all empty phys pages to free list on boot
     void freerange(void *pa_start, void *pa_end);
