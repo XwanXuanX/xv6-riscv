@@ -71,7 +71,10 @@ template <uint64 S, int N> static void slab_test_one() {
 }
 
 void slab_self_test() {
-    slab_test_one<32, 1024>();
+    {
+        slab_test_one<32, 1024>();
+        slab_allocator<32>::instance().reclaim();
+    }
     printf("slab selftest: OK\n");
 }
 

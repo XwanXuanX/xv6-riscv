@@ -6,6 +6,41 @@
 
 namespace xv6 {
 
+template <uint64 size> void slab_allocator<size>::reclaim() {
+    util::lock_guard lk(lock_);
+
+    if (pagelist_ == nullptr) {
+        return;
+    }
+
+    // Keep the first page in pagelist_
+    node* keep = pagelist_;
+    node* cur  = keep->next;
+    keep->next = nullptr;
+    pagelist_ = keep;
+    // Free all extra pages back to the page allocator
+    while (cur) {
+        node* nxt = cur->next;
+        page_allocator::instance().free(cur);
+        cur = nxt;
+    }
+
+    // Drop the freelist entirely
+    freelist_ = nullptr;
+    // Rebuild freelist from the kept page only
+    auto add = [&](node* n) {
+        n->next = freelist_;
+        freelist_ = n;
+    };
+    uint64 addr = reinterpret_cast<uint64>(keep) + sizeof(node);
+    constexpr uint64 A = alignof(node);
+    addr = (addr + (A - 1)) & ~(A - 1);
+    const uint64 page_end = reinterpret_cast<uint64>(keep) + PGSIZE;
+    for (; addr + size <= page_end; addr += size) {
+        add(reinterpret_cast<node *>(addr));
+    }
+}
+
 template <uint64 size>
 bool slab_allocator<size>::make_free_local(node *&local_free_head,
                                            void *&page) {

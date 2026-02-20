@@ -26,6 +26,10 @@ class slab_allocator : public util::singleton<slab_allocator<size>> {
     // allocate one object and return its pointer
     void *alloc();
 
+    // throw away the freelist, free all pages except one, and rebuild freelist
+    // IMPORTANT NOTE: when you call this method, make sure it contains no live objects!
+    void reclaim();
+
   private:
     struct node;
 
