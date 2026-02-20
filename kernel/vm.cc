@@ -38,6 +38,9 @@ pagetable_t kvmmake() {
     kvmmap(kpgtbl, KERNBASE, KERNBASE, cetext - KERNBASE, PTE_R | PTE_X);
 
     // map kernel data and the physical RAM we'll make use of.
+    // maps all usable RAM into the kernel's virtual address space with an
+    // identity mapping.
+    // in other words, kernel's VA == RAM's PA
     kvmmap(kpgtbl, cetext, cetext, PHYSTOP - cetext, PTE_R | PTE_W);
 
     // map the trampoline for trap entry/exit to
@@ -96,7 +99,7 @@ pte_t *walk(pagetable_t pagetable, const uint64 va, const int alloc) {
     for (int level = 2; level > 0; level--) {
         pte_t *pte = &pagetable[PX(level, va)];
         if (*pte & PTE_V) {
-            pagetable = (pagetable_t)PTE2_PA(*pte);
+            pagetable = reinterpret_cast<pagetable_t>(PTE2_PA(*pte));
         } else {
             if (!alloc || (pagetable = static_cast<pde_t *>(
                                page_alloc.alloc())) == nullptr) {
