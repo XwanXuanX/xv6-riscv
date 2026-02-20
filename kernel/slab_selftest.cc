@@ -75,6 +75,22 @@ void slab_self_test() {
         slab_test_one<32, 1024>();
         slab_allocator<32>::instance().reclaim();
     }
+    {
+        slab_test_one<64, 1024>();
+        slab_allocator<64>::instance().reclaim();
+    }
+    {
+        slab_test_one<128, 1024>();
+        slab_allocator<128>::instance().reclaim();
+    }
+    {
+        slab_test_one<256, 512>();
+        slab_allocator<256>::instance().reclaim();
+    }
+    {
+        slab_test_one<512, 512>();
+        slab_allocator<512>::instance().reclaim();
+    }
     printf("slab selftest: OK\n");
 }
 
