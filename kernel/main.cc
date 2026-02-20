@@ -30,6 +30,7 @@ void main() {
         fileinit();                        // file table
         virtio_disk_init();                // emulated hard disk
         mlq.init();                        // initialize MLFQ
+        slabs_init();                      // initialize all slab allocators
         test::slab_self_test();            // slab allocator self test
         userinit();                        // first user process
         __sync_synchronize();

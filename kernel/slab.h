@@ -12,6 +12,9 @@ namespace test {
 void slab_self_test();
 } // namespace test
 
+// initialize all instances of slab allocator
+void slabs_init();
+
 template <uint64 size>
 class slab_allocator : public util::singleton<slab_allocator<size>> {
     friend class singleton;
@@ -27,7 +30,8 @@ class slab_allocator : public util::singleton<slab_allocator<size>> {
     void *alloc();
 
     // throw away the freelist, free all pages except one, and rebuild freelist
-    // IMPORTANT NOTE: when you call this method, make sure it contains no live objects!
+    // IMPORTANT NOTE: when you call this method, make sure it contains no live
+    // objects!
     void reclaim();
 
   private:

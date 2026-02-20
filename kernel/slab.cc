@@ -14,13 +14,13 @@ template <uint64 size> void slab_allocator<size>::reclaim() {
     }
 
     // Keep the first page in pagelist_
-    node* keep = pagelist_;
-    node* cur  = keep->next;
+    node *keep = pagelist_;
+    node *cur = keep->next;
     keep->next = nullptr;
     pagelist_ = keep;
     // Free all extra pages back to the page allocator
     while (cur) {
-        node* nxt = cur->next;
+        node *nxt = cur->next;
         page_allocator::instance().free(cur);
         cur = nxt;
     }
@@ -28,7 +28,7 @@ template <uint64 size> void slab_allocator<size>::reclaim() {
     // Drop the freelist entirely
     freelist_ = nullptr;
     // Rebuild freelist from the kept page only
-    auto add = [&](node* n) {
+    auto add = [&](node *n) {
         n->next = freelist_;
         freelist_ = n;
     };
@@ -190,6 +190,14 @@ template <uint64 size> void *slab_allocator<size>::alloc() {
     node *n = freelist_;
     freelist_ = freelist_->next;
     return n;
+}
+
+void slabs_init() {
+    slab_allocator<32>::instance().init();
+    slab_allocator<64>::instance().init();
+    slab_allocator<128>::instance().init();
+    slab_allocator<256>::instance().init();
+    slab_allocator<512>::instance().init();
 }
 
 template class slab_allocator<32>;
