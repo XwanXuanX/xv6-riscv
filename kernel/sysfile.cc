@@ -18,8 +18,6 @@
 
 namespace xv6 {
 
-extern page_allocator page_alloc;
-
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int argfd(const int n, int *pfd, file **pf) {
@@ -456,7 +454,7 @@ uint64 sys_exec() {
             argv[i] = nullptr;
             break;
         }
-        argv[i] = static_cast<char *>(page_alloc.alloc());
+        argv[i] = static_cast<char *>(page_allocator::instance().alloc());
         if (argv[i] == nullptr) {
             goto bad;
         }
@@ -468,14 +466,14 @@ uint64 sys_exec() {
     ret = kexec(path.data(), argv.data());
 
     for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++) {
-        page_alloc.free((void *)argv[i]);
+        page_allocator::instance().free((void *)argv[i]);
     }
 
     return ret;
 
 bad:
     for (i = 0; i < NELEM(argv) && argv[i] != nullptr; i++) {
-        page_alloc.free((void *)argv[i]);
+        page_allocator::instance().free((void *)argv[i]);
     }
     return -1;
 }

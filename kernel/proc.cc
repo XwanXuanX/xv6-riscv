@@ -13,8 +13,6 @@
 
 namespace xv6 {
 
-extern page_allocator page_alloc;
-
 std::array<cpu, NCPU> cpus;
 
 std::array<proc, NPROC> proc_list;
@@ -46,9 +44,9 @@ spinlock wait_lock;
 // guard page.
 void proc_mapstacks(pagetable_t kpgtbl) {
     for (const proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        auto pa = static_cast<char *>(page_alloc.alloc());
+        auto pa = static_cast<char *>(page_allocator::instance().alloc());
         if (pa == nullptr) {
-            panic("page_alloc.alloc");
+            panic("page_allocator::instance().alloc");
         }
         const uint64 va = KSTACK(static_cast<int>(p - proc_list.data()));
         kvmmap(kpgtbl, va, reinterpret_cast<uint64>(pa), PGSIZE, PTE_R | PTE_W);
@@ -127,7 +125,8 @@ found:
     p->state = USED;
 
     // Allocate a trapframe page.
-    if ((p->trapf = static_cast<trapframe *>(page_alloc.alloc())) == nullptr) {
+    if ((p->trapf = static_cast<trapframe *>(
+             page_allocator::instance().alloc())) == nullptr) {
         freeproc(p);
         p->lock.unlock();
         return nullptr;
@@ -172,7 +171,7 @@ found:
 // p->lock must be held.
 static void freeproc(proc *p) {
     if (p->trapf) {
-        page_alloc.free(p->trapf);
+        page_allocator::instance().free(p->trapf);
     }
     p->trapf = nullptr;
     if (p->pagetable) {

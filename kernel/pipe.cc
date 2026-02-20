@@ -8,8 +8,6 @@
 
 namespace xv6 {
 
-extern page_allocator page_alloc;
-
 #define PIPESIZE 512
 
 struct pipe {
@@ -27,7 +25,8 @@ int pipealloc(file **f0, file **f1) {
     if ((*f0 = filealloc()) == nullptr || (*f1 = filealloc()) == nullptr) {
         goto bad;
     }
-    if ((pi = static_cast<pipe *>(page_alloc.alloc())) == nullptr) {
+    if ((pi = static_cast<pipe *>(page_allocator::instance().alloc())) ==
+        nullptr) {
         goto bad;
     }
     pi->readopen = 1;
@@ -47,7 +46,7 @@ int pipealloc(file **f0, file **f1) {
 
 bad:
     if (pi) {
-        page_alloc.free(pi);
+        page_allocator::instance().free(pi);
     }
     if (*f0) {
         fileclose(*f0);
@@ -69,7 +68,7 @@ void pipeclose(pipe *pi, const int writable) {
     }
     if (pi->readopen == 0 && pi->writeopen == 0) {
         pi->lock.unlock();
-        page_alloc.free(pi);
+        page_allocator::instance().free(pi);
     } else {
         pi->lock.unlock();
     }

@@ -19,8 +19,6 @@
 
 namespace xv6 {
 
-extern page_allocator page_alloc;
-
 // the address of virtio mmio register r.
 #define R(r) ((volatile uint32 *)(VIRTIO0 + (r)))
 
@@ -125,11 +123,11 @@ void virtio_disk_init() {
     }
 
     // allocate and zero queue memory.
-    disk.desc = static_cast<virtq_desc *>(page_alloc.alloc());
-    disk.avail = static_cast<virtq_avail *>(page_alloc.alloc());
-    disk.used = static_cast<virtq_used *>(page_alloc.alloc());
+    disk.desc = static_cast<virtq_desc *>(page_allocator::instance().alloc());
+    disk.avail = static_cast<virtq_avail *>(page_allocator::instance().alloc());
+    disk.used = static_cast<virtq_used *>(page_allocator::instance().alloc());
     if (!disk.desc || !disk.avail || !disk.used) {
-        panic("virtio disk page_alloc");
+        panic("virtio disk page_allocator::instance()");
     }
     memset(disk.desc, 0, PGSIZE);
     memset(disk.avail, 0, PGSIZE);
