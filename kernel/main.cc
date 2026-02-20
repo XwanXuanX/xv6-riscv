@@ -1,6 +1,7 @@
 #include "defs.h"
 #include "mlfq.h"
 #include "kalloc.h"
+#include "slab.h"
 
 namespace xv6 {
 
@@ -29,6 +30,7 @@ void main() {
         fileinit();                        // file table
         virtio_disk_init();                // emulated hard disk
         mlq.init();                        // initialize MLFQ
+        test::slab_self_test();            // slab allocator self test
         userinit();                        // first user process
         __sync_synchronize();
         started = 1;

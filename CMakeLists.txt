@@ -75,6 +75,7 @@ set(KERNEL_SOURCES
     kernel/uart.cc
     kernel/kalloc.cc
     kernel/slab.cc
+    kernel/slab_selftest.cc
     kernel/spinlock.cc
     kernel/string.cc
     kernel/main.cc

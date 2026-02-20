@@ -7,6 +7,11 @@
 
 namespace xv6 {
 
+namespace test {
+// Let kernel see self test at boot time
+void slab_self_test();
+} // namespace test
+
 template <uint64 size>
 class slab_allocator : public util::singleton<slab_allocator<size>> {
     friend class singleton;
@@ -43,8 +48,10 @@ class slab_allocator : public util::singleton<slab_allocator<size>> {
     static_assert(sizeof(node) <= PGSIZE, "PGSIZE cannot contain a node");
     // embed a node inside a freed object, make sure it's large enough
     static_assert(sizeof(node) <= size, "free obj cannot contain a node");
-    static_assert((size & alignof(node) - 1) == 0,
+    static_assert((size & (alignof(node) - 1)) == 0,
                   "slab size must be node-aligned");
+    static_assert(size <= PGSIZE - sizeof(node),
+                  "slab size too large to fit any object in a page");
 
     // mutex to protect both lists
     spinlock lock_{};
