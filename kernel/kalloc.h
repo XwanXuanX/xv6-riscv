@@ -33,14 +33,14 @@ class page_allocator : public util::singleton<page_allocator> {
     // helper to add all empty phys pages to free list on boot
     void freerange(void *pa_start, void *pa_end);
 
-    struct run {
-        run *next;
+    struct node {
+        node *next;
     };
 
     // mutex to protect the list of free phys pages
     spinlock lock_{};
     // the list of free phys pages
-    run *freelist_ = nullptr;
+    node *freelist_ = nullptr;
 };
 
 } // namespace xv6

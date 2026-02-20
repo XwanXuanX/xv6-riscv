@@ -48,7 +48,7 @@ void page_allocator::free(void *pa) {
     {
         // note that you use the first few bytes in the page as list node
         // to embed a free list within the free space
-        const auto r = static_cast<run *>(pa);
+        const auto r = static_cast<node *>(pa);
         util::lock_guard lk(lock_);
         r->next = freelist_;
         freelist_ = r;
@@ -56,10 +56,10 @@ void page_allocator::free(void *pa) {
 }
 
 void *page_allocator::alloc() {
-    run *const r = [this] {
+    node *const r = [this] {
         util::lock_guard lk(lock_);
         // pop from list head
-        run *const ret = freelist_;
+        node *const ret = freelist_;
         if (ret) {
             freelist_ = ret->next;
         }
