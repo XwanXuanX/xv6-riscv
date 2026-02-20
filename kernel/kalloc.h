@@ -6,6 +6,7 @@
 #include "spinlock.h"
 
 namespace xv6 {
+
 class page_allocator {
   public:
     // page allocator should be a singleton class
