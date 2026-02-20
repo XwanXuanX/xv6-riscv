@@ -139,7 +139,7 @@ void prepare_return() {
     // the process next traps into the kernel.
     p->trapf->kernel_satp = r_satp();         // kernel page table
     p->trapf->kernel_sp = p->kstack + PGSIZE; // process's kernel stack
-    p->trapf->kernel_trap = (uint64)usertrap;
+    p->trapf->kernel_trap = reinterpret_cast<uint64>(usertrap);
     p->trapf->kernel_hartid = r_tp(); // hartid for cpuid()
 
     // set up the registers that trampoline.S's sret will use
