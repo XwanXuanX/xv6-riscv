@@ -74,6 +74,7 @@ set(KERNEL_SOURCES
     kernel/printf.cc
     kernel/uart.cc
     kernel/kalloc.cc
+    kernel/slab.cc
     kernel/spinlock.cc
     kernel/string.cc
     kernel/main.cc
