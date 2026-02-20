@@ -4,12 +4,14 @@
 #pragma once
 
 #include "spinlock.h"
+#include "utility/singletony.h"
 
 namespace xv6 {
-class page_allocator {
-  public:
-    page_allocator() = default;
 
+class page_allocator : public util::singleton<page_allocator> {
+    friend class singleton;
+
+  public:
     // initialize page allocator on boot
     void init();
 
@@ -26,17 +28,19 @@ class page_allocator {
     void *alloc();
 
   private:
+    page_allocator() = default;
+
     // helper to add all empty phys pages to free list on boot
     void freerange(void *pa_start, void *pa_end);
 
-    struct run {
-        run *next;
+    struct node {
+        node *next;
     };
 
     // mutex to protect the list of free phys pages
-    spinlock lock_;
+    spinlock lock_{};
     // the list of free phys pages
-    run *freelist_ = nullptr;
+    node *freelist_ = nullptr;
 };
 
 } // namespace xv6

@@ -16,11 +16,10 @@ pagetable_t kernel_pagetable;
 
 // extern char trampoline[]; // trampoline.S
 
-extern page_allocator page_alloc;
-
 // Make a direct-map page table for the kernel.
 pagetable_t kvmmake() {
-    const auto kpgtbl = static_cast<pagetable_t>(page_alloc.alloc());
+    const auto kpgtbl =
+        static_cast<pagetable_t>(page_allocator::instance().alloc());
     memset(kpgtbl, 0, PGSIZE);
 
     // uart registers
@@ -38,6 +37,9 @@ pagetable_t kvmmake() {
     kvmmap(kpgtbl, KERNBASE, KERNBASE, cetext - KERNBASE, PTE_R | PTE_X);
 
     // map kernel data and the physical RAM we'll make use of.
+    // maps all usable RAM into the kernel's virtual address space with an
+    // identity mapping.
+    // in other words, kernel's VA == RAM's PA
     kvmmap(kpgtbl, cetext, cetext, PHYSTOP - cetext, PTE_R | PTE_W);
 
     // map the trampoline for trap entry/exit to
@@ -96,10 +98,11 @@ pte_t *walk(pagetable_t pagetable, const uint64 va, const int alloc) {
     for (int level = 2; level > 0; level--) {
         pte_t *pte = &pagetable[PX(level, va)];
         if (*pte & PTE_V) {
-            pagetable = (pagetable_t)PTE2_PA(*pte);
+            pagetable = reinterpret_cast<pagetable_t>(PTE2_PA(*pte));
         } else {
-            if (!alloc || (pagetable = static_cast<pde_t *>(
-                               page_alloc.alloc())) == nullptr) {
+            if (!alloc ||
+                (pagetable = static_cast<pde_t *>(
+                     page_allocator::instance().alloc())) == nullptr) {
                 return nullptr;
             }
             memset(pagetable, 0, PGSIZE);
@@ -174,7 +177,8 @@ int mappages(pagetable_t pagetable, const uint64 va, const uint64 size,
 // create an empty user page table.
 // returns 0 if out of memory.
 pagetable_t uvmcreate() {
-    const auto pagetable = static_cast<pagetable_t>(page_alloc.alloc());
+    const auto pagetable =
+        static_cast<pagetable_t>(page_allocator::instance().alloc());
     if (pagetable == nullptr) {
         return nullptr;
     }
@@ -203,7 +207,7 @@ void uvmunmap(pagetable_t pagetable, const uint64 va, const uint64 npages,
         }
         if (do_free) {
             const uint64 pa = PTE2_PA(*pte);
-            page_alloc.free(reinterpret_cast<void *>(pa));
+            page_allocator::instance().free(reinterpret_cast<void *>(pa));
         }
         *pte = 0;
     }
@@ -219,7 +223,7 @@ uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
 
     oldsz = PGROUNDUP(oldsz);
     for (uint64 a = oldsz; a < newsz; a += PGSIZE) {
-        auto mem = static_cast<char *>(page_alloc.alloc());
+        auto mem = static_cast<char *>(page_allocator::instance().alloc());
         if (mem == nullptr) {
             uvmdealloc(pagetable, a, oldsz);
             return 0;
@@ -227,7 +231,7 @@ uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
         memset(mem, 0, PGSIZE);
         if (mappages(pagetable, a, PGSIZE, (uint64)mem,
                      PTE_R | PTE_U | xperm) != 0) {
-            page_alloc.free(mem);
+            page_allocator::instance().free(mem);
             uvmdealloc(pagetable, a, oldsz);
             return 0;
         }
@@ -268,7 +272,7 @@ void freewalk(pagetable_t pagetable) {
             panic("freewalk: leaf");
         }
     }
-    page_alloc.free(pagetable);
+    page_allocator::instance().free(pagetable);
 }
 
 // Free user memory pages,
@@ -301,13 +305,14 @@ int uvmcopy(pagetable_t old, pagetable_t nw, const uint64 sz) {
         }
         pa = PTE2_PA(*pte);
         flags = PTE_FLAGS(*pte);
-        if ((mem = static_cast<char *>(page_alloc.alloc())) == nullptr) {
+        if ((mem = static_cast<char *>(page_allocator::instance().alloc())) ==
+            nullptr) {
             goto err;
         }
         memmove(mem, reinterpret_cast<char *>(pa), PGSIZE);
         if (mappages(nw, i, PGSIZE, reinterpret_cast<uint64>(mem),
                      static_cast<int>(flags)) != 0) {
-            page_alloc.free(mem);
+            page_allocator::instance().free(mem);
             goto err;
         }
     }
@@ -443,13 +448,14 @@ uint64 vmfault(pagetable_t pagetable, uint64 va) {
     if (ismapped(pagetable, va)) {
         return 0;
     }
-    const auto mem = reinterpret_cast<uint64>(page_alloc.alloc());
+    const auto mem =
+        reinterpret_cast<uint64>(page_allocator::instance().alloc());
     if (mem == 0) {
         return 0;
     }
     memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
     if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
-        page_alloc.free(reinterpret_cast<void *>(mem));
+        page_allocator::instance().free(reinterpret_cast<void *>(mem));
         return 0;
     }
     return mem;

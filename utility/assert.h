@@ -6,7 +6,7 @@
 #define assert_msg(expr, msg) ((void)0)
 #else
 
-static __attribute__((noreturn)) void
+static __attribute__((noreturn)) __attribute__((unused)) void
 assert_fail(const char *expr, const char *file, int line, const char *func,
             const char *msg) {
     (void)func;

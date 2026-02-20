@@ -1,15 +1,13 @@
 #include "defs.h"
 #include "mlfq.h"
 #include "kalloc.h"
+#include "slab.h"
 
 namespace xv6 {
 
 volatile static int started = 0;
 
 extern mlfq mlq;
-
-// physical memory page allocator
-page_allocator page_alloc;
 
 // start() jumps here in supervisor mode on all CPUs.
 void main() {
@@ -19,20 +17,22 @@ void main() {
         printf("\n");
         printf("xv6 kernel is booting\n");
         printf("\n");
-        page_alloc.init();  // physical page allocator
-        kvminit();          // create kernel page table
-        kvminithart();      // turn on paging
-        procinit();         // process table
-        trapinit();         // trap vectors
-        trapinithart();     // install kernel trap vector
-        plicinit();         // set up interrupt controller
-        plicinithart();     // ask PLIC for device interrupts
-        binit();            // buffer cache
-        iinit();            // inode table
-        fileinit();         // file table
-        virtio_disk_init(); // emulated hard disk
-        mlq.init();         // initialize MLFQ
-        userinit();         // first user process
+        page_allocator::instance().init(); // physical page allocator
+        kvminit();                         // create kernel page table
+        kvminithart();                     // turn on paging
+        procinit();                        // process table
+        trapinit();                        // trap vectors
+        trapinithart();                    // install kernel trap vector
+        plicinit();                        // set up interrupt controller
+        plicinithart();                    // ask PLIC for device interrupts
+        binit();                           // buffer cache
+        iinit();                           // inode table
+        fileinit();                        // file table
+        virtio_disk_init();                // emulated hard disk
+        mlq.init();                        // initialize MLFQ
+        slabs_init();                      // initialize all slab allocators
+        test::slab_self_test();            // slab allocator self test
+        userinit();                        // first user process
         __sync_synchronize();
         started = 1;
     } else {
