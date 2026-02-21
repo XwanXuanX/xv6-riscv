@@ -4,16 +4,16 @@
 #include "spinlock.h"
 #include <array>
 #include "utility/assert.h"
+#include "utility/singletony.h"
 
 namespace xv6 {
 
-// promise that we'll have this somewhere
 struct proc;
 
-class mlfq {
-  public:
-    mlfq() = default;
+class multi_lvl_feedback_q : public util::singleton<multi_lvl_feedback_q> {
+    friend class singleton;
 
+  public:
     // Initialize all level queues to be empty at first
     void init();
 
@@ -67,17 +67,19 @@ class mlfq {
 
     // Test if a queue is empty
     [[nodiscard]] bool empty(const int lvl) const {
-        const rqueue *const rq = &q_[lvl];
+        const queue *const rq = &q_[lvl];
         return !(rq->head && rq->tail);
     }
 
   private:
-    struct rqueue {
+    multi_lvl_feedback_q() = default;
+
+    struct queue {
         proc *head;
         proc *tail;
     };
 
-    std::array<rqueue, NLEVELS> q_;
+    std::array<queue, NLEVELS> q_;
     spinlock lock_;
 
     // The "version number" of the MLFQ
