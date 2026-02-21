@@ -81,6 +81,7 @@ set(KERNEL_SOURCES
     kernel/main.cc
     kernel/vm.cc
     kernel/proc.cc
+    kernel/proc_list.cc
     kernel/swtch.S
     kernel/trampoline.S
     kernel/trap.cc
