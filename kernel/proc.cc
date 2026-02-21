@@ -331,7 +331,7 @@ int kfork() {
         // Enqueue!
         {
             auto &feedback_q = multi_lvl_feedback_q::instance();
-            util::lock_guard mlq_lk(feedback_q.get_lock());
+            util::lock_guard feedback_q_lk(feedback_q.get_lock());
             // New job enters, put at the top
             feedback_q.enq_locked(0, np);
             assert(!np->in_ready_q, "double enq");
@@ -842,7 +842,7 @@ void wakeup(const void *chan) {
                 // Enqueue!
                 {
                     auto &feedback_q = multi_lvl_feedback_q::instance();
-                    util::lock_guard mlq_lk(feedback_q.get_lock());
+                    util::lock_guard feedback_q_lk(feedback_q.get_lock());
                     // Typically, a wake-up process needs immediate treatment
                     // for better response time, thus put it at the top
                     feedback_q.enq_locked(0, p);
@@ -872,7 +872,7 @@ int kkill(const int pid) {
                 // Enqueue!
                 {
                     auto &feedback_q = multi_lvl_feedback_q::instance();
-                    util::lock_guard mlq_lk(feedback_q.get_lock());
+                    util::lock_guard feedback_q_lk(feedback_q.get_lock());
                     // Wake the process ASAP so it can die quickly
                     // Thus put it at the top
                     feedback_q.enq_locked(0, p);
