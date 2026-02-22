@@ -82,6 +82,7 @@ set(KERNEL_SOURCES
     kernel/vm.cc
     kernel/proc.cc
     kernel/proc_list.cc
+    kernel/kstack_va_alloc.cc
     kernel/swtch.S
     kernel/trampoline.S
     kernel/trap.cc
