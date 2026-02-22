@@ -130,7 +130,10 @@ template <typename T> class ts_forward_list : util::do_not_copy {
         util::lock_guard<spinlock> g_;
     };
 
-    ts_forward_list() { before_.next = nullptr; }
+    ts_forward_list() {
+        lk_.init_lock("list_lock");
+        before_.next = nullptr;
+    }
     ~ts_forward_list() { clear(); }
 
     bool empty() const {
