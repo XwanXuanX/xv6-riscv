@@ -259,26 +259,27 @@ static void test_basics() {
     lst.push_front(10);
 
     const auto bb = lst.before_begin();
-    lst.insert_after(bb, 11); // [10,11,20,30]
+    lst.insert_after(bb, 11); // [11,10,20,30]
 
+    {
+        static model_list m;
+        m.clear();
+        m.push_front(30);
+        m.push_front(20);
+        m.push_front(10); // [10, 20, 30]
+        // this insert 11 at index 0, making the list [11,10,20,30]
+        m.insert_after(-1, 11);
+        require_equals_model(lst, m);
+    }
+
+    // erase_after(before_begin) removes head (11)
+    lst.erase_after(lst.before_begin()); // removes 11 => [10,20,30]
     {
         static model_list m;
         m.clear();
         m.push_front(30);
         m.push_front(20);
         m.push_front(10);
-        m.insert_after(-1, 11);
-        require_equals_model(lst, m);
-    }
-
-    // erase_after(before_begin) removes head (10)
-    lst.erase_after(lst.before_begin()); // removes 10 => [11,20,30]
-    {
-        static model_list m;
-        m.clear();
-        m.push_front(30);
-        m.push_front(20);
-        m.push_front(11);
         require_equals_model(lst, m);
     }
 
@@ -328,8 +329,8 @@ static void test_basics() {
     {
         static model_list m;
         m.clear();
-        m.push_front(3);
         m.push_front(1);
+        m.push_front(3);
         require_equals_model(lst, m);
     }
 
