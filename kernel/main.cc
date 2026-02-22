@@ -1,11 +1,17 @@
-#include "defs.h"
-#include "mlfq.h"
-#include "kalloc.h"
-#include "slab.h"
+#include "kernel/defs.h"
+#include "kernel/mlfq.h"
+#include "kernel/kalloc.h"
+#include "kernel/slab.h"
+#include "kernel/stl/ts_forward_list.h"
 
 namespace xv6 {
 
 volatile static int started = 0;
+
+static void self_test() {
+    test::slab_self_test();            // slab allocator self test
+    test::ts_forward_list_self_test(); // thread-safe list self test
+}
 
 // start() jumps here in supervisor mode on all CPUs.
 void main() {
@@ -30,10 +36,10 @@ void main() {
         fileinit();         // file table
         virtio_disk_init(); // emulated hard disk
         auto &feedback_q = multi_lvl_feedback_q::instance();
-        feedback_q.init();      // initialize MLFQ
-        slabs_init();           // initialize all slab allocators
-        test::slab_self_test(); // slab allocator self test
-        userinit();             // first user process
+        feedback_q.init(); // initialize MLFQ
+        slabs_init();      // initialize all slab allocators
+        self_test();       // self test subsystems
+        userinit();        // first user process
         __sync_synchronize();
         started = 1;
     } else {
