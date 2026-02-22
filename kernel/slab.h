@@ -95,11 +95,11 @@ template <uint64 N> struct slab_class_size {
 template <class T>
 using slab_for_t = slab_allocator<slab_class_size<sizeof(T)>::value>;
 
-template <class T> static inline T *slab_alloc_t() {
+template <class T> static T *slab_alloc_t() {
     return static_cast<T *>(slab_for_t<T>::instance().alloc());
 }
 
-template <class T> static inline void slab_free_t(T *p) {
+template <class T> static void slab_free_t(T *p) {
     slab_for_t<T>::instance().free(static_cast<void *>(p));
 }
 
