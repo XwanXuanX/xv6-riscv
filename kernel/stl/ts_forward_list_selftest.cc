@@ -262,7 +262,8 @@ static void test_basics() {
     lst.insert_after(bb, 11); // [10,11,20,30]
 
     {
-        model_list m;
+        static model_list m;
+        m.clear();
         m.push_front(30);
         m.push_front(20);
         m.push_front(10);
@@ -273,7 +274,8 @@ static void test_basics() {
     // erase_after(before_begin) removes head (10)
     lst.erase_after(lst.before_begin()); // removes 10 => [11,20,30]
     {
-        model_list m;
+        static model_list m;
+        m.clear();
         m.push_front(30);
         m.push_front(20);
         m.push_front(11);
@@ -296,7 +298,8 @@ static void test_basics() {
 
     assert(lst.remove(2) == 3, "basic: remove(2) should remove 3 elems");
     {
-        model_list m;
+        static model_list m;
+        m.clear();
         m.push_front(2);
         m.push_front(4);
         m.push_front(2);
@@ -311,7 +314,8 @@ static void test_basics() {
     assert(lst.remove_if([](const int x) { return x % 2 == 0; }) == 1,
            "basic: remove_if(even) should remove 1");
     {
-        model_list m;
+        static model_list m;
+        m.clear();
         m.push_front(4);
         m.push_front(3);
         m.push_front(1);
@@ -322,7 +326,8 @@ static void test_basics() {
     // reverse [1,3] -> [3,1]
     lst.reverse();
     {
-        model_list m;
+        static model_list m;
+        m.clear();
         m.push_front(3);
         m.push_front(1);
         require_equals_model(lst, m);
@@ -340,7 +345,8 @@ static void test_random_single_thread() {
     using stl::ts_forward_list;
 
     ts_forward_list<int> lst;
-    model_list m;
+    static model_list m;
+    m.clear();
 
     uint32 seed = 0x12345678u;
 
