@@ -188,6 +188,18 @@ template <typename T> class ts_forward_list : util::do_not_copy {
         return true;
     }
 
+    bool pop_front_value(T &out) {
+        util::lock_guard g(lk_);
+        node *h = before_.next;
+        if (!h) {
+            return false;
+        }
+        out = h->value;
+        before_.next = h->next;
+        delete_node(h);
+        return true;
+    }
+
     void clear() {
         util::lock_guard g(lk_);
         node *cur = before_.next;
