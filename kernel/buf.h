@@ -1,7 +1,6 @@
 #pragma once
-
-#include "sleeplock.h"
-#include "fs.h"
+#include "kernel/sleeplock.h"
+#include "kernel/fs.h"
 #include <array>
 
 namespace xv6 {

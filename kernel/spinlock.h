@@ -1,6 +1,5 @@
 #pragma once
-
-#include "types.h"
+#include "kernel/types.h"
 
 namespace xv6 {
 

@@ -1,8 +1,7 @@
 #pragma once
-
-#include "param.h"
-#include "riscv.h"
-#include "spinlock.h"
+#include "kernel/param.h"
+#include "kernel/riscv.h"
+#include "kernel/spinlock.h"
 #include <array>
 
 namespace xv6 {

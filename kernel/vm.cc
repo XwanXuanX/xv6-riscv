@@ -1,9 +1,9 @@
-#include "types.h"
-#include "memlayout.h"
-#include "riscv.h"
-#include "defs.h"
-#include "proc.h"
-#include "kalloc.h"
+#include "kernel/types.h"
+#include "kernel/memlayout.h"
+#include "kernel/riscv.h"
+#include "kernel/defs.h"
+#include "kernel/proc.h"
+#include "kernel/kalloc.h"
 
 namespace xv6 {
 

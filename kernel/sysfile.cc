@@ -3,17 +3,16 @@
 // Mostly argument checking, since we don't trust
 // user code, and calls into file.c and fs.c.
 //
-
-#include "types.h"
-#include "riscv.h"
-#include "defs.h"
-#include "param.h"
-#include "stats.h"
-#include "proc.h"
-#include "fs.h"
-#include "file.h"
-#include "fcntl.h"
-#include "kalloc.h"
+#include "kernel/types.h"
+#include "kernel/riscv.h"
+#include "kernel/defs.h"
+#include "kernel/param.h"
+#include "kernel/stats.h"
+#include "kernel/proc.h"
+#include "kernel/fs.h"
+#include "kernel/file.h"
+#include "kernel/fcntl.h"
+#include "kernel/kalloc.h"
 #include <array>
 
 namespace xv6 {

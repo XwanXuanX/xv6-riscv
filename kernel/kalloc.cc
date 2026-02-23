@@ -1,13 +1,12 @@
 // Physical memory allocator, for user processes,
 // kernel stacks, page-table pages,
 // and pipe buffers. Allocates whole 4096-byte pages.
-
-#include "types.h"
-#include "memlayout.h"
-#include "spinlock.h"
-#include "riscv.h"
-#include "defs.h"
-#include "kalloc.h"
+#include "kernel/types.h"
+#include "kernel/memlayout.h"
+#include "kernel/spinlock.h"
+#include "kernel/riscv.h"
+#include "kernel/defs.h"
+#include "kernel/kalloc.h"
 #include "kernel/util/lock_guard.h"
 
 namespace xv6 {

@@ -1,7 +1,7 @@
-#include "types.h"
-#include "param.h"
-#include "riscv.h"
-#include "defs.h"
+#include "kernel/types.h"
+#include "kernel/param.h"
+#include "kernel/riscv.h"
+#include "kernel/defs.h"
 #include <array>
 
 using namespace xv6;
