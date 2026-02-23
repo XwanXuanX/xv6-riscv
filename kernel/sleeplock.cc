@@ -3,7 +3,7 @@
 #include "defs.h"
 #include "proc.h"
 #include "sleeplock.h"
-#include "utility/lock_guard.h"
+#include "kernel/util/lock_guard.h"
 
 namespace xv6 {
 

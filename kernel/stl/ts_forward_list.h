@@ -4,8 +4,8 @@
 #include "kernel/types.h"
 #include "kernel/spinlock.h"
 #include "kernel/slab.h"
-#include "utility/lock_guard.h"
-#include "utility/do_not_copy.h"
+#include "kernel/util/lock_guard.h"
+#include "kernel/util/do_not_copy.h"
 
 namespace xv6::test {
 void ts_forward_list_self_test();

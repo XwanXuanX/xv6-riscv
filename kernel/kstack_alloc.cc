@@ -1,7 +1,7 @@
 #include "kernel/kstack_alloc.h"
 #include "kernel/memlayout.h"
 #include "kernel/defs.h"
-#include "utility/assert.h"
+#include "kernel/util/assert.h"
 
 namespace xv6 {
 

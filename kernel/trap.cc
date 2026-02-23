@@ -6,7 +6,7 @@
 #include "defs.h"
 #include "mlfq.h"
 #include <array>
-#include "utility/lock_guard.h"
+#include "kernel/util/lock_guard.h"
 
 namespace xv6 {
 
