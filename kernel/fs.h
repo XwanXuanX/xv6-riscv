@@ -2,8 +2,7 @@
 
 // On-disk file system format.
 // Both the kernel and user programs use this header file.
-
-#include "types.h"
+#include "kernel/types.h"
 #include <array>
 
 namespace xv6 {

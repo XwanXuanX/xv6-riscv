@@ -1,7 +1,7 @@
-#include "types.h"
-#include "proc.h"
-#include "syscall.h"
-#include "defs.h"
+#include "kernel/types.h"
+#include "kernel/proc.h"
+#include "kernel/syscall.h"
+#include "kernel/defs.h"
 #include <array>
 
 namespace xv6 {

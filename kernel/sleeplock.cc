@@ -1,8 +1,7 @@
 // Sleeping locks
-
-#include "defs.h"
-#include "proc.h"
-#include "sleeplock.h"
+#include "kernel/defs.h"
+#include "kernel/proc.h"
+#include "kernel/sleeplock.h"
 #include "kernel/util/lock_guard.h"
 
 namespace xv6 {

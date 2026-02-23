@@ -3,10 +3,9 @@
 //
 
 #include <cstdarg>
-
-#include "types.h"
-#include "spinlock.h"
-#include "defs.h"
+#include "kernel/types.h"
+#include "kernel/spinlock.h"
+#include "kernel/defs.h"
 #include <array>
 #include <string_view>
 

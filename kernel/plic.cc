@@ -1,6 +1,6 @@
-#include "types.h"
-#include "memlayout.h"
-#include "defs.h"
+#include "kernel/types.h"
+#include "kernel/memlayout.h"
+#include "kernel/defs.h"
 
 namespace xv6 {
 

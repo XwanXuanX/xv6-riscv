@@ -1,6 +1,6 @@
-#include "defs.h"
-#include "slab.h"
-#include "kalloc.h"
+#include "kernel/defs.h"
+#include "kernel/slab.h"
+#include "kernel/kalloc.h"
 #include "kernel/util/assert.h"
 #include "kernel/util/lock_guard.h"
 

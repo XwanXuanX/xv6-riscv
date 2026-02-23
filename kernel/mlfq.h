@@ -1,7 +1,7 @@
 #pragma once
 
-#include "param.h"
-#include "spinlock.h"
+#include "kernel/param.h"
+#include "kernel/spinlock.h"
 #include <array>
 #include "kernel/util/assert.h"
 #include "kernel/util/singletony.h"

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "types.h"
-#include "param.h"
-#include "fs.h"
-#include "sleeplock.h"
+#include "kernel/types.h"
+#include "kernel/param.h"
+#include "kernel/fs.h"
+#include "kernel/sleeplock.h"
 #include <array>
 
 namespace xv6 {

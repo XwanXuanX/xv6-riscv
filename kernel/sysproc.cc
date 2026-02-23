@@ -1,10 +1,10 @@
-#include "types.h"
-#include "riscv.h"
-#include "defs.h"
-#include "memlayout.h"
-#include "spinlock.h"
-#include "proc.h"
-#include "vm.h"
+#include "kernel/types.h"
+#include "kernel/riscv.h"
+#include "kernel/defs.h"
+#include "kernel/memlayout.h"
+#include "kernel/spinlock.h"
+#include "kernel/proc.h"
+#include "kernel/vm.h"
 
 namespace xv6 {
 

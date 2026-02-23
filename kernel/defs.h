@@ -1,7 +1,7 @@
 #pragma once
 
-#include "types.h"
-#include "riscv.h"
+#include "kernel/types.h"
+#include "kernel/riscv.h"
 #include <span>
 
 namespace xv6 {

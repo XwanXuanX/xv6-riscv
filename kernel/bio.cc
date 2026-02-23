@@ -12,12 +12,11 @@
 // * Do not use the buffer after calling brelse.
 // * Only one process at a time can use a buffer,
 //     so do not keep them longer than necessary.
-
-#include "types.h"
-#include "param.h"
-#include "spinlock.h"
-#include "defs.h"
-#include "buf.h"
+#include "kernel/types.h"
+#include "kernel/param.h"
+#include "kernel/spinlock.h"
+#include "kernel/defs.h"
+#include "kernel/buf.h"
 #include <array>
 
 namespace xv6 {

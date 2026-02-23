@@ -1,9 +1,8 @@
 // Mutual exclusion spin locks.
-
-#include "spinlock.h"
-#include "riscv.h"
-#include "proc.h"
-#include "defs.h"
+#include "kernel/spinlock.h"
+#include "kernel/riscv.h"
+#include "kernel/proc.h"
+#include "kernel/defs.h"
 
 namespace xv6 {
 

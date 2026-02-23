@@ -1,6 +1,6 @@
 #pragma once
 
-#include "spinlock.h"
+#include "kernel/spinlock.h"
 
 namespace xv6 {
 

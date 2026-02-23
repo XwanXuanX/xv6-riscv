@@ -1,15 +1,14 @@
 //
 // Support functions for system calls that involve file descriptors.
 //
-
-#include "types.h"
-#include "defs.h"
-#include "param.h"
-#include "fs.h"
-#include "spinlock.h"
-#include "file.h"
-#include "stats.h"
-#include "proc.h"
+#include "kernel/types.h"
+#include "kernel/defs.h"
+#include "kernel/param.h"
+#include "kernel/fs.h"
+#include "kernel/spinlock.h"
+#include "kernel/file.h"
+#include "kernel/stats.h"
+#include "kernel/proc.h"
 #include <array>
 #include "kernel/util/lock_guard.h"
 
