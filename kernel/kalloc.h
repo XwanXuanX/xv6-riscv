@@ -4,7 +4,7 @@
 #pragma once
 
 #include "spinlock.h"
-#include "utility/singletony.h"
+#include "kernel/utility/singletony.h"
 
 namespace xv6 {
 

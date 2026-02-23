@@ -25,7 +25,7 @@
 #include "kernel/spinlock.h"
 #include "kernel/slab.h"
 #include "kernel/stl/ts_forward_list.h"
-#include "utility/singletony.h"
+#include "kernel/utility/singletony.h"
 
 namespace xv6 {
 

@@ -11,7 +11,7 @@
 #include "stats.h"
 #include "proc.h"
 #include <array>
-#include "utility/lock_guard.h"
+#include "kernel/utility/lock_guard.h"
 
 namespace xv6 {
 

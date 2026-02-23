@@ -5,11 +5,11 @@
 #include "proc.h"
 #include "defs.h"
 #include "mlfq.h"
-#include "utility/assert.h"
+#include "kernel/utility/assert.h"
 #include "kalloc.h"
 
 #include <array>
-#include "utility/lock_guard.h"
+#include "kernel/utility/lock_guard.h"
 
 namespace xv6 {
 

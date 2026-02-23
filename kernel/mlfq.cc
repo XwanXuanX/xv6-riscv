@@ -2,8 +2,8 @@
 #include "defs.h"
 #include "proc.h"
 #include "mlfq.h"
-#include "utility/assert.h"
-#include "utility/lock_guard.h"
+#include "kernel/utility/assert.h"
+#include "kernel/utility/lock_guard.h"
 
 namespace xv6 {
 

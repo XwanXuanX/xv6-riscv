@@ -4,7 +4,7 @@
 #include "kernel/types.h"
 #include "kernel/memlayout.h"
 #include "kernel/kstack_alloc.h"
-#include "utility/assert.h"
+#include "kernel/utility/assert.h"
 
 #include <array>
 

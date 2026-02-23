@@ -8,7 +8,7 @@
 #include "riscv.h"
 #include "defs.h"
 #include "kalloc.h"
-#include "utility/lock_guard.h"
+#include "kernel/utility/lock_guard.h"
 
 namespace xv6 {
 

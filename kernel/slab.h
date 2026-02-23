@@ -3,7 +3,7 @@
 
 #include "riscv.h"
 #include "spinlock.h"
-#include "utility/singletony.h"
+#include "kernel/utility/singletony.h"
 #include <array>
 
 namespace xv6 {
