@@ -1,7 +1,7 @@
 // This is a kernel self test at boot time
 
-#include "defs.h"
-#include "slab.h"
+#include "kernel/defs.h"
+#include "kernel/slab.h"
 #include <array>
 
 namespace xv6::test {
