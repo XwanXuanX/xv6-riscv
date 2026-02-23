@@ -1,4 +1,5 @@
 #pragma once
+
 #include "kernel/util/do_not_copy.h"
 #include "kernel/util/do_not_move.h"
 #include <type_traits>
