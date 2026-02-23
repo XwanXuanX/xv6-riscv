@@ -75,15 +75,15 @@ set(KERNEL_SOURCES
     kernel/uart.cc
     kernel/kalloc.cc
     kernel/slab.cc
-    kernel/slab_selftest.cc
+    kernel/test/slab_selftest.cc
     kernel/spinlock.cc
     kernel/string.cc
     kernel/main.cc
     kernel/vm.cc
     kernel/proc.cc
     kernel/kstack_alloc.cc
-    kernel/kstack_alloc_selftest.cc
-    kernel/stl/ts_forward_list_selftest.cc
+    kernel/test/kstack_alloc_selftest.cc
+    kernel/test/ts_forward_list_selftest.cc
     kernel/swtch.S
     kernel/trampoline.S
     kernel/trap.cc
