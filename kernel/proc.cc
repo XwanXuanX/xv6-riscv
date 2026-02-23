@@ -2,11 +2,11 @@
 #include "kernel/memlayout.h"
 #include "kernel/riscv.h"
 #include "kernel/spinlock.h"
-#include "proc.h"
-#include "defs.h"
-#include "mlfq.h"
+#include "kernel/proc.h"
+#include "kernel/defs.h"
+#include "kernel/mlfq.h"
 #include "kernel/util/assert.h"
-#include "kalloc.h"
+#include "kernel/kalloc.h"
 
 #include <array>
 #include "kernel/util/lock_guard.h"

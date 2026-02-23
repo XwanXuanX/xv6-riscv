@@ -1,9 +1,9 @@
-#include "types.h"
-#include "defs.h"
-#include "spinlock.h"
-#include "proc.h"
-#include "file.h"
-#include "kalloc.h"
+#include "kernel/types.h"
+#include "kernel/defs.h"
+#include "kernel/spinlock.h"
+#include "kernel/proc.h"
+#include "kernel/file.h"
+#include "kernel/kalloc.h"
 #include <array>
 
 namespace xv6 {

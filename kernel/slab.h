@@ -1,8 +1,7 @@
 // Fixed-sized slab allocator for quick allocation
 #pragma once
-
-#include "riscv.h"
-#include "spinlock.h"
+#include "kernel/riscv.h"
+#include "kernel/spinlock.h"
 #include "kernel/util/singletony.h"
 #include <array>
 

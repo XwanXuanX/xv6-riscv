@@ -8,16 +8,15 @@
 // This file contains the low-level file system manipulation
 // routines.  The (higher-level) system call implementations
 // are in sysfile.c.
-
-#include "types.h"
-#include "defs.h"
-#include "param.h"
-#include "stats.h"
-#include "spinlock.h"
-#include "proc.h"
-#include "fs.h"
-#include "buf.h"
-#include "file.h"
+#include "kernel/types.h"
+#include "kernel/defs.h"
+#include "kernel/param.h"
+#include "kernel/stats.h"
+#include "kernel/spinlock.h"
+#include "kernel/proc.h"
+#include "kernel/fs.h"
+#include "kernel/buf.h"
+#include "kernel/file.h"
 #include <array>
 
 namespace xv6 {

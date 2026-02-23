@@ -1,9 +1,9 @@
-#include "types.h"
-#include "defs.h"
-#include "param.h"
-#include "spinlock.h"
-#include "fs.h"
-#include "buf.h"
+#include "kernel/types.h"
+#include "kernel/defs.h"
+#include "kernel/param.h"
+#include "kernel/spinlock.h"
+#include "kernel/fs.h"
+#include "kernel/buf.h"
 #include <array>
 
 namespace xv6 {

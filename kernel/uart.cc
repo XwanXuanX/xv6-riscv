@@ -1,10 +1,9 @@
 //
 // low-level driver for 16550a UART.
 //
-
-#include "memlayout.h"
-#include "spinlock.h"
-#include "defs.h"
+#include "kernel/memlayout.h"
+#include "kernel/spinlock.h"
+#include "kernel/defs.h"
 #include <span>
 
 namespace xv6 {

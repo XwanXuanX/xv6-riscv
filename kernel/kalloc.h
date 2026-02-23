@@ -2,8 +2,7 @@
 // kernel stacks, page-table pages,
 // and pipe buffers. Allocates whole 4096-byte pages.
 #pragma once
-
-#include "spinlock.h"
+#include "kernel/spinlock.h"
 #include "kernel/util/singletony.h"
 
 namespace xv6 {

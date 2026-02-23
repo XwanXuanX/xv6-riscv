@@ -8,12 +8,11 @@
 //   control-d -- end of file
 //   control-p -- print process list
 //
-
-#include "types.h"
-#include "spinlock.h"
-#include "fs.h"
-#include "file.h"
-#include "defs.h"
+#include "kernel/types.h"
+#include "kernel/spinlock.h"
+#include "kernel/fs.h"
+#include "kernel/file.h"
+#include "kernel/defs.h"
 #include <array>
 
 #define BACKSPACE 0x100  // erase the last output character
