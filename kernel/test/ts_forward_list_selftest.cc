@@ -4,8 +4,8 @@
 #include "kernel/types.h"
 #include "kernel/spinlock.h"
 #include "kernel/slab.h"
-#include "kernel/utility/lock_guard.h"
-#include "kernel/utility/assert.h"
+#include "kernel/util/lock_guard.h"
+#include "kernel/util/assert.h"
 #include "kernel/stl/ts_forward_list.h"
 
 #include <array>

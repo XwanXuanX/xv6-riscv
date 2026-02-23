@@ -1,8 +1,8 @@
 #include "defs.h"
 #include "slab.h"
 #include "kalloc.h"
-#include "kernel/utility/assert.h"
-#include "kernel/utility/lock_guard.h"
+#include "kernel/util/assert.h"
+#include "kernel/util/lock_guard.h"
 
 namespace xv6 {
 

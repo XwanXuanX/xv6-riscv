@@ -3,8 +3,8 @@
 #include "param.h"
 #include "spinlock.h"
 #include <array>
-#include "kernel/utility/assert.h"
-#include "kernel/utility/singletony.h"
+#include "kernel/util/assert.h"
+#include "kernel/util/singletony.h"
 
 namespace xv6 {
 
