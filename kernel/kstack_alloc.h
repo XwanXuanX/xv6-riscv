@@ -29,6 +29,10 @@
 
 namespace xv6 {
 
+namespace test {
+void kstack_self_test();
+}
+
 // Allocates ONLY kernel virtual addresses (KVAs) for per-process kernel stacks.
 // Does NOT allocate physical pages and does NOT modify page tables.
 class kstack_allocator : public util::singleton<kstack_allocator> {

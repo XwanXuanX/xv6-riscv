@@ -3,6 +3,7 @@
 #include "kernel/kalloc.h"
 #include "kernel/slab.h"
 #include "kernel/stl/ts_forward_list.h"
+#include "kernel/kstack_alloc.h"
 
 namespace xv6 {
 
@@ -11,6 +12,7 @@ volatile static int started = 0;
 static void self_test() {
     test::slab_self_test();            // slab allocator self test
     test::ts_forward_list_self_test(); // thread-safe list self test
+    test::kstack_self_test();          // kernel stack allocator self test
 }
 
 // start() jumps here in supervisor mode on all CPUs.
