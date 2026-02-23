@@ -4,6 +4,7 @@
 #include "riscv.h"
 #include "spinlock.h"
 #include "utility/singletony.h"
+#include <array>
 
 namespace xv6 {
 
@@ -74,5 +75,33 @@ class slab_allocator : public util::singleton<slab_allocator<size>> {
     static constexpr uint64 PERIOD = 0x3FF;
     uint64 ops_ = 0;
 };
+
+template <uint64 N> consteval uint64 slab_size_for() {
+    static_assert(N > 0);
+    constexpr std::array<uint64, 5> classes = {32, 64, 128, 256, 512};
+    for (uint64 s : classes) {
+        if (N <= s) {
+            return s;
+        }
+    }
+    return 0;
+}
+
+template <uint64 N> struct slab_class_size {
+    static constexpr uint64 value = slab_size_for<N>();
+    static_assert(N > 0, "slab_class_size: size must be > 0");
+    static_assert(value != 0, "slab_class_size: requested size > 512");
+};
+
+template <class T>
+using slab_for_t = slab_allocator<slab_class_size<sizeof(T)>::value>;
+
+template <class T> static T *slab_alloc_t() {
+    return static_cast<T *>(slab_for_t<T>::instance().alloc());
+}
+
+template <class T> static void slab_free_t(T *p) {
+    slab_for_t<T>::instance().free(static_cast<void *>(p));
+}
 
 } // namespace xv6

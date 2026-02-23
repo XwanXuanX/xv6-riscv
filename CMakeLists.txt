@@ -81,6 +81,9 @@ set(KERNEL_SOURCES
     kernel/main.cc
     kernel/vm.cc
     kernel/proc.cc
+    kernel/kstack_alloc.cc
+    kernel/kstack_alloc_selftest.cc
+    kernel/stl/ts_forward_list_selftest.cc
     kernel/swtch.S
     kernel/trampoline.S
     kernel/trap.cc

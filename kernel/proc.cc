@@ -26,7 +26,7 @@ extern void forkret();
 static void freeproc(proc *p);
 
 extern std::array<int, NLEVELS> quantum; // trap.c
-// extern char trampoline[];                // trampoline.S
+// extern char trampoline[];             // trampoline.S
 
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
