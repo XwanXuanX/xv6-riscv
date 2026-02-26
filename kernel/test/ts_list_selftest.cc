@@ -253,6 +253,7 @@ static void test_basics() {
     assert(!lst.empty(), "ts_list basic: should not be empty");
     assert(lst.front() == 1, "ts_list basic: front mismatch");
     assert(lst.back() == 3, "ts_list basic: back mismatch");
+    assert(lst.size() == 3, "ts_list basic: size mismatch");
 
     {
         auto view = lst.locked();
@@ -275,8 +276,10 @@ static void test_basics() {
 
     // pop_front / pop_back
     assert(lst.pop_front(), "ts_list basic: pop_front failed"); // [2,3]
+    assert(lst.size() == 2, "ts_list basic: size mismatch");
     assert(lst.front() == 2, "ts_list basic: front after pop_front");
     assert(lst.pop_back(), "ts_list basic: pop_back failed"); // [2]
+    assert(lst.size() == 1, "ts_list basic: size mismatch");
     assert(lst.back() == 2, "ts_list basic: back after pop_back");
     assert(lst.pop_front(), "ts_list basic: pop_front single failed");
     assert(lst.empty(), "ts_list basic: should be empty after pops");
@@ -289,6 +292,7 @@ static void test_basics() {
     lst.push_back(30); // [10,20,30]
 
     int out = 0;
+    assert(lst.size() == 3, "ts_list basic: size mismatch");
     assert(lst.pop_front_value(out), "ts_list basic: pop_front_value failed");
     assert(out == 10, "ts_list basic: pop_front_value wrong value");
     assert(lst.pop_back_value(out), "ts_list basic: pop_back_value failed");
