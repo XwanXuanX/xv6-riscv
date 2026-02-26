@@ -36,7 +36,7 @@ class process_list : public util::singleton<process_list> {
         }
     }
 
-    [[nodiscard]] int count() const;
+    [[nodiscard]] uint64 count() const;
 
   private:
     [[nodiscard]] int alloc_pid();
@@ -46,10 +46,6 @@ class process_list : public util::singleton<process_list> {
     // protects next_pid_
     mutable spinlock pid_lock_{};
     int next_pid_ = 1;
-
-    // number of active processes
-    mutable spinlock count_lock_{};
-    int nproc_ = 0;
 
     // global process list
     stl::ts_list<proc *> procs_;
