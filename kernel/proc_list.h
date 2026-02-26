@@ -39,7 +39,11 @@ class process_list : public util::singleton<process_list> {
     [[nodiscard]] uint64 count() const;
 
   private:
+    // allocate a unique pid for newly created process
     [[nodiscard]] int alloc_pid();
+
+    // initialize required fields for newly created process
+    static void pinit(proc *p);
 
     process_list() = default;
 
