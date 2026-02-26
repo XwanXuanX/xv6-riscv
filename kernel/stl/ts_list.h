@@ -137,13 +137,19 @@ template <typename T> class ts_list : util::do_not_copy {
         lk_.init_lock("list_lock");
         before_.prev = sentinel_as_node();
         before_.next = sentinel_as_node();
+        size_ = 0;
     }
 
     ~ts_list() { clear(); }
 
-    bool empty() const {
+    [[nodiscard]] bool empty() const {
         util::lock_guard g(lk_);
-        return empty_unlocked();
+        return size_ == 0;
+    }
+
+    [[nodiscard]] uint64 size() const {
+        util::lock_guard g(lk_);
+        return size_;
     }
 
     T &front() {
@@ -166,6 +172,7 @@ template <typename T> class ts_list : util::do_not_copy {
         return tail()->value;
     }
 
+    // Iterators returned here are NOT safe under concurrent writers.
     iterator begin() {
         util::lock_guard g(lk_);
         return iterator(head());
@@ -192,7 +199,7 @@ template <typename T> class ts_list : util::do_not_copy {
         insert_between(tail(), sentinel_as_node(), std::forward<Args>(args)...);
     }
 
-    bool pop_front() const {
+    bool pop_front() {
         util::lock_guard g(lk_);
         if (empty_unlocked()) {
             return false;
@@ -201,7 +208,7 @@ template <typename T> class ts_list : util::do_not_copy {
         return true;
     }
 
-    bool pop_back() const {
+    bool pop_back() {
         util::lock_guard g(lk_);
         if (empty_unlocked()) {
             return false;
@@ -263,18 +270,6 @@ template <typename T> class ts_list : util::do_not_copy {
         return iterator(stop);
     }
 
-    void clear() {
-        util::lock_guard g(lk_);
-        node *cur = head();
-        while (cur != sentinel_as_node()) {
-            node *nxt = cur->next;
-            delete_node(cur);
-            cur = nxt;
-        }
-        before_.prev = sentinel_as_node();
-        before_.next = sentinel_as_node();
-    }
-
     uint64 remove(const T &value) {
         return remove_if([&](const T &x) { return x == value; });
     }
@@ -293,6 +288,32 @@ template <typename T> class ts_list : util::do_not_copy {
             cur = nxt;
         }
         return removed;
+    }
+
+    bool erase_first_value(const T &value) {
+        util::lock_guard g(lk_);
+        node *cur = head();
+        while (cur != sentinel_as_node()) {
+            if (cur->value == value) {
+                unlink_and_delete(cur);
+                return true;
+            }
+            cur = cur->next;
+        }
+        return false;
+    }
+
+    void clear() {
+        util::lock_guard g(lk_);
+        node *cur = head();
+        while (cur != sentinel_as_node()) {
+            node *nxt = cur->next;
+            delete_node(cur);
+            cur = nxt;
+        }
+        before_.prev = sentinel_as_node();
+        before_.next = sentinel_as_node();
+        size_ = 0;
     }
 
     void reverse() {
@@ -314,7 +335,7 @@ template <typename T> class ts_list : util::do_not_copy {
     node *head() const { return before_.next; }
     node *tail() const { return before_.prev; }
 
-    bool empty_unlocked() const { return before_.next == sentinel_as_node(); }
+    bool empty_unlocked() const { return size_ == 0; }
 
     template <class... Args>
     static node *new_node(node *prev, node *next, Args &&...args) {
@@ -332,6 +353,7 @@ template <typename T> class ts_list : util::do_not_copy {
         node *n = new_node(prev, next, std::forward<Args>(args)...);
         prev->next = n;
         next->prev = n;
+        ++size_;
         return n;
     }
 
@@ -340,13 +362,15 @@ template <typename T> class ts_list : util::do_not_copy {
         n->next->prev = n->prev;
     }
 
-    static void unlink_and_delete(node *n) {
+    void unlink_and_delete(node *n) {
         unlink(n);
         delete_node(n);
+        --size_;
     }
 
     mutable spinlock lk_{};
     sentinel_node before_;
+    uint64 size_ = 0;
 };
 
 } // namespace xv6::stl
