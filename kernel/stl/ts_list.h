@@ -1,4 +1,3 @@
-
 // A thread-safe doubly linked list
 #pragma once
 
@@ -7,6 +6,10 @@
 #include "kernel/slab.h"
 #include "kernel/util/lock_guard.h"
 #include "kernel/util/do_not_copy.h"
+
+namespace xv6::test {
+void ts_list_self_test();
+}
 
 namespace xv6::stl {
 
