@@ -11,7 +11,21 @@ void process_list::init() {
     next_pid_ = 1;
 }
 
-proc *process_list::alloc_proc() { return nullptr; }
+void process_list::pinit(proc *p) {
+    // NOTE: initialization of p is done without holding p's mutex
+    // and this is safe. Since p's handle (ptr) is not publicly available
+    // by other CPUs yet, data race is not possible
+}
+
+proc *process_list::alloc_proc() {
+    proc *p = slab_alloc_t<proc>();
+    if (p == nullptr) {
+        return nullptr;
+    }
+    pinit(p);
+    procs_.push_front(p);
+    return p;
+}
 
 void process_list::retire_proc(proc *p) {}
 
