@@ -250,6 +250,14 @@ void slabs_init() {
     slab_allocator<512>::instance().init();
 }
 
+void slabs_reclaim() {
+    slab_allocator<32>::instance().reclaim();
+    slab_allocator<64>::instance().reclaim();
+    slab_allocator<128>::instance().reclaim();
+    slab_allocator<256>::instance().reclaim();
+    slab_allocator<512>::instance().reclaim();
+}
+
 template class slab_allocator<32>;
 template class slab_allocator<64>;
 template class slab_allocator<128>;
