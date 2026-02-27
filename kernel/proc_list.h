@@ -46,7 +46,7 @@ class process_list : public util::singleton<process_list> {
     [[nodiscard]] bool pinit(proc *p);
 
     // free the allocated fields for a process
-    static void pfree(proc *p);
+    void pfree(proc *p) const;
 
     // allocate a page table for a process
     static pagetable_t alloc_ptable(proc *p);
