@@ -18,22 +18,22 @@ class process_list : public util::singleton<process_list> {
     // returns nullptr on failure
     proc *alloc_proc();
 
+    // same as free_proc(), but requires procs_ lock held AND p->lock held
+    void free_proc_locked(proc *p);
+
     // free proc object memory and remove from process list
     void free_proc(proc *p);
 
     // find process by pid; returns with p->lock NOT held
     [[nodiscard]] proc *find_pid(int pid) const;
 
-    // iterate through all processes, calling fn(p) with p->lock held
-    template <class Fn> void for_each_locked(Fn &&fn) {
-        auto view = const_cast<stl::ts_list<proc *> &>(procs_).locked();
-        for (proc *p : view) {
-            util::lock_guard proc_lk(p->lock);
-            fn(p);
-        }
-    }
-
+    // return the number of processes in list
     [[nodiscard]] uint64 count() const;
+
+    template <class Fn> auto with_list_locked(Fn &&fn) const {
+        auto view = const_cast<stl::ts_list<proc *> &>(procs_).locked();
+        return fn(view); // caller can iterate and can early-return
+    }
 
   private:
     // allocate a unique pid for newly created process
