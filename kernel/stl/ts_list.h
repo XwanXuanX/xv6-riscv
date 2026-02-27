@@ -439,6 +439,8 @@ template <typename T> class ts_list : util::do_not_copy {
         size_ = 0;
     }
 
+    [[nodiscard]] bool holding() const { return lk_.holding(); }
+
   private:
     node *sentinel_as_node() const {
         return reinterpret_cast<node *>(const_cast<sentinel_node *>(&before_));
