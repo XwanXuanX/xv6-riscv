@@ -26,9 +26,6 @@ class process_list : public util::singleton<process_list> {
     // free proc object memory and remove from process list
     void free_proc(proc *p);
 
-    // find process by pid; returns with p->lock NOT held
-    [[nodiscard]] proc *find_pid(int pid) const;
-
     // return the number of processes in list
     [[nodiscard]] uint64 count() const;
 

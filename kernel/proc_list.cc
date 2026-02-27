@@ -223,19 +223,6 @@ void process_list::free_proc(proc *p) {
     });
 }
 
-proc *process_list::find_pid(const int pid) const {
-    auto &list = const_cast<stl::ts_list<proc *> &>(procs_);
-    for (auto view = list.locked(); proc *p : view) {
-        // although PID should be immutable after process creation
-        // we still lock the per-process mutex to guarantee system integrity
-        util::lock_guard lk(p->lock);
-        if (p->pid == pid) {
-            return p;
-        }
-    }
-    return nullptr;
-}
-
 uint64 process_list::count() const { return procs_.size(); }
 
 int process_list::alloc_pid() {
