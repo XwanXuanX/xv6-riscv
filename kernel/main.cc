@@ -33,7 +33,7 @@ void main() {
         page_alloc.init();  // physical page allocator
         kvminit();          // create kernel page table
         kvminithart();      // turn on paging
-        procinit();         // process table
+        proc_init();         // process table
         trapinit();         // trap vectors
         trapinithart();     // install kernel trap vector
         plicinit();         // set up interrupt controller

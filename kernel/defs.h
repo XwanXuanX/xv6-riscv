@@ -111,7 +111,7 @@ int killed(proc *);
 void setkilled(proc *);
 cpu *mycpu();
 proc *myproc();
-void procinit();
+void proc_init();
 void scheduler() __attribute__((noreturn));
 void sched();
 void sleep(void *, spinlock *);
