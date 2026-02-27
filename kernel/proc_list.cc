@@ -195,9 +195,33 @@ proc *process_list::alloc_proc() {
     return p;
 }
 
-void process_list::retire_proc(proc *p) {}
+void process_list::detach_and_pfree(proc *p) {
+    assert(p != nullptr, "process_list::free_proc_locked: nullptr");
+    assert(procs_.holding(), "process list not locked when operated on");
+    assert(p->lock.holding(), "p->lock not held when operated on");
 
-void process_list::destroy_proc(proc *p) {}
+    // unlink p from process list to make it not discoverable
+    const bool removed = procs_.erase_first_value_unlocked(p);
+    assert(removed, "proc not found in list");
+
+    // Now p is no longer discoverable from the global list
+    // free resources
+    pfree(p);
+
+    // NOTE: PCB is NOT freed since lock is still held
+    // the caller needs to unlock and free the PCB explicitly
+}
+
+void process_list::free_proc(proc *p) {
+    assert(p != nullptr, "process_list::free_proc: nullptr");
+    // lock ordering is preserved
+    with_list_locked([&](auto &) {
+        p->lock.lock();
+        detach_and_pfree(p);
+        p->lock.unlock();
+        slab_free_t<proc>(p);
+    });
+}
 
 proc *process_list::find_pid(const int pid) const {
     auto &list = const_cast<stl::ts_list<proc *> &>(procs_);
