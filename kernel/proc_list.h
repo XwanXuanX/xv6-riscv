@@ -18,11 +18,8 @@ class process_list : public util::singleton<process_list> {
     // returns nullptr on failure
     proc *alloc_proc();
 
-    // remove p from process list, but do not free the proc object itself
-    void retire_proc(proc *p);
-
-    // actually free proc object memory
-    void destroy_proc(proc *p);
+    // free proc object memory and remove from process list
+    void free_proc(proc *p);
 
     // find process by pid; returns with p->lock NOT held
     [[nodiscard]] proc *find_pid(int pid) const;
