@@ -327,6 +327,118 @@ template <typename T> class ts_list : util::do_not_copy {
         } while (cur != sentinel_as_node());
     }
 
+    // Run a function with the list lock held.
+    // Useful for composing multistep operations atomically (e.g., lock-ordering
+    // with other locks, publishing objects without races).
+    template <class Fn> decltype(auto) with_lock(Fn &&fn) {
+        util::lock_guard g(lk_);
+        return fn();
+    }
+
+    template <class Fn> decltype(auto) with_lock(Fn &&fn) const {
+        util::lock_guard g(lk_);
+        return fn();
+    }
+
+    // Unlocked variants: caller MUST already hold the list lock (via
+    // with_lock()).
+    template <class... Args> void push_front_unlocked(Args &&...args) {
+        insert_between(sentinel_as_node(), head(), std::forward<Args>(args)...);
+    }
+
+    template <class... Args> void push_back_unlocked(Args &&...args) {
+        insert_between(tail(), sentinel_as_node(), std::forward<Args>(args)...);
+    }
+
+    bool pop_front_unlocked() {
+        if (empty_unlocked()) {
+            return false;
+        }
+        unlink_and_delete(head());
+        return true;
+    }
+
+    bool pop_back_unlocked() {
+        if (empty_unlocked()) {
+            return false;
+        }
+        unlink_and_delete(tail());
+        return true;
+    }
+
+    bool pop_front_value_unlocked(T &out) {
+        if (empty_unlocked()) {
+            return false;
+        }
+        node *h = head();
+        out = h->value;
+        unlink_and_delete(h);
+        return true;
+    }
+
+    bool pop_back_value_unlocked(T &out) {
+        if (empty_unlocked()) {
+            return false;
+        }
+        node *t = tail();
+        out = t->value;
+        unlink_and_delete(t);
+        return true;
+    }
+
+    template <class... Args>
+    iterator insert_unlocked(iterator pos, Args &&...args) {
+        node *next = pos.n_;
+        node *prev = next->prev;
+        return iterator(
+            insert_between(prev, next, std::forward<Args>(args)...));
+    }
+
+    iterator erase_unlocked(iterator pos) {
+        node *victim = pos.n_;
+        if (victim == sentinel_as_node()) {
+            return iterator(sentinel_as_node());
+        }
+        node *ret = victim->next;
+        unlink_and_delete(victim);
+        return iterator(ret);
+    }
+
+    iterator erase_unlocked(iterator first, iterator last) {
+        node *cur = first.n_;
+        node *stop = last.n_;
+        while (cur != sentinel_as_node() && cur != stop) {
+            node *nxt = cur->next;
+            unlink_and_delete(cur);
+            cur = nxt;
+        }
+        return iterator(stop);
+    }
+
+    bool erase_first_value_unlocked(const T &value) {
+        node *cur = head();
+        while (cur != sentinel_as_node()) {
+            if (cur->value == value) {
+                unlink_and_delete(cur);
+                return true;
+            }
+            cur = cur->next;
+        }
+        return false;
+    }
+
+    void clear_unlocked() {
+        node *cur = head();
+        while (cur != sentinel_as_node()) {
+            node *nxt = cur->next;
+            delete_node(cur);
+            cur = nxt;
+        }
+        before_.prev = sentinel_as_node();
+        before_.next = sentinel_as_node();
+        size_ = 0;
+    }
+
   private:
     node *sentinel_as_node() const {
         return reinterpret_cast<node *>(const_cast<sentinel_node *>(&before_));
