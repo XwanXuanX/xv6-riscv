@@ -18,8 +18,10 @@ class process_list : public util::singleton<process_list> {
     // returns nullptr on failure
     proc *alloc_proc();
 
-    // same as free_proc(), but requires procs_ lock held AND p->lock held
-    void free_proc_locked(proc *p);
+    // detach the process from global list and free the resource it's holding
+    // DOES NOT free the PCB, the caller needs to handle that.
+    // requires procs_ lock held AND p->lock held
+    void detach_and_pfree(proc *p);
 
     // free proc object memory and remove from process list
     void free_proc(proc *p);
