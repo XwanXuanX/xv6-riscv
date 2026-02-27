@@ -12,7 +12,7 @@ class process_list : public util::singleton<process_list> {
     friend class singleton;
 
   public:
-    void init();
+    void init(pagetable_t kernel_ptable);
 
     // allocate a new proc object and insert it into the global process list
     // returns nullptr on failure
@@ -43,13 +43,25 @@ class process_list : public util::singleton<process_list> {
     [[nodiscard]] int alloc_pid();
 
     // initialize required fields for newly created process
-    static void pinit(proc *p);
+    [[nodiscard]] bool pinit(proc *p);
+
+    // free the allocated fields for a process
+    static void pfree(proc *p);
+
+    // allocate a page table for a process
+    static pagetable_t alloc_ptable(proc *p);
+
+    // free a process's page table
+    static void free_ptable(pagetable_t page, uint64 sz);
 
     process_list() = default;
 
     // protects next_pid_
     mutable spinlock pid_lock_{};
     int next_pid_ = 1;
+
+    // kernel's page table, used to map kernel stacks
+    pagetable_t kernel_ptable_ = nullptr;
 
     // global process list
     stl::ts_list<proc *> procs_;
