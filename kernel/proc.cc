@@ -216,14 +216,24 @@ int kfork() {
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
 void reparent(const proc *const p) {
+    bool did_reparent = false;
+
     process_list::instance().with_list_locked([&](auto &view) {
-        for (auto &pp : view) {
+        for (const auto pp : view) {
             if (pp->parent == p) {
+                // move all children of p to init
                 pp->parent = initproc;
-                wakeup(initproc);
+                did_reparent = true;
             }
         }
     });
+
+    // some children of p may be in ZOMBIE state at the moment of reparenting,
+    // so wake up init to reap them. It's also possible that init wakes and does
+    // nothing, which is totally fine
+    if (did_reparent) {
+        wakeup(initproc);
+    }
 }
 
 // Exit the current process. Does not return.
