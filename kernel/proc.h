@@ -151,7 +151,7 @@ enum procstate {
 
 // Per-process state
 struct proc {
-    spinlock lock;
+    spinlock lock{};
 
     // MLFQ run queue constructs
     // IMPORTANT: this field is conceptually not part of "process state";
@@ -159,36 +159,36 @@ struct proc {
     // the queue. It is stored in struct proc only for convenience.
     // In the MLFQ helpers that manipulate the run queue, mlq.lock must be
     // held while reading or writing this field. p->lock is not required.
-    proc *rqnext; // next process in the run queue
+    proc *rqnext = nullptr; // next process in the run queue
 
     // p->lock must be held when using these:
-    procstate state; // Process state
-    void *chan;      // If non-zero, sleeping on chan
-    int killed;      // If non-zero, have been killed
-    int xstate;      // Exit status to be returned to parent's wait
-    int pid;         // Process ID
-    int in_ready_q;  // marks if this process is in ready queue or not (for
-                     // validation)
-    int qlevel;      // current queue level
-    int qticks;      // ticks used at current level
-    int epoch;       // "version number" of the process
-    int slice_left;  // the remaining ticks left before preemption
-    int need_yield;  // signal to `kerneltrap()` and `usertrap()` to yield when
-                     // the time slice is used up
+    procstate state = UNUSED; // Process state
+    void *chan = nullptr;     // If non-zero, sleeping on chan
+    int killed = 0;           // If non-zero, have been killed
+    int xstate = 0;           // Exit status to be returned to parent's wait
+    int pid = 0;              // Process ID
+    int in_ready_q = 0; // marks if this process is in ready queue or not (for
+                        // validation)
+    int qlevel = 0;     // current queue level
+    int qticks = 0;     // ticks used at current level
+    int epoch = 0;      // "version number" of the process
+    int slice_left = 0; // the remaining ticks left before preemption
+    int need_yield = 0; // signal to `kerneltrap()` and `usertrap()` to yield
+                        // when the time slice is used up
 
     // wait_lock must be held when using this:
-    proc *parent; // Parent process
+    proc *parent = nullptr; // Parent process
 
     // these are private to the process, so p->lock need not be held.
-    uint64 kstack;                           // Virtual address of kernel stack
-    uint64 kstack_phys;                      // Physical page of kernel stack
-    uint64 sz;                               // Size of process memory (bytes)
-    pagetable_t pagetable;                   // User page table
-    trapframe *trapf;                        // data page for trampoline.S
-    context ctx;                             // swtch() here to run process
-    std::array<struct file *, NOFILE> ofile; // Open files
-    struct inode *cwd;                       // Current directory
-    std::array<char, 16> name;               // Process name (debugging)
+    uint64 kstack = 0;               // Virtual address of kernel stack
+    uint64 kstack_phys = 0;          // Physical page of kernel stack
+    uint64 sz = 0;                   // Size of process memory (bytes)
+    pagetable_t pagetable = nullptr; // User page table
+    trapframe *trapf = nullptr;      // data page for trampoline.S
+    context ctx{};                   // swtch() here to run process
+    std::array<struct file *, NOFILE> ofile{}; // Open files
+    struct inode *cwd = nullptr;               // Current directory
+    std::array<char, 16> name{};               // Process name (debugging)
 };
 
 } // namespace xv6
