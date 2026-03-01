@@ -23,6 +23,12 @@ bool process_list::pinit(proc *p) {
     // and this is safe. Since p's handle (ptr) is not publicly available
     // by other CPUs yet, data race is not possible
 
+    // Zero initialize the chunk of memory
+    // without initialization, the memory is full of garbage
+    {
+        new (p) proc();
+    }
+
     // initialize the lock before anything can use it
     {
         p->lock.init_lock("proc");
