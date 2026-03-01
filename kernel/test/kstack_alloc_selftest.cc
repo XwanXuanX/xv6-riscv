@@ -183,8 +183,6 @@ void kstack_self_test() {
         one_round_alloc_all(kv1);
         one_round_free_all(kv1);
     }
-
-    printf("kstack_alloc selftest: OK\n");
 }
 
 } // namespace xv6::test
