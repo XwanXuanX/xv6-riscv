@@ -473,7 +473,6 @@ static void test_random_single_thread() {
 void ts_forward_list_self_test() {
     test_basics();
     test_random_single_thread();
-    printf("ts_forward_list selftest: OK\n");
 }
 
 } // namespace xv6::test
