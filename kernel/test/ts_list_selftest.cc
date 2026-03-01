@@ -537,7 +537,6 @@ static void test_random() {
 void ts_list_self_test() {
     test_basics();
     test_random();
-    printf("ts_list selftest: OK\n");
 }
 
 } // namespace xv6::test
