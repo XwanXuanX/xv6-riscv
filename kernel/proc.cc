@@ -8,9 +8,9 @@
 #include "kernel/proc_list.h"
 #include "kernel/util/assert.h"
 #include "kernel/kalloc.h"
+#include "kernel/util/lock_guard.h"
 
 #include <array>
-#include "kernel/util/lock_guard.h"
 
 namespace xv6 {
 
