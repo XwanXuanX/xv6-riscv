@@ -292,7 +292,17 @@ int kwait(const uint64 addr) {
         int z_pid = -1;
 
         process_list::instance().with_list_locked([&](auto &view) {
-            for (auto &pp : view) {
+            // Use copying instead of referencing:
+            // previous this line was written as `for (const auto& pp : view)`,
+            // which caused me A LOT of trouble. The reason is as follows:
+            // if you use `auto& p`, then p is actually a pointer to the pointer
+            // in the node, which points to the proc struct. However, when you
+            // delete the list node, the pointer to the proc struct is invalid,
+            // and so does pp. Thus, if you try to dereference pp you'll be in
+            // trouble. The solution is simply switching from referencing the
+            // node value to copying the node value, so even if the node itself
+            // is deleted, its value persists valid.
+            for (const auto pp : view) {
                 if (pp->parent != p) {
                     continue;
                 }
