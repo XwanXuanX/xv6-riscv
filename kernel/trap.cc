@@ -10,6 +10,69 @@
 
 namespace xv6 {
 
+// clang-format off
+/*
+ * Case 1: Timer Interrupt in User Space
+ * user process
+ * -> timer interrupt
+ * -> uservec
+ * -> save user state to trampoline page
+ * -> usertrap
+ * -> yield/sched/swtch
+ * -> save the context of the user process when it is running in kernel mode
+ * -> load scheduler context
+ * -> scheduler run something else
+ * -> swtch
+ * -> save scheduler context
+ * -> load process context and came out of yield
+ * -> usertrap
+ * -> prepare_return()
+ * -> load user state from trampoline page
+ * -> sret
+ * -> user process resumes
+ */
+
+/*
+ * Case 2: System Call in User Space
+ * user process
+ * -> ecall
+ * -> uservec: save user registers into trapframe
+ * -> usertrap: set stvec to kernelvec
+ * -> interrupt is turned on, means the system call execution is preemptive
+ * -> syscall()
+ * -> corresponding syscall handler is run in kernel mode
+ * Two subcases:
+ *  1) -> timer interrupt
+ *     -> kernelvec
+ *     -> save the process's kernel context on the process's kernel stack
+ *     -> kerneltrap
+ *     -> yield/sched/swtch
+ *     -> save the kernel context in p->context
+ *     -> load scheduler context
+ *     -> scheduler run something else
+ *     -> swtch
+ *     -> save scheduler context
+ *     -> load p->context
+ *     -> come out of swtch/sched/yield
+ *     -> kerneltrap
+ *     -> restore the process's kernel context from the kernel stack
+ *     -> sret
+ *  2) -> other exception
+ *     -> kernelvec
+ *     -> save the process's kernel context on the process's kernel stack
+ *     -> kerneltrap
+ *     -> handle the exception
+ *     -> restore the process's kernel context from the kernel stack
+ *     -> sret
+ * -> continue executing syscall handler
+ * -> handler done
+ * -> prepare_return()
+ * -> load user state from trampoline page
+ * -> sret
+ * -> user process resumes
+ */
+// clang-format on
+
 spinlock tickslock;
 uint ticks;
 
@@ -48,7 +111,7 @@ uint64 usertrap() {
 
     // send interrupts and exceptions to kerneltrap(),
     // since we're now in the kernel.
-    w_stvec((uint64)kernelvec); // DOC: kernelvec
+    w_stvec(reinterpret_cast<uint64>(kernelvec)); // DOC: kernelvec
 
     proc *p = myproc();
 
@@ -73,6 +136,7 @@ uint64 usertrap() {
         syscall();
     } else if ((which_dev = devintr()) != 0) {
         // ok
+        ;
     } else if ((r_scause() == 15 || r_scause() == 13) &&
                vmfault(p->pagetable, r_stval()) != 0) {
         // page fault on lazily-allocated page
