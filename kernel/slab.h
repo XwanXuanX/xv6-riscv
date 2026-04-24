@@ -16,6 +16,9 @@ void slab_self_test();
 // initialize all instances of slab allocator
 void slabs_init();
 
+// reclaim all allocated memory from all instances of slab allocators
+void slabs_reclaim();
+
 template <uint64 size>
 class slab_allocator : public util::singleton<slab_allocator<size>> {
     friend class singleton;

@@ -103,7 +103,6 @@ int cpuid();
 void kexit(int);
 int kfork();
 int growproc(int);
-void proc_mapstacks(pagetable_t);
 pagetable_t proc_pagetable(proc *);
 void proc_freepagetable(pagetable_t, uint64);
 int kkill(int);
@@ -111,7 +110,7 @@ int killed(proc *);
 void setkilled(proc *);
 cpu *mycpu();
 proc *myproc();
-void procinit();
+void proc_init();
 void scheduler() __attribute__((noreturn));
 void sched();
 void sleep(void *, spinlock *);
@@ -161,7 +160,7 @@ void uartputc_sync(int);
 int uartgetc();
 
 // vm.c
-void kvminit();
+pagetable_t kvminit();
 void kvminithart();
 void kvmmap(pagetable_t, uint64, uint64, uint64, int);
 int mappages(pagetable_t, uint64, uint64, uint64, int);

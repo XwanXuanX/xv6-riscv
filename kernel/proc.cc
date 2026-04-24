@@ -5,25 +5,20 @@
 #include "kernel/proc.h"
 #include "kernel/defs.h"
 #include "kernel/mlfq.h"
+#include "kernel/proc_list.h"
 #include "kernel/util/assert.h"
 #include "kernel/kalloc.h"
+#include "kernel/util/lock_guard.h"
 
 #include <array>
-#include "kernel/util/lock_guard.h"
 
 namespace xv6 {
 
 std::array<cpu, NCPU> cpus;
 
-std::array<proc, NPROC> proc_list;
-
 proc *initproc;
 
-int nextpid = 1;
-spinlock pid_lock;
-
 extern void forkret();
-static void freeproc(proc *p);
 
 extern std::array<int, NLEVELS> quantum; // trap.c
 // extern char trampoline[];             // trampoline.S
@@ -34,30 +29,7 @@ extern std::array<int, NLEVELS> quantum; // trap.c
 // must be acquired before any p->lock.
 spinlock wait_lock;
 
-// Allocate a page for each process's kernel stack.
-// Map it high in memory, followed by an invalid
-// guard page.
-void proc_mapstacks(pagetable_t kpgtbl) {
-    for (const proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        auto pa = static_cast<char *>(page_allocator::instance().alloc());
-        if (pa == nullptr) {
-            panic("page_allocator::instance().alloc");
-        }
-        const uint64 va = KSTACK(static_cast<int>(p - proc_list.data()));
-        kvmmap(kpgtbl, va, reinterpret_cast<uint64>(pa), PGSIZE, PTE_R | PTE_W);
-    }
-}
-
-// initialize the proc table.
-void procinit() {
-    pid_lock.init_lock("nextpid");
-    wait_lock.init_lock("wait_lock");
-    for (proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        p->lock.init_lock("proc");
-        p->state = UNUSED;
-        p->kstack = KSTACK(static_cast<int>(p - proc_list.data()));
-    }
-}
+void proc_init() { wait_lock.init_lock("wait_lock"); }
 
 // Must be called with interrupts disabled,
 // to prevent race with process being moved
@@ -82,111 +54,6 @@ proc *myproc() {
     proc *p = c->proc;
     pop_off();
     return p;
-}
-
-int allocpid() {
-    util::lock_guard lk(pid_lock);
-    const int pid = nextpid;
-    nextpid = nextpid + 1;
-    return pid;
-}
-
-// Look in the process table for an UNUSED proc.
-// If found, initialize state required to run in the kernel,
-// and return with p->lock held.
-// If there are no free procs, or a memory allocation fails, return 0.
-static proc *allocproc() {
-    proc *p;
-
-    // prob all the locations, for each location
-    //  1. pretend it is available
-    //  2. acquire the lock
-    //  3. if ok: proceed to setup with lock held
-    //  4. if no: release the lock immediately
-    for (p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        p->lock.lock();
-        if (p->state == UNUSED) {
-            goto found;
-        }
-        p->lock.unlock();
-    }
-    return nullptr;
-
-found:
-    //
-    // The lock is held while setup
-    //
-    p->pid = allocpid();
-    p->state = USED;
-
-    // Allocate a trapframe page.
-    if ((p->trapf = static_cast<trapframe *>(
-             page_allocator::instance().alloc())) == nullptr) {
-        freeproc(p);
-        p->lock.unlock();
-        return nullptr;
-    }
-
-    // An empty user page table.
-    p->pagetable = proc_pagetable(p);
-    if (p->pagetable == nullptr) {
-        freeproc(p);
-        p->lock.unlock();
-        return nullptr;
-    }
-
-    // Initialize MLFQ related fields
-    // DO NOT enqueue JUST YET!
-    p->qlevel = p->qticks = 0;
-    p->rqnext = nullptr;
-    p->in_ready_q = 0;
-    p->epoch = 0;
-
-    // Per-level quantum
-    // the slice_left and need_yield field will be set when a process becomes
-    // RUNNABLE, so initialize with 0 for now
-    p->slice_left = 0;
-    p->need_yield = 0;
-
-    // Set up new context to start executing at forkret,
-    // which returns to user space.
-    memset(&p->ctx, 0, sizeof(p->ctx));
-    p->ctx.ra = reinterpret_cast<uint64>(forkret);
-    p->ctx.sp = p->kstack + PGSIZE;
-
-    //
-    // Remember! The process lock is still being held!
-    // Someone needs to release it later!
-    //
-    return p;
-}
-
-// free a proc structure and the data hanging from it,
-// including user pages.
-// p->lock must be held.
-static void freeproc(proc *p) {
-    if (p->trapf) {
-        page_allocator::instance().free(p->trapf);
-    }
-    p->trapf = nullptr;
-    if (p->pagetable) {
-        proc_freepagetable(p->pagetable, p->sz);
-    }
-    p->pagetable = nullptr;
-    p->sz = 0;
-    p->pid = 0;
-    p->parent = nullptr;
-    p->name[0] = 0;
-    p->chan = nullptr;
-    p->killed = 0;
-    p->xstate = 0;
-    p->state = UNUSED;
-    p->qlevel = p->qticks = 0;
-    p->rqnext = nullptr;
-    p->in_ready_q = 0;
-    p->epoch = 0;
-    p->slice_left = 0;
-    p->need_yield = 0;
 }
 
 // Create a user page table for a given process, with no user memory,
@@ -230,7 +97,9 @@ void proc_freepagetable(pagetable_t pagetable, const uint64 sz) {
 
 // Set up first user process.
 void userinit() {
-    proc *p = allocproc();
+    proc *p = process_list::instance().alloc_proc();
+    assert(p != nullptr, "init process is null");
+    assert(p->lock.holding(), "process lock NOT held");
     // Process lock is still held
     initproc = p;
 
@@ -278,28 +147,32 @@ int growproc(const int n) {
 // Create a new process, copying the parent.
 // Sets up child kernel stack to return as if from fork() system call.
 int kfork() {
-    proc *np;
     proc *p = myproc();
 
     // Allocate process.
-    if ((np = allocproc()) == nullptr) {
+    proc *np = process_list::instance().alloc_proc();
+    if (np == nullptr) {
         return -1;
     }
+    assert(np->lock.holding(), "process lock NOT held");
 
     // Copy user memory from parent to child.
     if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
-        freeproc(np);
-        np->lock.unlock();
+        np->lock.unlock(); // unlock and relock later to preserve lock ordering
+        process_list::instance().with_list_locked([&](auto &) {
+            np->lock.lock();
+            process_list::instance().detach_and_pfree(np);
+            np->lock.unlock();
+            slab_free_t<proc>(np);
+        });
         return -1;
     }
-    np->sz = p->sz;
 
+    np->sz = p->sz;
     // copy saved user registers.
     *np->trapf = *p->trapf;
-
     // Cause fork to return 0 in the child.
     np->trapf->a0 = 0;
-
     // increment reference counts on open file descriptors.
     for (int i = 0; i < NOFILE; i++) {
         if (p->ofile[i]) {
@@ -307,11 +180,9 @@ int kfork() {
         }
     }
     np->cwd = idup(p->cwd);
-
     safestrcpy(np->name.data(), p->name.data(), sizeof(p->name));
 
     const int pid = np->pid;
-
     np->lock.unlock();
 
     {
@@ -345,15 +216,27 @@ int kfork() {
 // Pass p's abandoned children to init.
 // Caller must hold wait_lock.
 void reparent(const proc *const p) {
-    for (proc *pp = proc_list.data(); pp < &proc_list[NPROC]; pp++) {
-        if (pp->parent == p) {
-            pp->parent = initproc;
-            wakeup(initproc);
+    bool did_reparent = false;
+
+    process_list::instance().with_list_locked([&](auto &view) {
+        for (const auto pp : view) {
+            if (pp->parent == p) {
+                // move all children of p to init
+                pp->parent = initproc;
+                did_reparent = true;
+            }
         }
+    });
+
+    // some children of p may be in ZOMBIE state at the moment of reparenting,
+    // so wake up init to reap them. It's also possible that init wakes and does
+    // nothing, which is totally fine
+    if (did_reparent) {
+        wakeup(initproc);
     }
 }
 
-// Exit the current process.  Does not return.
+// Exit the current process. Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait().
 void kexit(const int status) {
@@ -414,31 +297,72 @@ int kwait(const uint64 addr) {
 
     for (;;) {
         // Scan through table looking for exited children.
-        int havekids = 0;
-        for (proc *pp = proc_list.data(); pp < &proc_list[NPROC]; pp++) {
-            if (pp->parent == p) {
-                // make sure the child isn't still in exit() or swtch().
-                util::lock_guard plock(pp->lock);
-                havekids = 1;
+        int have_kids = 0;
+        proc *z = nullptr;
+        int z_pid = -1;
+
+        process_list::instance().with_list_locked([&](auto &view) {
+            // Use copying instead of referencing:
+            // previous this line was written as `for (const auto& pp : view)`,
+            // which caused me A LOT of trouble. The reason is as follows:
+            // if you use `auto& p`, then p is actually a pointer to the pointer
+            // in the node, which points to the proc struct. However, when you
+            // delete the list node, the pointer to the proc struct is invalid,
+            // and so does pp. Thus, if you try to dereference pp you'll be in
+            // trouble. The solution is simply switching from referencing the
+            // node value to copying the node value, so even if the node itself
+            // is deleted, its value persists valid.
+            for (const auto pp : view) {
+                if (pp->parent != p) {
+                    continue;
+                }
+                have_kids = 1;
+                // maintain global locking order
+                // wait_lock -> list_lock -> p_lock
+                pp->lock.lock();
+
                 if (pp->state == ZOMBIE) {
-                    // Found one.
-                    const int pid = pp->pid;
+                    // Save what we need before pfree() clears fields.
+                    z = pp;
+                    z_pid = pp->pid;
+
+                    // copy out exit status while child is locked
                     if (addr != 0 &&
                         copyout(p->pagetable, addr,
                                 reinterpret_cast<char *>(&pp->xstate),
                                 sizeof(pp->xstate)) < 0) {
-                        wait_lock.unlock();
-                        return -1;
+                        // On error, just leave z null and unlock child.
+                        // We cannot unlock wait_lock here; handled after
+                        // lambda.
+                        z = nullptr;
+                        z_pid = -1;
+                        pp->lock.unlock();
+                        break;
                     }
-                    freeproc(pp);
-                    wait_lock.unlock();
-                    return pid;
+
+                    // Remove from global list and free resources while holding:
+                    // list lock + pp->lock.
+                    process_list::instance().detach_and_pfree(pp);
+                    // detach_and_pfree() leaves pp->lock held; we must unlock
+                    // before freeing the PCB memory.
+                    pp->lock.unlock();
+                    slab_free_t<proc>(pp);
+
+                    break; // reaped one, return
                 }
+
+                pp->lock.unlock();
             }
+        });
+
+        // if we've successfully reaped one
+        if (z_pid != -1) {
+            wait_lock.unlock();
+            return z_pid;
         }
 
         // No point waiting if we don't have any children.
-        if (!havekids || killed(p)) {
+        if (!have_kids || killed(p)) {
             wait_lock.unlock();
             return -1;
         }
@@ -448,6 +372,7 @@ int kwait(const uint64 addr) {
     }
 }
 
+#if false
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -580,6 +505,7 @@ __attribute__((unused)) __attribute__((noreturn)) static void round_robin() {
         }
     }
 }
+#endif
 
 __attribute__((unused)) __attribute__((noreturn)) static void
 multi_level_feedback_q() {
@@ -782,7 +708,7 @@ void forkret() {
     prepare_return();
     const uint64 satp = MAKE_SATP(p->pagetable);
     const uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
-    ((void (*)(uint64))trampoline_userret)(satp);
+    reinterpret_cast<void (*)(uint64)>(trampoline_userret)(satp);
 }
 
 // Sleep on channel chan, releasing condition lock lk.
@@ -828,63 +754,80 @@ void sleep(void *chan, spinlock *lk) {
 // Wake up all processes sleeping on channel chan.
 // Caller should hold the condition lock.
 void wakeup(const void *chan) {
-    for (proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        if (p != myproc()) {
-            util::lock_guard lk(p->lock);
-            if (p->state == SLEEPING && p->chan == chan) {
-                // I was sleeping, but now I've been wakened up,
-                // and I'm ready to run!
-                p->state = RUNNABLE;
-                p->qlevel = p->qticks = 0;
-                // each scheduling round a process starts with a fresh quanta
-                p->slice_left = quantum[p->qlevel];
-                p->need_yield = 0;
-                // Enqueue!
-                {
-                    auto &feedback_q = multi_lvl_feedback_q::instance();
-                    util::lock_guard feedback_q_lk(feedback_q.get_lock());
-                    // Typically, a wake-up process needs immediate treatment
-                    // for better response time, thus put it at the top
-                    feedback_q.enq_locked(0, p);
-                    assert(!p->in_ready_q, "double enq");
-                    p->in_ready_q++;
+    process_list::instance().with_list_locked([&](auto &view) {
+        for (auto &p : view) {
+            if (p != myproc()) {
+                util::lock_guard lk(p->lock);
+                if (p->state == SLEEPING && p->chan == chan) {
+                    // I was sleeping, but now I've been wakened up,
+                    // and I'm ready to run!
+                    p->state = RUNNABLE;
+                    p->qlevel = p->qticks = 0;
+                    // each scheduling round a process starts with a fresh
+                    // quanta
+                    p->slice_left = quantum[p->qlevel];
+                    p->need_yield = 0;
+                    // Enqueue!
+                    {
+                        auto &feedback_q = multi_lvl_feedback_q::instance();
+                        util::lock_guard feedback_q_lk(feedback_q.get_lock());
+                        // Typically, a wake-up process needs immediate
+                        // treatment for better response time, thus put it at
+                        // the top
+                        feedback_q.enq_locked(0, p);
+                        assert(!p->in_ready_q, "double enq");
+                        ++p->in_ready_q;
+                    }
                 }
             }
         }
-    }
+    });
 }
 
 // Kill the process with the given pid.
 // The victim won't exit until it tries to return
 // to user space (see usertrap() in trap.c).
 int kkill(const int pid) {
-    for (proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        util::lock_guard lk(p->lock);
-        if (p->pid == pid) {
-            p->killed = 1;
-            if (p->state == SLEEPING) {
-                // Wake process from sleep().
-                p->state = RUNNABLE;
-                p->qlevel = p->qticks = 0;
-                // each scheduling round a process starts with a fresh quanta
-                p->slice_left = quantum[p->qlevel];
-                p->need_yield = 0;
-                // Enqueue!
-                {
-                    auto &feedback_q = multi_lvl_feedback_q::instance();
-                    util::lock_guard feedback_q_lk(feedback_q.get_lock());
-                    // Wake the process ASAP so it can die quickly
-                    // Thus put it at the top
-                    feedback_q.enq_locked(0, p);
-                    assert(!p->in_ready_q, "double enq");
-                    p->in_ready_q++;
+    int rc = -1;
+
+    process_list::instance().with_list_locked([&](auto &view) {
+        for (proc *p : view) {
+            // Lock order: list lock -> p->lock
+            p->lock.lock();
+
+            if (p->pid == pid) {
+                p->killed = 1;
+                if (p->state == SLEEPING) {
+                    // Wake process from sleep().
+                    p->state = RUNNABLE;
+                    p->qlevel = p->qticks = 0;
+                    // each scheduling round a process starts with a fresh
+                    // quanta
+                    p->slice_left = quantum[p->qlevel];
+                    p->need_yield = 0;
+
+                    // Enqueue!
+                    {
+                        auto &feedback_q = multi_lvl_feedback_q::instance();
+                        util::lock_guard feedback_q_lk(feedback_q.get_lock());
+                        // Wake the process ASAP so it can die quickly
+                        // Thus put it at the top
+                        feedback_q.enq_locked(0, p);
+                        assert(!p->in_ready_q, "double enq");
+                        ++p->in_ready_q;
+                    }
                 }
+
+                rc = 0;
+                p->lock.unlock();
+                break; // stop scanning
             }
-            // p->lock automatically unlocked here
-            return 0;
+
+            p->lock.unlock();
         }
-    }
-    return -1;
+    });
+
+    return rc;
 }
 
 void setkilled(proc *p) {
@@ -909,7 +852,7 @@ int either_copyout(const int user_dst, const uint64 dst, void *src,
     if (user_dst) {
         return copyout(p->pagetable, dst, static_cast<char *>(src), len);
     }
-    memmove((char *)dst, src, len);
+    memmove(reinterpret_cast<char *>(dst), src, len);
     return 0;
 }
 
@@ -922,7 +865,7 @@ int either_copyin(void *dst, const int user_src, const uint64 src,
     if (user_src) {
         return copyin(p->pagetable, static_cast<char *>(dst), src, len);
     }
-    memmove(dst, (char *)src, len);
+    memmove(dst, reinterpret_cast<char *>(src), len);
     return 0;
 }
 
@@ -931,22 +874,24 @@ int either_copyin(void *dst, const int user_src, const uint64 src,
 // No lock to avoid wedging a stuck machine further.
 void procdump() {
     static constexpr std::array<const char *, 6> states = {
-        "unused", "used", "sleep ", "runble", "run   ", "zombie"};
+        "unused", "used", "sleep ", "runnable", "run   ", "zombie"};
     const char *state;
 
     printf("PID\tSTATE\tNAME\n");
-    for (proc *p = proc_list.data(); p < &proc_list[NPROC]; p++) {
-        if (p->state == UNUSED) {
-            continue;
+    process_list::instance().with_list_locked([&](auto &view) {
+        for (auto &p : view) {
+            if (p->state == UNUSED) {
+                continue;
+            }
+            if (p->state >= 0 && p->state < NELEM(states) && states[p->state]) {
+                state = states[p->state];
+            } else {
+                state = "???";
+            }
+            printf("%d\t%s\t%s", p->pid, state, p->name.data());
+            printf("\n");
         }
-        if (p->state >= 0 && p->state < NELEM(states) && states[p->state]) {
-            state = states[p->state];
-        } else {
-            state = "???";
-        }
-        printf("%d\t%s\t%s", p->pid, state, p->name.data());
-        printf("\n");
-    }
+    });
 
     // Print MLFQ queue status
     const auto &feedback_q = multi_lvl_feedback_q::instance();

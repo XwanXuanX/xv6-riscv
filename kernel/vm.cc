@@ -47,9 +47,6 @@ pagetable_t kvmmake() {
     kvmmap(kpgtbl, TRAMPOLINE, reinterpret_cast<uint64>(trampoline), PGSIZE,
            PTE_R | PTE_X);
 
-    // allocate and map a kernel stack for each process.
-    proc_mapstacks(kpgtbl);
-
     return kpgtbl;
 }
 
@@ -64,7 +61,7 @@ void kvmmap(pagetable_t kpgtbl, const uint64 va, const uint64 pa,
 }
 
 // Initialize the kernel_pagetable, shared by all CPUs.
-void kvminit() { kernel_pagetable = kvmmake(); }
+pagetable_t kvminit() { return kernel_pagetable = kvmmake(); }
 
 // Switch the current CPU's h/w page table register to
 // the kernel's page table, and enable paging.
