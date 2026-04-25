@@ -581,6 +581,15 @@ multi_level_feedback_q() {
         p->slice_left = quantum[p->qlevel];
         p->need_yield = 0;
 
+        // Flush any stale TLB entry for this process's kernel stack VA before
+        // context-switching in. The kstack is dynamically mapped in the shared
+        // kernel page table. Another CPU may have remapped this KVA (freed the
+        // old physical page and mapped a new one) since this CPU last ran a
+        // process using the same kstack KVA. Without this flush, this CPU
+        // would use the stale TLB entry — reading/writing the old freed page
+        // — causing stack corruption and a kernel instruction page fault.
+        asm volatile("sfence.vma %0, zero" : : "r"(p->kstack) : "memory");
+
         // context switch!
         swtch(&c->ctx, &p->ctx);
 
