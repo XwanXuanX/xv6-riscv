@@ -60,9 +60,6 @@ bool process_list::pinit(proc *p) {
         // map the kernel stack to kernel's address space
         kvmmap(kernel_ptable_, reinterpret_cast<uint64>(kva),
                reinterpret_cast<uint64>(pa), PGSIZE, PTE_R | PTE_W);
-        // Flush the local CPU's TLB for this VA so that a stale entry from a
-        // previously freed kstack at the same KVA is not used by this CPU.
-        sfence_vma();
     }
 
     // initialize other fields
@@ -118,9 +115,6 @@ void process_list::pfree(proc *p) const {
     if (p->kstack) {
         // remember to unmap the mapped kernel stack from kernel's page table
         uvmunmap(kernel_ptable_, p->kstack, 1, 0);
-        // Flush the local CPU's TLB for this VA so the cleared PTE takes
-        // effect immediately and cannot be re-installed from a stale entry.
-        sfence_vma();
         kstack_allocator::instance().free(reinterpret_cast<void *>(p->kstack));
         p->kstack = 0;
     }
