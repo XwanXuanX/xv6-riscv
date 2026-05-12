@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <cassert>
 #include <array>
+#include <cstdlib>
 
 #define STAT xv6_stat // avoid clash with host struct stat
 #include "kernel/types.h"
