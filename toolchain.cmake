@@ -2,6 +2,9 @@
 # RISC-V Cross-Compilation Toolchain
 # ==============================================================================
 
+# Propagate the selected compiler into CMake try_compile checks.
+set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES RISCV_GCC)
+
 # Try to find the RISC-V toolchain.
 find_program(RISCV_GCC riscv64-unknown-elf-gcc)
 
@@ -34,6 +37,9 @@ if(NOT RISCV_GCC)
             "or rerun CMake with -DRISCV_GCC=/full/path/to/riscv64-unknown-elf-gcc (or equivalent)."
     )
 endif()
+
+# Preserve the selected compiler path for nested CMake checks.
+set(RISCV_GCC "${RISCV_GCC}" CACHE FILEPATH "Path to the RISC-V GCC cross-compiler")
 
 # ==============================================================================
 # Derive Toolchain Paths
