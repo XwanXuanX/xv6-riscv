@@ -1,39 +1,84 @@
 #include "kernel/kstack_alloc.h"
 #include "kernel/memlayout.h"
 #include "kernel/defs.h"
+#include "kernel/slab.h"
 #include "kernel/util/assert.h"
+#include "kernel/util/lock_guard.h"
 
 namespace xv6 {
 
-void kstack_allocator::init() {
-    freelist_.clear();
-
-    for (uint64 i = 0; i < NPROC; i++) {
-        auto stack_kva = reinterpret_cast<void *>(KSTACK(i));
-        freelist_.push_front(stack_kva);
+bool kstack_kva_valid(const uint64 va) {
+    if (va == 0 || (va % PGSIZE) != 0) {
+        return false;
     }
+    if (va >= TRAMPOLINE) {
+        return false;
+    }
+    const uint64 delta = TRAMPOLINE - va;
+    if (delta < KSTACK_SLOT_SIZE) {
+        return false;
+    }
+    if (delta % KSTACK_SLOT_SIZE != 0) {
+        return false;
+    }
+    if (va < KSTACK_VA_FLOOR) {
+        return false;
+    }
+    return true;
+}
+
+void kstack_allocator::init() {
+    if (!lock_inited_) {
+        lock_.init_lock("kstack_allocator");
+        lock_inited_ = true;
+    }
+    util::lock_guard lk(lock_);
+    while (freelist_ != nullptr) {
+        free_entry *e = freelist_;
+        freelist_ = e->next;
+        slab_free_t<free_entry>(e);
+    }
+    next_slot_ = 0;
+}
+
+void *kstack_allocator::alloc_locked() {
+    if (freelist_ != nullptr) {
+        free_entry *e = freelist_;
+        freelist_ = e->next;
+        const uint64 kva = e->stack_kva;
+        slab_free_t<free_entry>(e);
+        assert(kstack_kva_valid(kva), "kstack_allocator: bad freelist kva");
+        return reinterpret_cast<void *>(kva);
+    }
+
+    const uint64 kva = KSTACK_SLOT_VA(next_slot_);
+    if (!kstack_kva_valid(kva)) {
+        return nullptr;
+    }
+    next_slot_++;
+    return reinterpret_cast<void *>(kva);
 }
 
 void *kstack_allocator::alloc() {
-    void *kva = nullptr;
-    // atomically pop one entry from list
-    if (!freelist_.pop_front_value(kva)) {
-        return nullptr;
-    }
-    return kva;
+    util::lock_guard lk(lock_);
+    return alloc_locked();
+}
+
+void kstack_allocator::free_locked(void *va) {
+    assert(va != nullptr, "kstack_allocator::free: nullptr");
+    const auto kva = reinterpret_cast<uint64>(va);
+    assert(kstack_kva_valid(kva), "kstack_allocator::free: invalid kva");
+
+    auto *e = slab_alloc_t<free_entry>();
+    assert(e != nullptr, "kstack_allocator::free: OOM for freelist node");
+    e->stack_kva = kva;
+    e->next = freelist_;
+    freelist_ = e;
 }
 
 void kstack_allocator::free(void *va) {
-    assert(va, "kstack_allocator::free: nullptr");
-    // must be page-aligned
-    assert((reinterpret_cast<uint64>(va) % PGSIZE) == 0,
-           "kstack_allocator::free: unaligned kva");
-    // must be in the kstack region below TRAMPOLINE
-    assert(reinterpret_cast<uint64>(va) < TRAMPOLINE,
-           "kstack_allocator::free: kva >= TRAMPOLINE");
-
-    // atomically push one entry to list
-    freelist_.push_front(va);
+    util::lock_guard lk(lock_);
+    free_locked(va);
 }
 
 } // namespace xv6
