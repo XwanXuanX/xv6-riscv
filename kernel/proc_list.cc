@@ -25,9 +25,7 @@ bool process_list::pinit(proc *p) {
 
     // Zero initialize the chunk of memory
     // without initialization, the memory is full of garbage
-    {
-        new (p) proc();
-    }
+    { new (p) proc(); }
 
     // initialize the lock before anything can use it
     {

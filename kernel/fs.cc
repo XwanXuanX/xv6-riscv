@@ -558,7 +558,7 @@ int dirlink(inode *dp, const char *name, const uint inum) {
     dirent de{};
 
     // Check that name is not present.
-    if (inode *ip; (ip = dirlookup(dp, name, nullptr)) != nullptr) {
+    if (inode * ip; (ip = dirlookup(dp, name, nullptr)) != nullptr) {
         iput(ip);
         return -1;
     }
