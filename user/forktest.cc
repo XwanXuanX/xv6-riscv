@@ -3,7 +3,8 @@
 
 #include "user/user.h"
 
-#define N 1000
+// Impossible upper bound for the number of forks.
+#define N 10000000000
 
 void print(const char *s) { write(1, s, strlen(s)); }
 
@@ -22,6 +23,7 @@ void forktest() {
         }
     }
 
+    printf("forktest: forked %d times\n", n);
     if (n == N) {
         print("fork claimed to work N times!\n");
         exit(1);

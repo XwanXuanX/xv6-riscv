@@ -1870,7 +1870,7 @@ void iref(const char *s) {
 // the forktest binary also does this, but it runs out of proc entries first.
 // inside the bigger usertests binary, we run out of memory first.
 void forktest(const char *s) {
-    enum { N = 1000 };
+    enum { N = 10000000000 };
     int n;
 
     for (n = 0; n < N; n++) {
