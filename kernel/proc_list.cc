@@ -196,6 +196,7 @@ proc *process_list::alloc_proc() {
         procs_.push_front_unlocked(p);
     });
 
+    assert(p->lock.holding(), "plock not held when returning");
     return p;
 }
 
