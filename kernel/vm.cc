@@ -438,7 +438,7 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {
 uint64 vmfault(pagetable_t pagetable, uint64 va) {
     const proc *p = myproc();
 
-    if (va >= p->sz) {
+    if (va >= p->heap_top) {
         return 0;
     }
     va = PGROUNDDOWN(va);

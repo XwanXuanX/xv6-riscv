@@ -129,18 +129,18 @@ void userinit() {
 int growproc(const int n) {
     proc *p = myproc();
 
-    uint64 sz = p->sz;
+    uint64 top = p->heap_top;
     if (n > 0) {
-        if (sz + n > TRAPFRAME) {
+        if (top + n > TRAPFRAME) {
             return -1;
         }
-        if ((sz = uvmalloc(p->pagetable, sz, sz + n, PTE_W)) == 0) {
+        if ((top = uvmalloc(p->pagetable, top, top + n, PTE_W)) == 0) {
             return -1;
         }
     } else if (n < 0) {
-        sz = uvmdealloc(p->pagetable, sz, sz + n);
+        top = uvmdealloc(p->pagetable, top, top + n);
     }
-    p->sz = sz;
+    p->heap_top = top;
     return 0;
 }
 
@@ -157,7 +157,7 @@ int kfork() {
     assert(np->lock.holding(), "process lock NOT held");
 
     // Copy user memory from parent to child.
-    if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
+    if (uvmcopy(p->pagetable, np->pagetable, p->heap_top) < 0) {
         np->lock.unlock(); // unlock and relock later to preserve lock ordering
         process_list::instance().with_list_locked([&](auto &) {
             np->lock.lock();
@@ -168,7 +168,10 @@ int kfork() {
         return -1;
     }
 
-    np->sz = p->sz;
+    np->heap_top = p->heap_top;
+    np->heap_bottom = p->heap_bottom;
+    np->stack_top = p->stack_top;
+    np->stack_bottom = p->stack_bottom;
     // copy saved user registers.
     *np->trapf = *p->trapf;
     // Cause fork to return 0 in the child.

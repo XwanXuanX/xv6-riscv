@@ -31,7 +31,7 @@ uint64 sys_sbrk() {
 
     argint(0, &n);
     argint(1, &t);
-    const uint64 addr = myproc()->sz;
+    const uint64 addr = myproc()->heap_top;
 
     if (t == SBRK_EAGER || n < 0) {
         if (growproc(n) < 0) {
@@ -47,7 +47,7 @@ uint64 sys_sbrk() {
         if (addr + n > TRAPFRAME) {
             return -1;
         }
-        myproc()->sz += n;
+        myproc()->heap_top += n;
     }
     return addr;
 }

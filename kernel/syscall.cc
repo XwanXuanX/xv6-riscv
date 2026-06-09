@@ -9,8 +9,8 @@ namespace xv6 {
 // Fetch the uint64 at addr from the current process.
 int fetchaddr(const uint64 addr, uint64 *ip) {
     const proc *p = myproc();
-    if (addr >= p->sz || addr + sizeof(uint64) >
-                             p->sz) { // both tests needed, in case of overflow
+    if (addr >= p->heap_top || addr + sizeof(uint64) >
+                                  p->heap_top) { // both tests needed, in case of overflow
         return -1;
     }
     if (copyin(p->pagetable, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) !=

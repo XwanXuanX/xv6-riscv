@@ -107,7 +107,7 @@ void process_list::pfree(proc *p) const {
         p->trapf = nullptr;
     }
     if (p->pagetable) {
-        free_ptable(p->pagetable, p->sz);
+        free_ptable(p->pagetable, p->heap_top);
         p->pagetable = nullptr;
     }
     if (p->kstack) {
@@ -122,7 +122,10 @@ void process_list::pfree(proc *p) const {
         p->kstack_phys = 0;
     }
     // Other fields
-    p->sz = 0;
+    p->heap_top = 0;
+    p->heap_bottom = 0;
+    p->stack_top = 0;
+    p->stack_bottom = 0;
     p->pid = 0;
     p->parent = nullptr;
     p->name[0] = 0;

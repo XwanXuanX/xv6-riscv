@@ -68,7 +68,7 @@ int kexec(const char *path, const char **argv) {
     // │ text/data   │ guard │ stack   │ heap (sbrk / malloc)     │ TRAPFRAME │ TRAMPOLINE │
     // │ (ELF)       │       │ fixed   │ grows upward             │ trap save │ trap code  │
     // └─────────────┴───────┴─────────┴──────────────────────────┴───────────┴────────────┘
-    // 0             S       S+PGSIZE  S+2*PGSIZE (= p->sz after exec)     ~MAXVA-2PG   MAXVA-PGSIZE
+    // 0             S       S+PGSIZE  S+2*PGSIZE (= heap_top after exec)   ~MAXVA-2PG   MAXVA-PGSIZE
     // clang-format on
     for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
         if (readi(ip, 0, reinterpret_cast<uint64>(&ph), off, sizeof(ph)) !=
@@ -101,7 +101,7 @@ int kexec(const char *path, const char **argv) {
     ip = nullptr;
 
     p = myproc();
-    oldsz = p->sz;
+    oldsz = p->heap_top;
 
     // Allocate some pages at the next page boundary.
     // Make the first inaccessible as a stack guard.
@@ -161,7 +161,10 @@ int kexec(const char *path, const char **argv) {
     // Commit to the user image.
     oldpagetable = p->pagetable;
     p->pagetable = pagetable;
-    p->sz = sz;
+    p->heap_top = sz;
+    p->heap_bottom = sz;
+    p->stack_bottom = sz - USERSTACK * PGSIZE;
+    p->stack_top = sz;
     p->trapf->epc = elf.entry; // initial program counter = ulib.c:start()
     p->trapf->sp = sp;         // initial stack pointer
     proc_freepagetable(oldpagetable, oldsz);
