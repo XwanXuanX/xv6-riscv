@@ -179,13 +179,22 @@ struct proc {
     // wait_lock must be held when using this:
     proc *parent = nullptr; // Parent process
 
+    //////////////////////////////////////////////////////////////////
     // these are private to the process, so p->lock need not be held.
-    uint64 kstack = 0;               // Virtual address of kernel stack
-    uint64 kstack_phys = 0;          // Physical page of kernel stack
-    uint64 sz = 0;                   // Size of process memory (bytes)
-    pagetable_t pagetable = nullptr; // User page table
-    trapframe *trapf = nullptr;      // data page for trampoline.S
-    context ctx{};                   // swtch() here to run process
+
+    // kernel stack memory region
+    uint64 kstack = 0;      // Virtual address of kernel stack
+    uint64 kstack_phys = 0; // Physical page of kernel stack
+
+    // user program's memory regions (stack and heap)
+    uint64 heap_top = 0;     // highest addr of heap
+    uint64 heap_bottom = 0;  // lowest addr of heap
+    uint64 stack_top = 0;    // highest addr of stack
+    uint64 stack_bottom = 0; // lowest addr of stack
+
+    pagetable_t pagetable = nullptr;           // User page table
+    trapframe *trapf = nullptr;                // data page for trampoline.S
+    context ctx{};                             // swtch() here to run process
     std::array<struct file *, NOFILE> ofile{}; // Open files
     struct inode *cwd = nullptr;               // Current directory
     std::array<char, 16> name{};               // Process name (debugging)
