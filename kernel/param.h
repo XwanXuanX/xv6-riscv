@@ -13,7 +13,5 @@
 #define FSSIZE 2000                 // size of file system in blocks
 #define MAXPATH 128                 // maximum file path name
 #define USERSTACK 1                 // user stack pages
-// #define RR                          // round robin scheduling policy
-#define MLFQ      // multi-level feedback queue scheduling policy
-#define NLEVELS 5 // number of levels of queue that we have
-#define S 256     // the period for periodic priority boost
+#define NLEVELS 5                   // number of levels of queue that we have
+#define S 256                       // the period for periodic priority boost
