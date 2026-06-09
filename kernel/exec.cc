@@ -62,6 +62,14 @@ int kexec(const char *path, const char **argv) {
     }
 
     // Load program into memory.
+    // User program memory layout:
+    // clang-format off
+    // ┌─────────────┬───────┬─────────┬──────────────────────────┬───────────┬────────────┐
+    // │ text/data   │ guard │ stack   │ heap (sbrk / malloc)     │ TRAPFRAME │ TRAMPOLINE │
+    // │ (ELF)       │       │ fixed   │ grows upward             │ trap save │ trap code  │
+    // └─────────────┴───────┴─────────┴──────────────────────────┴───────────┴────────────┘
+    // 0             S       S+PGSIZE  S+2*PGSIZE (= p->sz after exec)     ~MAXVA-2PG   MAXVA-PGSIZE
+    // clang-format on
     for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
         if (readi(ip, 0, reinterpret_cast<uint64>(&ph), off, sizeof(ph)) !=
             sizeof(ph)) {
