@@ -1,30 +1,27 @@
-// User process's kernel stack is mapped to some virtual addresses in the
-// kernel's address space. This allocator provides a number of available kernel
-// VA that the kernel stack page can be mapped to
+// Per-process kernel stacks are mapped in the shared kernel page table.
+// Each stack uses a two-page virtual slot below TRAMPOLINE:
+//   [guard page: unmapped] [stack page: mapped read/write]
+// The guard page catches overflow toward higher addresses (toward TRAMPOLINE).
 //
-// The new kernel virtual memory layout:
 // MAX_VA
 //   ┌──────────────────────────┐
-//   │ trampoline (1 page)      │  TRAMPOLINE = MAX_VA - PG_SIZE
+//   │ trampoline (1 page)      │  TRAMPOLINE
 //   ├──────────────────────────┤
-//   │ kstack slot 0: guard     │
+//   │ kstack slot 0: guard     │  unmapped
 //   ├──────────────────────────┤
-//   │ kstack slot 0: stack     │
+//   │ kstack slot 0: stack     │  mapped per process
 //   ├──────────────────────────┤
 //   │ kstack slot 1: guard     │
 //   ├──────────────────────────┤
 //   │ kstack slot 1: stack     │
 //   ├──────────────────────────┤
-//   │ ...                      │
+//   │ ... (grows downward)     │
 //   └──────────────────────────┘
-//   (rest of kernel mappings below)
+//   KSTACK_VA_FLOOR
 #pragma once
 
 #include "kernel/types.h"
-#include "kernel/param.h"
 #include "kernel/spinlock.h"
-#include "kernel/slab.h"
-#include "kernel/stl/ts_forward_list.h"
 #include "kernel/util/singletony.h"
 
 namespace xv6 {
@@ -33,26 +30,39 @@ namespace test {
 void kstack_self_test();
 }
 
-// Allocates ONLY kernel virtual addresses (KVAs) for per-process kernel stacks.
-// Does NOT allocate physical pages and does NOT modify page tables.
+// True if va is a valid stack-page KVA from this allocator (page-aligned slot).
+[[nodiscard]] bool kstack_kva_valid(uint64 va);
+
+// Allocates kernel virtual addresses for per-process kernel stack pages.
+// Does not allocate physical pages or modify page tables.
 class kstack_allocator : public util::singleton<kstack_allocator> {
     friend class singleton;
 
   public:
-    // Initialize freelist with NPROC stack KVAs under TRAMPOLINE
     void init();
 
-    // Pop one available KVA for a stack page. Returns nullptr if empty.
+    // Pop a recycled stack KVA, or bump-allocate a new slot. nullptr if full.
     void *alloc();
 
-    // Push a previously allocated KVA back to freelist.
+    // Return a stack KVA to the freelist.
     void free(void *va);
 
   private:
+    struct free_entry {
+        free_entry *next;
+        uint64 stack_kva;
+    };
+
     kstack_allocator() = default;
 
-    // Thread-safe freelist
-    stl::ts_forward_list<void *> freelist_;
+    [[nodiscard]] void *alloc_locked();
+    void free_locked(void *va);
+
+    mutable spinlock lock_{};
+    bool lock_inited_ = false;
+    free_entry *freelist_ = nullptr;
+    // Number of slots ever bump-allocated (slot indices [0, next_slot_)).
+    uint64 next_slot_ = 0;
 };
 
 } // namespace xv6

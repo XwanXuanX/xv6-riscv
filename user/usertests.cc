@@ -955,17 +955,21 @@ void forkforkfork(const char *s) {
         while (true) {
             const int fd = open("stopforking", 0);
             if (fd >= 0) {
+                close(fd);
                 exit(0);
             }
-            if (fork() < 0) {
+            const int npid = fork();
+            if (npid < 0) {
                 close(open("stopforking", O_CREATE | O_RDWR));
+                exit(0);
+            }
+            if (npid == 0) {
+                exit(0);
             }
         }
-
-        exit(0);
     }
 
-    pause(20); // two seconds
+    pause(100); // ten seconds
     close(open("stopforking", O_CREATE | O_RDWR));
     wait(nullptr);
     pause(10); // one second
@@ -1866,7 +1870,7 @@ void iref(const char *s) {
 // the forktest binary also does this, but it runs out of proc entries first.
 // inside the bigger usertests binary, we run out of memory first.
 void forktest(const char *s) {
-    enum { N = 1000 };
+    enum { N = 10000000000 };
     int n;
 
     for (n = 0; n < N; n++) {

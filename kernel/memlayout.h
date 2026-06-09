@@ -44,9 +44,17 @@
 // in both user and kernel space.
 #define TRAMPOLINE (MAXVA - PGSIZE)
 
-// map kernel stacks beneath the trampoline,
-// each surrounded by invalid guard pages.
-#define KSTACK(p) (TRAMPOLINE - ((p) + 1) * 2 * PGSIZE)
+// Kernel stack slots live in a high VA region directly below TRAMPOLINE.
+// Each slot is two pages: guard (unmapped) then stack (mapped on demand).
+// Slot index 0 is closest to TRAMPOLINE.
+#define KSTACK_SLOT_PAGES 2
+#define KSTACK_SLOT_SIZE (KSTACK_SLOT_PAGES * PGSIZE)
+// 64 MiB of VA for kernel stack slots (32768 two-page slots).
+#define KSTACK_VA_REGION_SIZE (64UL * 1024 * 1024)
+#define KSTACK_VA_FLOOR (TRAMPOLINE - KSTACK_VA_REGION_SIZE)
+
+// Stack page VA for slot index (0-based, allocated from low index upward).
+#define KSTACK_SLOT_VA(index) (TRAMPOLINE - ((index) + 1ULL) * KSTACK_SLOT_SIZE)
 
 // User memory layout.
 // Address zero first:
