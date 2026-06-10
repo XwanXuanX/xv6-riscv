@@ -33,7 +33,6 @@ int kexec(const char *path, const char **argv) {
     uint64 argc, sz = 0, sp, stackbase;
     uint64 sz1, old_heap_top, old_stack_bottom, old_stack_top;
     uint64 new_heap_top = 0, new_stack_bottom = 0, new_stack_top = 0;
-    uint64 guard_va = 0;
     bool stack_mapped = false;
     elfhdr elf{};
     inode *ip;
@@ -119,12 +118,10 @@ int kexec(const char *path, const char **argv) {
     new_heap_top = sz;
     new_stack_top = USERSTACK_HIGH;
     new_stack_bottom = USERSTACK_HIGH - USERSTACK * PGSIZE;
-    guard_va = USERSTACK_HIGH - (USERSTACK + 1) * PGSIZE;
-    if (uvmalloc(pagetable, guard_va, new_stack_top, PTE_W) == 0) {
+    if (uvmalloc(pagetable, new_stack_bottom, new_stack_top, PTE_W) == 0) {
         goto bad;
     }
     stack_mapped = true;
-    uvmclear(pagetable, guard_va);
     sp = new_stack_top;
     stackbase = new_stack_bottom;
 
