@@ -2547,9 +2547,13 @@ void lazy_copy(const char *) {
     }
 
     // read() and write() to these addresses should fail.
+    // USERSTACK_HIGH - USERSTACK*PGSIZE is the mapped user stack and is valid.
     constexpr unsigned long bad[] = {
-        0x3fffffc000, 0x3fffffd000, 0x3fffffe000,
-        0x3ffffff000, 0x4000000000, 0x8000000000,
+        USERSTACK_HIGH - USERSTACK * PGSIZE - PGSIZE, // unmapped below stack
+        USERSTACK_HIGH,                               // TRAPFRAME (no PTE_U)
+        TRAMPOLINE,
+        MAXVA,
+        0x8000000000UL,
     };
     for (int i = 0; i < static_cast<int>(std::size(bad)); i++) {
         int fd = open("README.md", 0);
@@ -2558,7 +2562,7 @@ void lazy_copy(const char *) {
             exit(1);
         }
         if (read(fd, (char *)bad[i], 512) >= 0) {
-            printf("read succeeded\n");
+            printf("read succeeded at %p\n", (void *)bad[i]);
             exit(1);
         }
         close(fd);
@@ -2568,10 +2572,36 @@ void lazy_copy(const char *) {
             exit(1);
         }
         if (write(fd, (char *)bad[i], 512) >= 0) {
-            printf("write succeeded\n");
+            printf("write succeeded at %p\n", (void *)bad[i]);
             exit(1);
         }
         close(fd);
+    }
+
+    // read() and write() to the fixed user stack should succeed.
+    {
+        const unsigned long stack = USERSTACK_HIGH - USERSTACK * PGSIZE;
+        int fd = open("README.md", 0);
+        if (fd < 0) {
+            printf("cannot open README.md\n");
+            exit(1);
+        }
+        if (read(fd, (char *)stack, 512) < 0) {
+            printf("read to user stack failed\n");
+            exit(1);
+        }
+        close(fd);
+        fd = open("junk", O_CREATE | O_RDWR | O_TRUNC);
+        if (fd < 0) {
+            printf("cannot open junk\n");
+            exit(1);
+        }
+        if (write(fd, (char *)stack, 512) < 0) {
+            printf("write from user stack failed\n");
+            exit(1);
+        }
+        close(fd);
+        unlink("junk");
     }
 
     exit(0);
