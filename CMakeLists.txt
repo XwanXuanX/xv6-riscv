@@ -248,6 +248,8 @@ set(USER_PROGS
         dorphan
         hellocpp
         mlfq_test
+        exec_test
+        exec_target
 )
 
 # Special handling for usertests, which is not in the initial list but is in the Makefile.
