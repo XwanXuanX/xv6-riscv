@@ -2608,6 +2608,13 @@ void lazy_copy(const char *) {
 }
 
 void lazy_sbrk(const char *) {
+    constexpr uint64 stack_bottom = USERSTACK_HIGH - USERSTACK * PGSIZE;
+    // NOTE: the heap_limit here represent the starting address of the last heap
+    // page, not the ending address of the last heap page.
+    // Therefore, without guard page = stack_bottom - PGSIZE
+    // and with guard page = stack_bottom - (2 * PGSIZE)
+    constexpr uint64 heap_limit = stack_bottom - PGSIZE * 2;
+
     // sbrk() takes just int, so take 2^30-sized steps towards MAXVA
     char *p = sbrk(0);
     while ((uint64)p < MAXVA - (1 << 30)) {
@@ -2620,8 +2627,7 @@ void lazy_sbrk(const char *) {
         p = sbrklazy(0);
     }
 
-    const int n = TRAPFRAME - PGSIZE - (uint64)p;
-
+    const int n = heap_limit - reinterpret_cast<uint64>(p);
     char *p1 = sbrklazy(n);
     if (p1 == (char *)-1 || p1 != p) {
         printf("sbrklazy(%d) returned %p, not expected %p\n", n, p1, p);
@@ -2630,9 +2636,9 @@ void lazy_sbrk(const char *) {
 
     p = sbrk(PGSIZE);
     if (p == reinterpret_cast<char *>(-1) ||
-        reinterpret_cast<uint64>(p) != TRAPFRAME - PGSIZE) {
-        printf("sbrk(%d) returned %p, not expected TRAPFRAME-PGSIZE\n", PGSIZE,
-               p);
+        reinterpret_cast<uint64>(p) != heap_limit) {
+        printf("sbrk(%d) returned %p, not expected %p\n", PGSIZE, p,
+               reinterpret_cast<void*>(heap_limit));
         exit(1);
     }
 
