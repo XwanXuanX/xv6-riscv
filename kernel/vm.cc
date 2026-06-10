@@ -210,30 +210,30 @@ void uvmunmap(pagetable_t pagetable, const uint64 va, const uint64 npages,
     }
 }
 
-// Allocate PTEs and physical memory to grow a process from oldsz to
-// newsz, which need not be page aligned.  Returns new size or 0 on error.
-uint64 uvmalloc(pagetable_t pagetable, uint64 oldsz, const uint64 newsz,
+// Allocate PTEs and physical memory to grow a process from start_va to
+// end_va, which need not be page aligned. Returns new size or 0 on error.
+uint64 uvmalloc(pagetable_t pagetable, uint64 start_va, const uint64 end_va,
                 const int xperm) {
-    if (newsz < oldsz) {
-        return oldsz;
+    if (end_va < start_va) {
+        return start_va;
     }
 
-    oldsz = PGROUNDUP(oldsz);
-    for (uint64 a = oldsz; a < newsz; a += PGSIZE) {
+    start_va = PGROUNDUP(start_va);
+    for (uint64 a = start_va; a < end_va; a += PGSIZE) {
         auto mem = static_cast<char *>(page_allocator::instance().alloc());
         if (mem == nullptr) {
-            uvmdealloc(pagetable, a, oldsz);
+            uvmdealloc(pagetable, a, start_va);
             return 0;
         }
         memset(mem, 0, PGSIZE);
-        if (mappages(pagetable, a, PGSIZE, (uint64)mem,
+        if (mappages(pagetable, a, PGSIZE, reinterpret_cast<uint64>(mem),
                      PTE_R | PTE_U | xperm) != 0) {
             page_allocator::instance().free(mem);
-            uvmdealloc(pagetable, a, oldsz);
+            uvmdealloc(pagetable, a, start_va);
             return 0;
         }
     }
-    return newsz;
+    return end_va;
 }
 
 // Deallocate user pages to bring the process size from oldsz to
@@ -272,11 +272,18 @@ void freewalk(pagetable_t pagetable) {
     page_allocator::instance().free(pagetable);
 }
 
-// Free user memory pages,
+// Free user memory pages, including the heap and stack sections,
 // then free page-table pages.
-void uvmfree(pagetable_t pagetable, const uint64 sz) {
-    if (sz > 0) {
-        uvmunmap(pagetable, 0, PGROUNDUP(sz) / PGSIZE, 1);
+void uvmfree(pagetable_t pagetable, const uint64 heap_top,
+             const uint64 stack_bottom, const uint64 stack_top) {
+    // free the text/bss/data + heap section
+    if (heap_top > 0) {
+        uvmunmap(pagetable, 0, PGROUNDUP(heap_top) / PGSIZE, 1);
+    }
+    // free the stack section
+    const uint64 stack_size = stack_top - stack_bottom;
+    if (stack_size > 0) {
+        uvmunmap(pagetable, stack_bottom, PGROUNDUP(stack_size) / PGSIZE, 1);
     }
     freewalk(pagetable);
 }
@@ -287,32 +294,47 @@ void uvmfree(pagetable_t pagetable, const uint64 sz) {
 // physical memory.
 // returns 0 on success, -1 on failure.
 // frees any allocated pages on failure.
-int uvmcopy(pagetable_t old, pagetable_t nw, const uint64 sz) {
+int uvmcopy(pagetable_t old, pagetable_t nw, const uint64 heap_top,
+            const uint64 stack_bottom, const uint64 stack_top) {
     pte_t *pte;
     uint64 pa, i;
     uint flags;
     char *mem;
 
-    for (i = 0; i < sz; i += PGSIZE) {
-        if ((pte = walk(old, i, 0)) == nullptr) {
-            continue; // page table entry hasn't been allocated
+    // helper to copy over a section of memory
+    auto copy_over = [&](const uint64 start, const uint64 end) -> bool {
+        for (i = start; i < end; i += PGSIZE) {
+            if ((pte = walk(old, i, 0)) == nullptr) {
+                continue; // page table entry hasn't been allocated
+            }
+            if ((*pte & PTE_V) == 0) {
+                continue; // physical page hasn't been allocated
+            }
+            pa = PTE2_PA(*pte);
+            flags = PTE_FLAGS(*pte);
+            if ((mem = static_cast<char *>(
+                     page_allocator::instance().alloc())) == nullptr) {
+                return false;
+            }
+            memmove(mem, reinterpret_cast<char *>(pa), PGSIZE);
+            if (mappages(nw, i, PGSIZE, reinterpret_cast<uint64>(mem),
+                         static_cast<int>(flags)) != 0) {
+                page_allocator::instance().free(mem);
+                return false;
+            }
         }
-        if ((*pte & PTE_V) == 0) {
-            continue; // physical page hasn't been allocated
-        }
-        pa = PTE2_PA(*pte);
-        flags = PTE_FLAGS(*pte);
-        if ((mem = static_cast<char *>(page_allocator::instance().alloc())) ==
-            nullptr) {
-            goto err;
-        }
-        memmove(mem, reinterpret_cast<char *>(pa), PGSIZE);
-        if (mappages(nw, i, PGSIZE, reinterpret_cast<uint64>(mem),
-                     static_cast<int>(flags)) != 0) {
-            page_allocator::instance().free(mem);
-            goto err;
-        }
+        return true;
+    };
+
+    // copy over text/bss/data + heap section
+    if (!copy_over(0, heap_top)) {
+        goto err;
     }
+    // copy over stack section
+    if (!copy_over(stack_bottom, stack_top)) {
+        goto err;
+    }
+
     return 0;
 
 err:

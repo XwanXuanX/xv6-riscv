@@ -71,7 +71,7 @@ pagetable_t proc_pagetable(proc *p) {
     // to/from user space, so not PTE_U.
     if (mappages(pagetable, TRAMPOLINE, PGSIZE,
                  reinterpret_cast<uint64>(trampoline), PTE_R | PTE_X) < 0) {
-        uvmfree(pagetable, 0);
+        uvmfree(pagetable, 0, 0, 0);
         return nullptr;
     }
 
@@ -80,7 +80,7 @@ pagetable_t proc_pagetable(proc *p) {
     if (mappages(pagetable, TRAPFRAME, PGSIZE,
                  reinterpret_cast<uint64>(p->trapf), PTE_R | PTE_W) < 0) {
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-        uvmfree(pagetable, 0);
+        uvmfree(pagetable, 0, 0, 0);
         return nullptr;
     }
 
@@ -89,10 +89,11 @@ pagetable_t proc_pagetable(proc *p) {
 
 // Free a process's page table, and free the
 // physical memory it refers to.
-void proc_freepagetable(pagetable_t pagetable, const uint64 sz) {
+void proc_freepagetable(pagetable_t pagetable, const uint64 heap_top,
+                        const uint64 stack_bottom, const uint64 stack_top) {
     uvmunmap(pagetable, TRAMPOLINE, 1, 0);
     uvmunmap(pagetable, TRAPFRAME, 1, 0);
-    uvmfree(pagetable, sz);
+    uvmfree(pagetable, heap_top, stack_bottom, stack_top);
 }
 
 // Set up first user process.

@@ -66,3 +66,6 @@
 //   TRAPFRAME (p->trapframe, used by the trampoline)
 //   TRAMPOLINE (the same page as in the kernel)
 #define TRAPFRAME (TRAMPOLINE - PGSIZE)
+
+// Exclusive top of user stack; stack VA is [stack_bottom, USERSTACK_HIGH).
+#define USERSTACK_HIGH TRAPFRAME
