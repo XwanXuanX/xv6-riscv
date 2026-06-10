@@ -67,7 +67,7 @@ int kexec(const char *path, const char **argv) {
     // Load program into memory.
     // User program memory layout:
     // clang-format off
-    // Low VA                                                          High VA
+    // Low VA                                                                                  High VA
     // ┌──────────────┬──────────────────┬──────────┬───────────┬────────────┬───────────┬────────────┐
     // │ text/data    │ heap             │   gap    │ guard     │ stack      │ TRAPFRAME │ TRAMPOLINE │
     // │ (ELF)        │ (sbrk, grows up) │ unmapped │ (no PTE_U)│ (fixed)    │ trap save │ trap code  │
