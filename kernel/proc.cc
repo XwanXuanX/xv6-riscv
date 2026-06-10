@@ -158,7 +158,8 @@ int kfork() {
     assert(np->lock.holding(), "process lock NOT held");
 
     // Copy user memory from parent to child.
-    if (uvmcopy(p->pagetable, np->pagetable, p->heap_top) < 0) {
+    if (uvmcopy(p->pagetable, np->pagetable, p->heap_top, p->stack_bottom,
+                p->stack_top) < 0) {
         np->lock.unlock(); // unlock and relock later to preserve lock ordering
         process_list::instance().with_list_locked([&](auto &) {
             np->lock.lock();
