@@ -49,9 +49,9 @@ static void fail(const char *name, const char *msg) {
 
 // Run path with stdout captured into buf. Returns 0 on success, -1 on setup
 // error. Child exit status is stored in *xstatus.
-static int run_capture_with_setup(const char *path, const char **argv, char *buf,
-                                  const int buflen, int *xstatus,
-                                  void (*setup)(void)) {
+static int
+run_capture_with_setup(const char *path, const char **argv, char *buf,
+                       const int buflen, int *xstatus, void (*setup)(void)) {
     int pfd[2];
     if (pipe(pfd) < 0) {
         return -1;
@@ -197,12 +197,14 @@ static void test_argc_argv() {
     const char *argv[] = {"exec_target", "alpha", "beta", nullptr};
     int xstatus = 0;
 
-    if (run_capture("exec_target", argv, out.data(), out.size(), &xstatus) < 0) {
+    if (run_capture("exec_target", argv, out.data(), out.size(), &xstatus) <
+        0) {
         fail("argc_argv", "run_capture failed");
         return;
     }
     if (xstatus != 0) {
-        fail_status("argc_argv", "child exit status (99=exec returned)", xstatus);
+        fail_status("argc_argv", "child exit status (99=exec returned)",
+                    xstatus);
         return;
     }
 
@@ -392,8 +394,9 @@ static void test_stack_guard() {
         return;
     }
     if (xstatus != -1) {
-        fail_status("stack_guard", "child was not killed on guard violation "
-                                    "(99=exec returned)",
+        fail_status("stack_guard",
+                    "child was not killed on guard violation "
+                    "(99=exec returned)",
                     xstatus);
         return;
     }
