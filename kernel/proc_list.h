@@ -48,7 +48,8 @@ class process_list : public util::singleton<process_list> {
     static pagetable_t alloc_ptable(proc *p);
 
     // free a process's page table
-    static void free_ptable(pagetable_t page, uint64 sz);
+    static void free_ptable(pagetable_t page, uint64 heap_top,
+                            uint64 stack_bottom, uint64 stack_top);
 
     process_list() = default;
 

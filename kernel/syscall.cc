@@ -2,6 +2,8 @@
 #include "kernel/proc.h"
 #include "kernel/syscall.h"
 #include "kernel/defs.h"
+#include "util/assert.h"
+
 #include <array>
 
 namespace xv6 {
@@ -9,8 +11,16 @@ namespace xv6 {
 // Fetch the uint64 at addr from the current process.
 int fetchaddr(const uint64 addr, uint64 *ip) {
     const proc *p = myproc();
-    if (addr >= p->sz || addr + sizeof(uint64) >
-                             p->sz) { // both tests needed, in case of overflow
+    // Check for unsigned overflow
+    if (addr + sizeof(uint64) < addr) {
+        return -1;
+    }
+    const bool in_heap = addr + sizeof(uint64) <= p->heap_top;
+    // this check should always be true
+    assert0(p->stack_top > p->stack_bottom);
+    const bool in_stack =
+        addr >= p->stack_bottom && addr + sizeof(uint64) <= p->stack_top;
+    if (!in_heap && !in_stack) {
         return -1;
     }
     if (copyin(p->pagetable, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) !=

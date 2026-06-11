@@ -107,7 +107,7 @@ void process_list::pfree(proc *p) const {
         p->trapf = nullptr;
     }
     if (p->pagetable) {
-        free_ptable(p->pagetable, p->sz);
+        free_ptable(p->pagetable, p->heap_top, p->stack_bottom, p->stack_top);
         p->pagetable = nullptr;
     }
     if (p->kstack) {
@@ -122,7 +122,10 @@ void process_list::pfree(proc *p) const {
         p->kstack_phys = 0;
     }
     // Other fields
-    p->sz = 0;
+    p->heap_top = 0;
+    p->heap_bottom = 0;
+    p->stack_top = 0;
+    p->stack_bottom = 0;
     p->pid = 0;
     p->parent = nullptr;
     p->name[0] = 0;
@@ -148,23 +151,25 @@ pagetable_t process_list::alloc_ptable(proc *p) {
     // way to/from user space, so not PTE_U.
     if (mappages(pagetable, TRAMPOLINE, PGSIZE,
                  reinterpret_cast<uint64>(trampoline), PTE_R | PTE_X) < 0) {
-        uvmfree(pagetable, 0);
+        uvmfree(pagetable, 0, 0, 0);
         return nullptr;
     }
     // map the trapframe page just below the trampoline page, for trampoline.S.
     if (mappages(pagetable, TRAPFRAME, PGSIZE,
                  reinterpret_cast<uint64>(p->trapf), PTE_R | PTE_W) < 0) {
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-        uvmfree(pagetable, 0);
+        uvmfree(pagetable, 0, 0, 0);
         return nullptr;
     }
     return pagetable;
 }
 
-void process_list::free_ptable(pagetable_t page, const uint64 sz) {
+void process_list::free_ptable(pagetable_t page, const uint64 heap_top,
+                               const uint64 stack_bottom,
+                               const uint64 stack_top) {
     uvmunmap(page, TRAMPOLINE, 1, 0);
     uvmunmap(page, TRAPFRAME, 1, 0);
-    uvmfree(page, sz);
+    uvmfree(page, heap_top, stack_bottom, stack_top);
 }
 
 proc *process_list::alloc_proc() {

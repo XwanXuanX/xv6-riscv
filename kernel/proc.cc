@@ -71,7 +71,7 @@ pagetable_t proc_pagetable(proc *p) {
     // to/from user space, so not PTE_U.
     if (mappages(pagetable, TRAMPOLINE, PGSIZE,
                  reinterpret_cast<uint64>(trampoline), PTE_R | PTE_X) < 0) {
-        uvmfree(pagetable, 0);
+        uvmfree(pagetable, 0, 0, 0);
         return nullptr;
     }
 
@@ -80,7 +80,7 @@ pagetable_t proc_pagetable(proc *p) {
     if (mappages(pagetable, TRAPFRAME, PGSIZE,
                  reinterpret_cast<uint64>(p->trapf), PTE_R | PTE_W) < 0) {
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-        uvmfree(pagetable, 0);
+        uvmfree(pagetable, 0, 0, 0);
         return nullptr;
     }
 
@@ -89,10 +89,11 @@ pagetable_t proc_pagetable(proc *p) {
 
 // Free a process's page table, and free the
 // physical memory it refers to.
-void proc_freepagetable(pagetable_t pagetable, const uint64 sz) {
+void proc_freepagetable(pagetable_t pagetable, const uint64 heap_top,
+                        const uint64 stack_bottom, const uint64 stack_top) {
     uvmunmap(pagetable, TRAMPOLINE, 1, 0);
     uvmunmap(pagetable, TRAPFRAME, 1, 0);
-    uvmfree(pagetable, sz);
+    uvmfree(pagetable, heap_top, stack_bottom, stack_top);
 }
 
 // Set up first user process.
@@ -129,18 +130,20 @@ void userinit() {
 int growproc(const int n) {
     proc *p = myproc();
 
-    uint64 sz = p->sz;
+    uint64 top = p->heap_top;
+    // same limit as sys_sbrk(), see comments there.
+    const uint64 limit = p->stack_bottom - PGSIZE;
     if (n > 0) {
-        if (sz + n > TRAPFRAME) {
+        if (top + n > limit) {
             return -1;
         }
-        if ((sz = uvmalloc(p->pagetable, sz, sz + n, PTE_W)) == 0) {
+        if ((top = uvmalloc(p->pagetable, top, top + n, PTE_W)) == 0) {
             return -1;
         }
     } else if (n < 0) {
-        sz = uvmdealloc(p->pagetable, sz, sz + n);
+        top = uvmdealloc(p->pagetable, top, top + n);
     }
-    p->sz = sz;
+    p->heap_top = top;
     return 0;
 }
 
@@ -157,7 +160,8 @@ int kfork() {
     assert(np->lock.holding(), "process lock NOT held");
 
     // Copy user memory from parent to child.
-    if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0) {
+    if (uvmcopy(p->pagetable, np->pagetable, p->heap_top, p->stack_bottom,
+                p->stack_top) < 0) {
         np->lock.unlock(); // unlock and relock later to preserve lock ordering
         process_list::instance().with_list_locked([&](auto &) {
             np->lock.lock();
@@ -168,7 +172,10 @@ int kfork() {
         return -1;
     }
 
-    np->sz = p->sz;
+    np->heap_top = p->heap_top;
+    np->heap_bottom = p->heap_bottom;
+    np->stack_top = p->stack_top;
+    np->stack_bottom = p->stack_bottom;
     // copy saved user registers.
     *np->trapf = *p->trapf;
     // Cause fork to return 0 in the child.

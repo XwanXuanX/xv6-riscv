@@ -4,6 +4,7 @@
 #include "kernel/proc.h"
 #include "kernel/defs.h"
 #include "kernel/elf.h"
+#include "kernel/memlayout.h"
 #include <array>
 
 namespace xv6 {
@@ -30,7 +31,9 @@ int kexec(const char *path, const char **argv) {
     int i, off;
     std::array<uint64, MAXARG> ustack{};
     uint64 argc, sz = 0, sp, stackbase;
-    uint64 sz1, oldsz;
+    uint64 sz1, old_heap_top, old_stack_bottom, old_stack_top;
+    uint64 new_heap_top = 0, new_stack_bottom = 0, new_stack_top = 0;
+    bool stack_mapped = false;
     elfhdr elf{};
     inode *ip;
     proghdr ph{};
@@ -62,6 +65,15 @@ int kexec(const char *path, const char **argv) {
     }
 
     // Load program into memory.
+    // User program memory layout:
+    // clang-format off
+    // Low VA                                                                                  High VA
+    // ┌──────────────┬──────────────────┬──────────┬───────────┬────────────┬───────────┬────────────┐
+    // │ text/data    │ heap             │   gap    │ guard     │ stack      │ TRAPFRAME │ TRAMPOLINE │
+    // │ (ELF)        │ (sbrk, grows up) │ unmapped │ (no PTE_U)│ (fixed)    │ trap save │ trap code  │
+    // └──────────────┴──────────────────┴──────────┴───────────┴────────────┴───────────┴────────────┘
+    // 0              heap_top (= PGROUNDUP(sz))   guard_va  stack_bottom  USERSTACK_HIGH
+    // clang-format on
     for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
         if (readi(ip, 0, reinterpret_cast<uint64>(&ph), off, sizeof(ph)) !=
             sizeof(ph)) {
@@ -93,20 +105,25 @@ int kexec(const char *path, const char **argv) {
     ip = nullptr;
 
     p = myproc();
-    oldsz = p->sz;
+    // old_sz is used to free the old page table after the new page table is
+    // committed, now contains two sections:
+    // 1. the old text/data/bss + heap section
+    // 2. the old stack section
+    old_heap_top = p->heap_top;
+    old_stack_bottom = p->stack_bottom;
+    old_stack_top = p->stack_top;
 
-    // Allocate some pages at the next page boundary.
-    // Make the first inaccessible as a stack guard.
-    // Use the rest as the user stack.
+    // Allocate guard + initial user stack pages just below TRAPFRAME.
     sz = PGROUNDUP(sz);
-    if ((sz1 = uvmalloc(pagetable, sz, sz + (USERSTACK + 1) * PGSIZE, PTE_W)) ==
-        0) {
+    new_heap_top = sz;
+    new_stack_top = USERSTACK_HIGH;
+    new_stack_bottom = USERSTACK_HIGH - USERSTACK * PGSIZE;
+    if (uvmalloc(pagetable, new_stack_bottom, new_stack_top, PTE_W) == 0) {
         goto bad;
     }
-    sz = sz1;
-    uvmclear(pagetable, sz - (USERSTACK + 1) * PGSIZE);
-    sp = sz;
-    stackbase = sp - USERSTACK * PGSIZE;
+    stack_mapped = true;
+    sp = new_stack_top;
+    stackbase = new_stack_bottom;
 
     // Copy argument strings into new stack, remember their
     // addresses in ustack[].
@@ -153,16 +170,22 @@ int kexec(const char *path, const char **argv) {
     // Commit to the user image.
     oldpagetable = p->pagetable;
     p->pagetable = pagetable;
-    p->sz = sz;
+    p->heap_top = new_heap_top;
+    p->heap_bottom = new_heap_top;
+    p->stack_bottom = new_stack_bottom;
+    p->stack_top = new_stack_top;
     p->trapf->epc = elf.entry; // initial program counter = ulib.c:start()
     p->trapf->sp = sp;         // initial stack pointer
-    proc_freepagetable(oldpagetable, oldsz);
+    proc_freepagetable(oldpagetable, old_heap_top, old_stack_bottom,
+                       old_stack_top);
 
     return argc; // this ends up in a0, the first argument to main(argc, argv)
 
 bad:
     if (pagetable) {
-        proc_freepagetable(pagetable, sz);
+        proc_freepagetable(pagetable, PGROUNDUP(sz),
+                           stack_mapped ? new_stack_bottom : 0,
+                           stack_mapped ? new_stack_top : 0);
     }
     if (ip) {
         iunlockput(ip);

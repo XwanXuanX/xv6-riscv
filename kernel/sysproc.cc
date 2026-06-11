@@ -31,7 +31,12 @@ uint64 sys_sbrk() {
 
     argint(0, &n);
     argint(1, &t);
-    const uint64 addr = myproc()->sz;
+    const uint64 addr = myproc()->heap_top;
+    // define the limit of how far can the heap grow
+    // we should always insert a guard page between the heap and stack,
+    // since this can catch any stack overflows and prevent a write to the stack
+    // accidentally modified the heap memory.
+    const uint64 limit = myproc()->stack_bottom - PGSIZE;
 
     if (t == SBRK_EAGER || n < 0) {
         if (growproc(n) < 0) {
@@ -44,10 +49,10 @@ uint64 sys_sbrk() {
         if (addr + n < addr) {
             return -1;
         }
-        if (addr + n > TRAPFRAME) {
+        if (addr + n > limit) {
             return -1;
         }
-        myproc()->sz += n;
+        myproc()->heap_top += n;
     }
     return addr;
 }
