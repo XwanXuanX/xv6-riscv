@@ -251,6 +251,7 @@ set(USER_PROGS
         exec_test
         exec_target
         stackrecur
+        stackshrink
 )
 
 # Special handling for usertests, which is not in the initial list but is in the Makefile.
