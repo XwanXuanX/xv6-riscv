@@ -131,10 +131,8 @@ int growproc(const int n) {
     proc *p = myproc();
 
     uint64 top = p->heap_top;
-    // same limit as sys_sbrk(), see comments there.
-    const uint64 limit = p->stack_bottom - PGSIZE;
     if (n > 0) {
-        if (top + n > limit) {
+        if (try_make_heap_room(p, top + n) < 0) {
             return -1;
         }
         if ((top = uvmalloc(p->pagetable, top, top + n, PTE_W)) == 0) {
