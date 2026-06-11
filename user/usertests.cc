@@ -2638,7 +2638,7 @@ void lazy_sbrk(const char *) {
     if (p == reinterpret_cast<char *>(-1) ||
         reinterpret_cast<uint64>(p) != heap_limit) {
         printf("sbrk(%d) returned %p, not expected %p\n", PGSIZE, p,
-               reinterpret_cast<void*>(heap_limit));
+               reinterpret_cast<void *>(heap_limit));
         exit(1);
     }
 
