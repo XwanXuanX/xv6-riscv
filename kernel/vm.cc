@@ -4,6 +4,7 @@
 #include "kernel/defs.h"
 #include "kernel/proc.h"
 #include "kernel/kalloc.h"
+#include "kernel/util/assert.h"
 
 namespace xv6 {
 
@@ -443,20 +444,56 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {
     return -1;
 }
 
-// allocate and map user memory if process is referencing a page
-// that was lazily allocated in sys_sbrk().
+// allocate and map user memory if process is referencing a page that is either:
+// 1. lazily allocated in sys_sbrk()
+// 2. a new stack page that has not been allocated yet.
 // returns 0 if va is invalid or already mapped, or if
 // out of physical memory, and physical address if successful.
 uint64 vmfault(pagetable_t pagetable, uint64 va) {
-    const proc *p = myproc();
+    proc *p = myproc();
+    va = PGROUNDDOWN(va);
 
-    if (va >= p->heap_top) {
+    // Lazily allocated heap page from sys_sbrk().
+    if (va < p->heap_top) {
+        if (ismapped(pagetable, va)) {
+            return 0;
+        }
+        const auto mem =
+            reinterpret_cast<uint64>(page_allocator::instance().alloc());
+        if (mem == 0) {
+            return 0;
+        }
+        memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
+        if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) !=
+            0) {
+            page_allocator::instance().free(reinterpret_cast<void *>(mem));
+            return 0;
+        }
+        return mem;
+    }
+
+    // Faults inside the already-mapped stack should not reach vmfault().
+    assert0(!(p->stack_bottom <= va && va < p->stack_top));
+
+    // Grow the stack down by one page: [stack_bottom - PGSIZE, stack_bottom).
+    // Rule #1: the requested va MUST immediately below current stack_bottom
+    if (p->stack_bottom == 0 || va + PGSIZE != p->stack_bottom) {
         return 0;
     }
-    va = PGROUNDDOWN(va);
+    // Rule #2: the requested va does not intrude into the guard page or heap
+    if (va < p->heap_top + PGSIZE) {
+        return 0;
+    }
+    // Rule #3: va is near SP, and SP is in the faulting page
+    const uint64 sp = p->trapf->sp;
+    if (sp < va || sp >= p->stack_bottom) {
+        return 0;
+    }
+    // Rule #4: page must not be already mapped
     if (ismapped(pagetable, va)) {
         return 0;
     }
+
     const auto mem =
         reinterpret_cast<uint64>(page_allocator::instance().alloc());
     if (mem == 0) {
@@ -467,6 +504,7 @@ uint64 vmfault(pagetable_t pagetable, uint64 va) {
         page_allocator::instance().free(reinterpret_cast<void *>(mem));
         return 0;
     }
+    p->stack_bottom = va;
     return mem;
 }
 
