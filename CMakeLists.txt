@@ -90,6 +90,7 @@ set(KERNEL_SOURCES
         kernel/main.cc
         kernel/vm.cc
         kernel/proc.cc
+        kernel/scheduler.cc
         kernel/kstack_alloc.cc
         kernel/test/kstack_alloc_selftest.cc
         kernel/test/ts_forward_list_selftest.cc
