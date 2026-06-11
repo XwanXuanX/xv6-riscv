@@ -5,8 +5,13 @@
 
 #include "user/user.h"
 
+// ignore infinite recursion since it is intended
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winfinite-recursion"
+
+// disable any optimizations so recursion remains recursion
+#pragma GCC push_options
+#pragma GCC optimize("O0")
 
 static void print_depth(const int depth) {
     char buf[16];
@@ -42,6 +47,7 @@ static void recurse_impl(const int depth) {
     recurse_impl(depth + 1);
 }
 
+#pragma GCC pop_options
 #pragma GCC diagnostic pop
 
 static void recurse(const int depth) { recurse_impl(depth); }
