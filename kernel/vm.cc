@@ -519,4 +519,40 @@ int ismapped(pagetable_t pagetable, const uint64 va) {
     return 0;
 }
 
+// Unmap stack pages below the page containing sp and move stack_bottom up.
+// Returns bytes reclaimed, 0 if nothing to reclaim, -1 if sp is invalid.
+int uvmstackshrink(pagetable_t pagetable, uint64 *stack_bottom, const uint64 sp,
+                   const uint64 stack_top) {
+    const uint64 old_bottom = *stack_bottom;
+    if (sp < old_bottom || sp >= stack_top) {
+        return -1;
+    }
+
+    const uint64 new_bottom = PGROUNDDOWN(sp);
+    if (new_bottom <= old_bottom) {
+        return 0;
+    }
+
+    const uint64 npages = (new_bottom - old_bottom) / PGSIZE;
+    uvmunmap(pagetable, old_bottom, npages, 1);
+    *stack_bottom = new_bottom;
+    return new_bottom - old_bottom;
+}
+
+// Ensure at least one guard page sits between heap_top and the stack.
+// Tries stack shrink when the heap would otherwise collide with the stack.
+int try_make_heap_room(proc *p, const uint64 new_heap_top) {
+    if (new_heap_top <= p->stack_bottom - PGSIZE) {
+        return 0;
+    }
+    if (uvmstackshrink(p->pagetable, &p->stack_bottom, p->trapf->sp,
+                       p->stack_top) <= 0) {
+        return -1;
+    }
+    if (new_heap_top <= p->stack_bottom - PGSIZE) {
+        return 0;
+    }
+    return -1;
+}
+
 } // namespace xv6
