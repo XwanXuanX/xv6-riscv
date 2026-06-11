@@ -2,9 +2,10 @@
 
 #include "kernel/param.h"
 #include "kernel/spinlock.h"
-#include <array>
 #include "kernel/util/assert.h"
 #include "kernel/util/singletony.h"
+
+#include <array>
 
 namespace xv6 {
 
