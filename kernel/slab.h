@@ -4,6 +4,7 @@
 #include "kernel/riscv.h"
 #include "kernel/spinlock.h"
 #include "kernel/util/singletony.h"
+
 #include <array>
 
 namespace xv6 {

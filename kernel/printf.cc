@@ -2,10 +2,11 @@
 // formatted console output -- printf, panic.
 //
 
-#include <cstdarg>
 #include "kernel/types.h"
 #include "kernel/spinlock.h"
 #include "kernel/defs.h"
+
+#include <cstdarg>
 #include <array>
 #include <string_view>
 

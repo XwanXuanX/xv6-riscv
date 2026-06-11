@@ -5,8 +5,9 @@
 #include "kernel/proc.h"
 #include "kernel/defs.h"
 #include "kernel/mlfq.h"
-#include <array>
 #include "kernel/util/lock_guard.h"
+
+#include <array>
 
 namespace xv6 {
 

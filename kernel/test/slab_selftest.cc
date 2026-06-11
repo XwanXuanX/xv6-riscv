@@ -2,6 +2,7 @@
 
 #include "kernel/defs.h"
 #include "kernel/slab.h"
+
 #include <array>
 
 namespace xv6::test {

@@ -13,8 +13,9 @@
 #include "kernel/fs.h"
 #include "kernel/buf.h"
 #include "kernel/virtio.h"
-#include <array>
 #include "kernel/kalloc.h"
+
+#include <array>
 
 namespace xv6 {
 

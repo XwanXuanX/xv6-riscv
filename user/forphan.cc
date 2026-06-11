@@ -1,6 +1,7 @@
 #include "kernel/stats.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
+
 #include <array>
 
 // Create an orphaned file and check if test-xv6.py recovers it.

@@ -9,8 +9,9 @@
 #include "kernel/file.h"
 #include "kernel/stats.h"
 #include "kernel/proc.h"
-#include <array>
 #include "kernel/util/lock_guard.h"
+
+#include <array>
 
 namespace xv6 {
 

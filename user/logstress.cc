@@ -1,5 +1,6 @@
 #include "kernel/fcntl.h"
 #include "user/user.h"
+
 #include <array>
 
 // Stress xv6 logging system by having several processes writing

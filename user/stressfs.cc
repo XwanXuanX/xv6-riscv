@@ -7,9 +7,10 @@
 //    for (i = 0; i < 40000; i++)
 //      asm volatile("");
 
-#include <array>
 #include "user/user.h"
 #include "kernel/fcntl.h"
+
+#include <array>
 
 int main() {
     int i;
