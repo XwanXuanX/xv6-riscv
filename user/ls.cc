@@ -1,7 +1,7 @@
-#include "kernel/stats.h"
+#include "kernel/fs/stats.h"
 #include "user/user.h"
-#include "kernel/fs.h"
-#include "kernel/fcntl.h"
+#include "kernel/fs/fs.h"
+#include "kernel/fs/fcntl.h"
 
 #include <array>
 #include <span>

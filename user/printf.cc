@@ -1,4 +1,4 @@
-#include "kernel/types.h"
+#include "kernel/lib/types.h"
 #include "user/user.h"
 
 #include <array>

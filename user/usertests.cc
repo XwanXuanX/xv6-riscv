@@ -1,10 +1,10 @@
-#include "kernel/param.h"
-#include "kernel/types.h"
+#include "kernel/lib/param.h"
+#include "kernel/lib/types.h"
 #include "user/user.h"
-#include "kernel/fs.h"
-#include "kernel/fcntl.h"
-#include "kernel/memlayout.h"
-#include "kernel/riscv.h"
+#include "kernel/fs/fs.h"
+#include "kernel/fs/fcntl.h"
+#include "kernel/arch/riscv/memlayout.h"
+#include "kernel/arch/riscv/riscv.h"
 
 #include <array>
 

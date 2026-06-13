@@ -1,7 +1,7 @@
 // Shell.
 
 #include "user/user.h"
-#include "kernel/fcntl.h"
+#include "kernel/fs/fcntl.h"
 
 #include <array>
 #include <string_view>

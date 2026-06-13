@@ -1,7 +1,7 @@
 // Tiny program exec'd by exec_test to inspect post-exec state.
-#include "kernel/types.h"
-#include "kernel/param.h"
-#include "kernel/riscv.h"
+#include "kernel/lib/types.h"
+#include "kernel/lib/param.h"
+#include "kernel/arch/riscv/riscv.h"
 #include "user/user.h"
 
 static uint64 read_sp() {

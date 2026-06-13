@@ -1,5 +1,5 @@
-#include "kernel/stats.h"
-#include "kernel/fcntl.h"
+#include "kernel/fs/stats.h"
+#include "kernel/fs/fcntl.h"
 #include "user/user.h"
 
 #include <array>

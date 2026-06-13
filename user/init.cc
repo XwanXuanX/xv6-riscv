@@ -1,9 +1,9 @@
 // init: The initial user-level program
 
-#include "kernel/fs.h"
-#include "kernel/file.h"
+#include "kernel/fs/fs.h"
+#include "kernel/fs/file.h"
 #include "user/user.h"
-#include "kernel/fcntl.h"
+#include "kernel/fs/fcntl.h"
 
 #include <array>
 

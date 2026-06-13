@@ -1,7 +1,7 @@
 #pragma once
 
-#include "kernel/stats.h"
-#include "kernel/types.h"
+#include "kernel/fs/stats.h"
+#include "kernel/lib/types.h"
 
 #define SBRK_ERROR ((char *)-1)
 

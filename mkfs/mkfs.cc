@@ -7,10 +7,10 @@
 #include <cstdlib>
 
 #define STAT xv6_stat // avoid clash with host struct stat
-#include "kernel/types.h"
-#include "kernel/fs.h"
-#include "kernel/stats.h"
-#include "kernel/param.h"
+#include "kernel/lib/types.h"
+#include "kernel/fs/fs.h"
+#include "kernel/fs/stats.h"
+#include "kernel/lib/param.h"
 
 using namespace xv6;
 

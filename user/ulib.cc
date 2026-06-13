@@ -1,7 +1,7 @@
-#include "kernel/types.h"
-#include "kernel/stats.h"
-#include "kernel/fcntl.h"
-#include "kernel/vm.h"
+#include "kernel/lib/types.h"
+#include "kernel/fs/stats.h"
+#include "kernel/fs/fcntl.h"
+#include "kernel/mm/vm.h"
 #include "user/user.h"
 
 using namespace xv6;
