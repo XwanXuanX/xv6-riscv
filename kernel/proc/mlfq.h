@@ -62,5 +62,6 @@ extern std::array<int, NLEVELS> quantum;
 void reset_time_slice(proc *p);
 void enqueue_runnable(int lvl, proc *p);
 void make_runnable_at_top(proc *p);
+void boost_runnable_to_top(proc *p, int epoch);
 
 } // namespace xv6

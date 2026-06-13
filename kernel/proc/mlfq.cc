@@ -28,6 +28,13 @@ void make_runnable_at_top(proc *p) {
     enqueue_runnable(0, p);
 }
 
+// Epoch-boost fixup: sync process epoch and re-enqueue at top priority.
+// Caller must hold p->lock.
+void boost_runnable_to_top(proc *p, const int epoch) {
+    p->epoch = epoch;
+    make_runnable_at_top(p);
+}
+
 void multi_lvl_feedback_q::init() {
     // For initialization, we don't lock
     lock_.init_lock("MLFQ_lock");
