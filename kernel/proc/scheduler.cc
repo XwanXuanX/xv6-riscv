@@ -12,7 +12,7 @@ namespace xv6 {
 __attribute__((unused)) __attribute__((noreturn)) static void
 multi_level_feedback_q() {
     cpu *c = mycpu();
-    auto &feedback_q = multi_lvl_feedback_q::instance();
+    auto &feedback_q = mlfq::instance();
 
     c->proc = nullptr;
     for (;;) {
@@ -57,15 +57,7 @@ multi_level_feedback_q() {
         // Epoch-boost fixup (Rule 5): if stale, bounce it to the top queue.
         // IMPORTANT: do NOT run it from a low queue after a boost.
         if (p->epoch != cur_epoch) {
-            p->epoch = cur_epoch;
-            p->qlevel = p->qticks = 0;
-            // Re-enqueue at top priority.
-            {
-                util::lock_guard lk(feedback_q.get_lock());
-                feedback_q.enq_locked(0, p);
-                assert(!p->in_ready_q, "double enq");
-                p->in_ready_q++;
-            }
+            boost_runnable_to_top(p, cur_epoch);
             p->lock.unlock();
             // We've fixed up the priority
             // next time we are guaranteed to pick this or some other processes

@@ -3,7 +3,7 @@
 #include "kernel/arch/riscv/riscv.h"
 #include "kernel/lib/defs.h"
 #include "kernel/proc/proc.h"
-#include "kernel/mm/kalloc.h"
+#include "kernel/mm/page_allocator.h"
 #include "kernel/util/assert.h"
 
 namespace xv6 {

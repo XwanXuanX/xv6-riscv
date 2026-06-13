@@ -3,7 +3,7 @@
 
 #include "kernel/lib/types.h"
 #include "kernel/sync/spinlock.h"
-#include "kernel/mm/slab.h"
+#include "kernel/mm/slab_allocator.h"
 #include "kernel/util/lock_guard.h"
 #include "kernel/util/do_not_copy.h"
 

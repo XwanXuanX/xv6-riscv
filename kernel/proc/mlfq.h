@@ -12,7 +12,7 @@ namespace xv6 {
 
 struct proc;
 
-class multi_lvl_feedback_q : public util::singleton<multi_lvl_feedback_q> {
+class mlfq : public util::singleton<mlfq> {
     friend class singleton;
 
   public:
@@ -45,7 +45,7 @@ class multi_lvl_feedback_q : public util::singleton<multi_lvl_feedback_q> {
     }
 
   private:
-    multi_lvl_feedback_q() = default;
+    mlfq() = default;
 
     struct queue {
         proc *head;
@@ -62,5 +62,6 @@ extern std::array<int, NLEVELS> quantum;
 void reset_time_slice(proc *p);
 void enqueue_runnable(int lvl, proc *p);
 void make_runnable_at_top(proc *p);
+void boost_runnable_to_top(proc *p, int epoch);
 
 } // namespace xv6

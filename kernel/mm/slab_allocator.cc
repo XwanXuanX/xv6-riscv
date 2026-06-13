@@ -1,6 +1,6 @@
 #include "kernel/lib/lib_api.h"
-#include "kernel/mm/slab.h"
-#include "kernel/mm/kalloc.h"
+#include "kernel/mm/slab_allocator.h"
+#include "kernel/mm/page_allocator.h"
 #include "kernel/util/assert.h"
 #include "kernel/util/lock_guard.h"
 

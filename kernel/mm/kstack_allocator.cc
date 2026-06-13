@@ -1,7 +1,7 @@
-#include "kernel/mm/kstack_alloc.h"
+#include "kernel/mm/kstack_allocator.h"
 #include "kernel/arch/riscv/memlayout.h"
 #include "kernel/lib/lib_api.h"
-#include "kernel/mm/slab.h"
+#include "kernel/mm/slab_allocator.h"
 #include "kernel/util/assert.h"
 #include "kernel/util/lock_guard.h"
 

@@ -1,7 +1,7 @@
 // This is a kernel self test at boot time
 
 #include "kernel/lib/defs.h"
-#include "kernel/mm/slab.h"
+#include "kernel/mm/slab_allocator.h"
 
 #include <array>
 
