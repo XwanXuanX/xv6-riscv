@@ -1,4 +1,5 @@
 #include "user/user.h"
+
 #include <array>
 
 // Create an orphaned directory and check if test-xv6.py recovers it.

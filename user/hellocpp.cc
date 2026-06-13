@@ -6,8 +6,9 @@
  * More C++ runtime will be supported.
  */
 
-#include "kernel/types.h"
+#include "kernel/lib/types.h"
 #include "user/user.h" // Includes a bunch of system calls declarations
+
 #include <type_traits>
 
 /**

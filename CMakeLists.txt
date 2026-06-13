@@ -77,41 +77,42 @@ set(CXX_FLAGS
 # ==============================================================================
 
 set(KERNEL_SOURCES
-        kernel/entry.S
-        kernel/start.cc
-        kernel/console.cc
-        kernel/printf.cc
-        kernel/uart.cc
-        kernel/kalloc.cc
-        kernel/slab.cc
-        kernel/test/slab_selftest.cc
-        kernel/spinlock.cc
-        kernel/string.cc
-        kernel/main.cc
-        kernel/vm.cc
-        kernel/proc.cc
-        kernel/kstack_alloc.cc
-        kernel/test/kstack_alloc_selftest.cc
-        kernel/test/ts_forward_list_selftest.cc
-        kernel/test/ts_list_selftest.cc
-        kernel/proc_list.cc
-        kernel/swtch.S
-        kernel/trampoline.S
-        kernel/trap.cc
-        kernel/syscall.cc
-        kernel/sysproc.cc
-        kernel/bio.cc
-        kernel/fs.cc
-        kernel/log.cc
-        kernel/sleeplock.cc
-        kernel/file.cc
-        kernel/pipe.cc
-        kernel/exec.cc
-        kernel/sysfile.cc
-        kernel/kernelvec.S
-        kernel/plic.cc
-        kernel/virtio_disk.cc
-        kernel/mlfq.cc
+        kernel/arch/riscv/entry.S
+        kernel/arch/riscv/start.cc
+        kernel/drivers/console.cc
+        kernel/lib/printf.cc
+        kernel/drivers/uart.cc
+        kernel/mm/kalloc.cc
+        kernel/mm/slab.cc
+        kernel/mm/test/slab_selftest.cc
+        kernel/sync/spinlock.cc
+        kernel/lib/string.cc
+        kernel/boot/main.cc
+        kernel/mm/vm.cc
+        kernel/proc/proc.cc
+        kernel/proc/scheduler.cc
+        kernel/mm/kstack_alloc.cc
+        kernel/mm/test/kstack_alloc_selftest.cc
+        kernel/stl/test/ts_forward_list_selftest.cc
+        kernel/stl/test/ts_list_selftest.cc
+        kernel/proc/process_list.cc
+        kernel/arch/riscv/swtch.S
+        kernel/arch/riscv/trampoline.S
+        kernel/trap/trap.cc
+        kernel/syscall/syscall.cc
+        kernel/syscall/sysproc.cc
+        kernel/fs/bio.cc
+        kernel/fs/fs.cc
+        kernel/fs/log.cc
+        kernel/sync/sleeplock.cc
+        kernel/fs/file.cc
+        kernel/fs/pipe.cc
+        kernel/proc/exec.cc
+        kernel/syscall/sysfile.cc
+        kernel/arch/riscv/kernelvec.S
+        kernel/drivers/plic.cc
+        kernel/drivers/virtio_disk.cc
+        kernel/proc/mlfq.cc
 )
 
 # ==============================================================================
@@ -176,8 +177,8 @@ endforeach()
 # Link kernel with custom command.
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/kernel/kernel
-        COMMAND ${CMAKE_LINKER} -m elf64lriscv -z max-page-size=4096 -T ${CMAKE_CURRENT_SOURCE_DIR}/kernel/kernel.ld -o ${CMAKE_CURRENT_SOURCE_DIR}/kernel/kernel ${KERNEL_OBJECTS}
-        DEPENDS ${KERNEL_OBJECTS} ${CMAKE_CURRENT_SOURCE_DIR}/kernel/kernel.ld
+        COMMAND ${CMAKE_LINKER} -m elf64lriscv -z max-page-size=4096 -T ${CMAKE_CURRENT_SOURCE_DIR}/kernel/boot/kernel.ld -o ${CMAKE_CURRENT_SOURCE_DIR}/kernel/kernel ${KERNEL_OBJECTS}
+        DEPENDS ${KERNEL_OBJECTS} ${CMAKE_CURRENT_SOURCE_DIR}/kernel/boot/kernel.ld
         COMMENT "Linking kernel"
 )
 

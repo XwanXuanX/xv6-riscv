@@ -2,10 +2,10 @@
 // that would collide with the old stack_bottom succeeds because unused stack
 // pages are reclaimed in sys_sbrk().
 
-#include "kernel/types.h"
-#include "kernel/param.h"
-#include "kernel/riscv.h"
-#include "kernel/memlayout.h"
+#include "kernel/lib/types.h"
+#include "kernel/lib/param.h"
+#include "kernel/arch/riscv/riscv.h"
+#include "kernel/arch/riscv/memlayout.h"
 #include "user/user.h"
 
 // Extra stack pages mapped below the initial one-page stack.

@@ -2,10 +2,11 @@
 // run random system calls in parallel forever.
 //
 
-#include "kernel/types.h"
-#include "kernel/stats.h"
+#include "kernel/lib/types.h"
+#include "kernel/fs/stats.h"
 #include "user/user.h"
-#include "kernel/fcntl.h"
+#include "kernel/fs/fcntl.h"
+
 #include <array>
 
 // from FreeBSD.

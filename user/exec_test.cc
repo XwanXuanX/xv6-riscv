@@ -1,9 +1,9 @@
 // Standalone tests for the exec() / kexec() system call.
-#include "kernel/types.h"
-#include "kernel/param.h"
-#include "kernel/riscv.h"
-#include "kernel/fcntl.h"
-#include "kernel/memlayout.h"
+#include "kernel/lib/types.h"
+#include "kernel/lib/param.h"
+#include "kernel/arch/riscv/riscv.h"
+#include "kernel/fs/fcntl.h"
+#include "kernel/arch/riscv/memlayout.h"
 #include "user/user.h"
 
 #include <array>
