@@ -67,7 +67,7 @@ void main() {
         // emulated hard disk
         virtio_disk_init();
         // initialize process queue
-        auto &feedback_q = multi_lvl_feedback_q::instance();
+        auto &feedback_q = mlfq::instance();
         feedback_q.init();
         // initialize all slab allocators
         slabs_init();

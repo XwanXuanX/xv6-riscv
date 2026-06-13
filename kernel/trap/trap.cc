@@ -286,7 +286,7 @@ void clockintr() {
             // and the MLFQ does not match, we will re-enqueue it at the top
             // level. This is essentially the same as periodic boosting.
             if (ticks % S == 0) {
-                auto &feedback_q = multi_lvl_feedback_q::instance();
+                auto &feedback_q = mlfq::instance();
                 util::lock_guard lk(feedback_q.get_lock());
                 feedback_q.inc_epoch();
             }

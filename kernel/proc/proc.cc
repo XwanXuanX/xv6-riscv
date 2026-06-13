@@ -589,7 +589,7 @@ void procdump() {
     });
 
     // Print MLFQ queue status
-    const auto &feedback_q = multi_lvl_feedback_q::instance();
+    const auto &feedback_q = mlfq::instance();
     feedback_q.dump();
 }
 

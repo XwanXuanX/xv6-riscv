@@ -12,7 +12,7 @@ namespace xv6 {
 __attribute__((unused)) __attribute__((noreturn)) static void
 multi_level_feedback_q() {
     cpu *c = mycpu();
-    auto &feedback_q = multi_lvl_feedback_q::instance();
+    auto &feedback_q = mlfq::instance();
 
     c->proc = nullptr;
     for (;;) {

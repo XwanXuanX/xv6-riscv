@@ -15,7 +15,7 @@ void reset_time_slice(proc *p) {
 }
 
 void enqueue_runnable(const int lvl, proc *p) {
-    auto &feedback_q = multi_lvl_feedback_q::instance();
+    auto &feedback_q = mlfq::instance();
     util::lock_guard lk(feedback_q.get_lock());
     feedback_q.enq_locked(lvl, p);
     assert(!p->in_ready_q, "double enq");
@@ -35,7 +35,7 @@ void boost_runnable_to_top(proc *p, const int epoch) {
     make_runnable_at_top(p);
 }
 
-void multi_lvl_feedback_q::init() {
+void mlfq::init() {
     // For initialization, we don't lock
     lock_.init_lock("MLFQ_lock");
     for (int i = 0; i < NLEVELS; ++i) {
@@ -45,7 +45,7 @@ void multi_lvl_feedback_q::init() {
     boost_epoch_ = 0;
 }
 
-void multi_lvl_feedback_q::enq_locked(const int lvl, proc *p) {
+void mlfq::enq_locked(const int lvl, proc *p) {
     if (!p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
@@ -61,7 +61,7 @@ void multi_lvl_feedback_q::enq_locked(const int lvl, proc *p) {
     }
 }
 
-void multi_lvl_feedback_q::enq(const int lvl, proc *p) {
+void mlfq::enq(const int lvl, proc *p) {
     if (!p || lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_enq");
     }
@@ -71,7 +71,7 @@ void multi_lvl_feedback_q::enq(const int lvl, proc *p) {
     }
 }
 
-proc *multi_lvl_feedback_q::deq_locked(const int lvl) {
+proc *mlfq::deq_locked(const int lvl) {
     if (lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
@@ -100,7 +100,7 @@ proc *multi_lvl_feedback_q::deq_locked(const int lvl) {
 }
 
 // Deque a process from a specific level queue
-proc *multi_lvl_feedback_q::deq(const int lvl) {
+proc *mlfq::deq(const int lvl) {
     if (lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_deq");
     }
@@ -114,7 +114,7 @@ proc *multi_lvl_feedback_q::deq(const int lvl) {
 }
 
 // Remove a process from a specific level queue
-bool multi_lvl_feedback_q::rm_locked(const int lvl, const proc *p) {
+bool mlfq::rm_locked(const int lvl, const proc *p) {
     if (lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
@@ -162,7 +162,7 @@ bool multi_lvl_feedback_q::rm_locked(const int lvl, const proc *p) {
     return false;
 }
 
-bool multi_lvl_feedback_q::rm(const int lvl, const proc *p) {
+bool mlfq::rm(const int lvl, const proc *p) {
     if (lvl < 0 || NLEVELS <= lvl) {
         panic("invalid_arguments_mlfq_rm");
     }
@@ -178,7 +178,7 @@ bool multi_lvl_feedback_q::rm(const int lvl, const proc *p) {
     return ok;
 }
 
-void multi_lvl_feedback_q::dump() const {
+void mlfq::dump() const {
     printf("MLFQ:\n");
     for (int lvl = 0; lvl < NLEVELS; lvl++) {
         printf("  L%d:", lvl);
@@ -198,7 +198,7 @@ void multi_lvl_feedback_q::dump() const {
     }
 }
 
-int multi_lvl_feedback_q::first_non_empty() const {
+int mlfq::first_non_empty() const {
     // IMPORTANT NOTE: the method does not lock itself
     // it assumes that the caller will lock before call it
     assert(lock_.holding(), "lock not held when searching");
