@@ -5,7 +5,7 @@
 #include "kernel/proc/proc.h"
 #include "kernel/lib/defs.h"
 #include "kernel/proc/mlfq.h"
-#include "kernel/proc/process_list.h"
+#include "kernel/proc/proc_list.h"
 #include "kernel/util/assert.h"
 #include "kernel/mm/kalloc.h"
 #include "kernel/util/lock_guard.h"
@@ -95,7 +95,7 @@ void proc_freepagetable(pagetable_t pagetable, const uint64 heap_top,
 
 // Set up first user process.
 void userinit() {
-    proc *p = process_list::instance().alloc_proc();
+    proc *p = proc_list::instance().alloc_proc();
     assert(p != nullptr, "init process is null");
     assert(p->lock.holding(), "process lock NOT held");
     // Process lock is still held
@@ -135,7 +135,7 @@ int kfork() {
     proc *p = myproc();
 
     // Allocate process.
-    proc *np = process_list::instance().alloc_proc();
+    proc *np = proc_list::instance().alloc_proc();
     if (np == nullptr) {
         return -1;
     }
@@ -145,9 +145,9 @@ int kfork() {
     if (uvmcopy(p->pagetable, np->pagetable, p->heap_top, p->stack_bottom,
                 p->stack_top) < 0) {
         np->lock.unlock(); // unlock and relock later to preserve lock ordering
-        process_list::instance().with_list_locked([&](auto &) {
+        proc_list::instance().with_list_locked([&](auto &) {
             np->lock.lock();
-            process_list::instance().detach_and_pfree(np);
+            proc_list::instance().detach_and_pfree(np);
             np->lock.unlock();
             slab_free_t<proc>(np);
         });
@@ -195,7 +195,7 @@ int kfork() {
 void reparent(const proc *const p) {
     bool did_reparent = false;
 
-    process_list::instance().with_list_locked([&](auto &view) {
+    proc_list::instance().with_list_locked([&](auto &view) {
         for (const auto pp : view) {
             if (pp->parent == p) {
                 // move all children of p to init
@@ -278,7 +278,7 @@ int kwait(const uint64 addr) {
         proc *z = nullptr;
         int z_pid = -1;
 
-        process_list::instance().with_list_locked([&](auto &view) {
+        proc_list::instance().with_list_locked([&](auto &view) {
             // Use copying instead of referencing:
             // previous this line was written as `for (const auto& pp : view)`,
             // which caused me A LOT of trouble. The reason is as follows:
@@ -319,7 +319,7 @@ int kwait(const uint64 addr) {
 
                     // Remove from global list and free resources while holding:
                     // list lock + pp->lock.
-                    process_list::instance().detach_and_pfree(pp);
+                    proc_list::instance().detach_and_pfree(pp);
                     // detach_and_pfree() leaves pp->lock held; we must unlock
                     // before freeing the PCB memory.
                     pp->lock.unlock();
@@ -479,7 +479,7 @@ void sleep(void *chan, spinlock *lk) {
 // Wake up all processes sleeping on channel chan.
 // Caller should hold the condition lock.
 void wakeup(const void *chan) {
-    process_list::instance().with_list_locked([&](auto &view) {
+    proc_list::instance().with_list_locked([&](auto &view) {
         for (auto &p : view) {
             if (p != myproc()) {
                 util::lock_guard lk(p->lock);
@@ -500,7 +500,7 @@ void wakeup(const void *chan) {
 int kkill(const int pid) {
     int rc = -1;
 
-    process_list::instance().with_list_locked([&](auto &view) {
+    proc_list::instance().with_list_locked([&](auto &view) {
         for (proc *p : view) {
             // Lock order: list lock -> p->lock
             p->lock.lock();
@@ -573,7 +573,7 @@ void procdump() {
     const char *state;
 
     printf("PID\tSTATE\tNAME\n");
-    process_list::instance().with_list_locked([&](auto &view) {
+    proc_list::instance().with_list_locked([&](auto &view) {
         for (auto &p : view) {
             if (p->state == UNUSED) {
                 continue;

@@ -1,7 +1,7 @@
 #include "kernel/lib/kernel_link.h"
 #include "kernel/lib/lib_api.h"
 #include "kernel/mm/vm_api.h"
-#include "kernel/proc/process_list.h"
+#include "kernel/proc/proc_list.h"
 #include "kernel/mm/slab.h"
 #include "kernel/mm/kstack_alloc.h"
 #include "kernel/mm/kalloc.h"
@@ -13,14 +13,14 @@ namespace xv6 {
 
 extern void forkret();
 
-void process_list::init(pagetable_t kernel_ptable) {
-    pid_lock_.init_lock("process_list::pid_lock");
+void proc_list::init(pagetable_t kernel_ptable) {
+    pid_lock_.init_lock("proc_list::pid_lock");
     next_pid_ = 1;
     assert(kernel_ptable != nullptr, "provided kernel page table is nullptr");
     kernel_ptable_ = kernel_ptable;
 }
 
-bool process_list::pinit(proc *p) {
+bool proc_list::pinit(proc *p) {
     // NOTE: initialization of p is done without holding p's mutex
     // and this is safe. Since p's handle (ptr) is not publicly available
     // by other CPUs yet, data race is not possible
@@ -103,7 +103,7 @@ bool process_list::pinit(proc *p) {
     return true;
 }
 
-void process_list::pfree(proc *p) const {
+void proc_list::pfree(proc *p) const {
     if (p->trapf) {
         page_allocator::instance().free(p->trapf);
         p->trapf = nullptr;
@@ -143,7 +143,7 @@ void process_list::pfree(proc *p) const {
     p->need_yield = 0;
 }
 
-pagetable_t process_list::alloc_ptable(proc *p) {
+pagetable_t proc_list::alloc_ptable(proc *p) {
     pagetable_t pagetable = uvmcreate();
     if (pagetable == nullptr) {
         return nullptr;
@@ -166,7 +166,7 @@ pagetable_t process_list::alloc_ptable(proc *p) {
     return pagetable;
 }
 
-void process_list::free_ptable(pagetable_t page, const uint64 heap_top,
+void proc_list::free_ptable(pagetable_t page, const uint64 heap_top,
                                const uint64 stack_bottom,
                                const uint64 stack_top) {
     uvmunmap(page, TRAMPOLINE, 1, 0);
@@ -174,7 +174,7 @@ void process_list::free_ptable(pagetable_t page, const uint64 heap_top,
     uvmfree(page, heap_top, stack_bottom, stack_top);
 }
 
-proc *process_list::alloc_proc() {
+proc *proc_list::alloc_proc() {
     proc *p = slab_alloc_t<proc>();
     if (p == nullptr) {
         return nullptr;
@@ -207,8 +207,8 @@ proc *process_list::alloc_proc() {
     return p;
 }
 
-void process_list::detach_and_pfree(proc *p) {
-    assert(p != nullptr, "process_list::free_proc_locked: nullptr");
+void proc_list::detach_and_pfree(proc *p) {
+    assert(p != nullptr, "proc_list::free_proc_locked: nullptr");
     assert(procs_.holding(), "process list not locked when operated on");
     assert(p->lock.holding(), "p->lock not held when operated on");
 
@@ -224,8 +224,8 @@ void process_list::detach_and_pfree(proc *p) {
     // the caller needs to unlock and free the PCB explicitly
 }
 
-void process_list::free_proc(proc *p) {
-    assert(p != nullptr, "process_list::free_proc: nullptr");
+void proc_list::free_proc(proc *p) {
+    assert(p != nullptr, "proc_list::free_proc: nullptr");
     // lock ordering is preserved
     with_list_locked([&](auto &) {
         p->lock.lock();
@@ -235,9 +235,9 @@ void process_list::free_proc(proc *p) {
     });
 }
 
-uint64 process_list::count() const { return procs_.size(); }
+uint64 proc_list::count() const { return procs_.size(); }
 
-int process_list::alloc_pid() {
+int proc_list::alloc_pid() {
     util::lock_guard lk(pid_lock_);
     return next_pid_++;
 }

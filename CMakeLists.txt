@@ -95,7 +95,7 @@ set(KERNEL_SOURCES
         kernel/mm/test/kstack_alloc_selftest.cc
         kernel/stl/test/ts_forward_list_selftest.cc
         kernel/stl/test/ts_list_selftest.cc
-        kernel/proc/process_list.cc
+        kernel/proc/proc_list.cc
         kernel/arch/riscv/swtch.S
         kernel/arch/riscv/trampoline.S
         kernel/trap/trap.cc

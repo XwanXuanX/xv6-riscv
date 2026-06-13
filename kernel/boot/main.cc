@@ -4,7 +4,7 @@
 #include "kernel/mm/slab.h"
 #include "kernel/stl/ts_forward_list.h"
 #include "kernel/stl/ts_list.h"
-#include "kernel/proc/process_list.h"
+#include "kernel/proc/proc_list.h"
 #include "kernel/mm/kstack_alloc.h"
 
 namespace xv6 {
@@ -72,7 +72,7 @@ void main() {
         // initialize all slab allocators
         slabs_init();
         // global process list
-        auto &procs = process_list::instance();
+        auto &procs = proc_list::instance();
         procs.init(kpt);
         // initialize with possible KVAs
         auto &kva_allocator = kstack_allocator::instance();

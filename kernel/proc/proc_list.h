@@ -9,7 +9,7 @@
 
 namespace xv6 {
 
-class process_list : public util::singleton<process_list> {
+class proc_list : public util::singleton<proc_list> {
     friend class singleton;
 
   public:
@@ -44,7 +44,7 @@ class process_list : public util::singleton<process_list> {
     static void free_ptable(pagetable_t page, uint64 heap_top,
                             uint64 stack_bottom, uint64 stack_top);
 
-    process_list() = default;
+    proc_list() = default;
 
     mutable spinlock pid_lock_{};
     int next_pid_ = 1;
