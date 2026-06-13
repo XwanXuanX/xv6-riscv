@@ -91,7 +91,7 @@ set(KERNEL_SOURCES
         kernel/mm/vm.cc
         kernel/proc/proc.cc
         kernel/proc/scheduler.cc
-        kernel/mm/kstack_alloc.cc
+        kernel/mm/kstack_allocator.cc
         kernel/mm/test/kstack_alloc_selftest.cc
         kernel/stl/test/ts_forward_list_selftest.cc
         kernel/stl/test/ts_list_selftest.cc

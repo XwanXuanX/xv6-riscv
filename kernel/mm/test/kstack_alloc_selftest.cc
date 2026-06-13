@@ -3,7 +3,7 @@
 #include "kernel/lib/defs.h"
 #include "kernel/lib/types.h"
 #include "kernel/arch/riscv/memlayout.h"
-#include "kernel/mm/kstack_alloc.h"
+#include "kernel/mm/kstack_allocator.h"
 #include "kernel/util/assert.h"
 
 #include <array>
