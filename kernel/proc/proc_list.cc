@@ -4,7 +4,7 @@
 #include "kernel/proc/proc_list.h"
 #include "kernel/mm/slab_allocator.h"
 #include "kernel/mm/kstack_alloc.h"
-#include "kernel/mm/kalloc.h"
+#include "kernel/mm/page_allocator.h"
 #include "kernel/arch/riscv/memlayout.h"
 #include "kernel/util/lock_guard.h"
 #include "kernel/util/assert.h"

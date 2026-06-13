@@ -13,7 +13,7 @@
 #include "kernel/fs/fs.h"
 #include "kernel/fs/buf.h"
 #include "kernel/drivers/virtio.h"
-#include "kernel/mm/kalloc.h"
+#include "kernel/mm/page_allocator.h"
 
 #include <array>
 

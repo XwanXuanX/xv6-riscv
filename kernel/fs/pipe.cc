@@ -3,7 +3,7 @@
 #include "kernel/sync/spinlock.h"
 #include "kernel/proc/proc.h"
 #include "kernel/fs/file.h"
-#include "kernel/mm/kalloc.h"
+#include "kernel/mm/page_allocator.h"
 
 #include <array>
 

@@ -7,7 +7,7 @@
 #include "kernel/arch/riscv/riscv.h"
 #include "kernel/lib/kernel_link.h"
 #include "kernel/lib/lib_api.h"
-#include "kernel/mm/kalloc.h"
+#include "kernel/mm/page_allocator.h"
 #include "kernel/util/lock_guard.h"
 
 namespace xv6 {
