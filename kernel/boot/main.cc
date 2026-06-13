@@ -1,7 +1,7 @@
 #include "kernel/lib/defs.h"
 #include "kernel/proc/mlfq.h"
 #include "kernel/mm/kalloc.h"
-#include "kernel/mm/slab.h"
+#include "kernel/mm/slab_allocator.h"
 #include "kernel/stl/ts_forward_list.h"
 #include "kernel/stl/ts_list.h"
 #include "kernel/proc/proc_list.h"

@@ -83,7 +83,7 @@ set(KERNEL_SOURCES
         kernel/lib/printf.cc
         kernel/drivers/uart.cc
         kernel/mm/kalloc.cc
-        kernel/mm/slab.cc
+        kernel/mm/slab_allocator.cc
         kernel/mm/test/slab_selftest.cc
         kernel/sync/spinlock.cc
         kernel/lib/string.cc

@@ -2,7 +2,7 @@
 #include "kernel/lib/lib_api.h"
 #include "kernel/mm/vm_api.h"
 #include "kernel/proc/proc_list.h"
-#include "kernel/mm/slab.h"
+#include "kernel/mm/slab_allocator.h"
 #include "kernel/mm/kstack_alloc.h"
 #include "kernel/mm/kalloc.h"
 #include "kernel/arch/riscv/memlayout.h"
