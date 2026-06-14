@@ -47,7 +47,7 @@ void main() {
         // create kernel page table
         pagetable kpt = kvminit();
         // turn on paging
-        kvminithart();
+        inithart();
         // process table
         proc_init();
         // trap vectors
@@ -88,7 +88,7 @@ void main() {
             ;
         __sync_synchronize();
         printf("hart %d starting\n", cpuid());
-        kvminithart();  // turn on paging
+        inithart();  // turn on paging
         trapinithart(); // install kernel trap vector
         plicinithart(); // ask PLIC for device interrupts
     }
