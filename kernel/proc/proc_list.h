@@ -14,7 +14,7 @@ class proc_list : public util::singleton<proc_list> {
     friend class singleton;
 
   public:
-    void init(pagetable kernel_ptable);
+    void init();
 
     // allocate a new proc object and insert it into the global process list
     // returns nullptr on failure
@@ -49,7 +49,6 @@ class proc_list : public util::singleton<proc_list> {
 
     mutable spinlock pid_lock_{};
     int next_pid_ = 1;
-    pagetable kernel_ptable_{};
     stl::ts_list<proc *> procs_;
 };
 

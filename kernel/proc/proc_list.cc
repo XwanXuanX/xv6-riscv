@@ -8,16 +8,17 @@
 #include "kernel/arch/riscv/memlayout.h"
 #include "kernel/util/lock_guard.h"
 #include "kernel/util/assert.h"
+#include "kernel/mm/kernel_pagetable.h"
 
 namespace xv6 {
 
 extern void forkret();
 
-void proc_list::init(pagetable kernel_ptable) {
+void proc_list::init() {
     pid_lock_.init_lock("proc_list::pid_lock");
     next_pid_ = 1;
-    assert(!kernel_ptable.is_null(), "provided kernel page table is nullptr");
-    kernel_ptable_ = kernel_ptable;
+    const auto &kpt = kernel_pagetable::instance();
+    assert(!kpt.is_null(), "provided kernel page table is nullptr");
 }
 
 bool proc_list::pinit(proc *p) {
@@ -58,8 +59,9 @@ bool proc_list::pinit(proc *p) {
         p->kstack = reinterpret_cast<uint64>(kva);
 
         // map the kernel stack to kernel's address space
-        kvmmap(kernel_ptable_, reinterpret_cast<uint64>(kva),
-               reinterpret_cast<uint64>(pa), PGSIZE, PTE_R | PTE_W);
+        const auto &kpt = kernel_pagetable::instance();
+        kpt.map(reinterpret_cast<uint64>(kva), reinterpret_cast<uint64>(pa),
+                PGSIZE, PTE_R | PTE_W);
     }
 
     // initialize other fields
@@ -114,7 +116,8 @@ void proc_list::pfree(proc *p) const {
     }
     if (p->kstack) {
         // remember to unmap the mapped kernel stack from kernel's page table
-        kernel_ptable_.unmap(p->kstack, 1, 0);
+        const auto &kpt = kernel_pagetable::instance();
+        kpt.unmap(p->kstack, 1, 0);
         kstack_allocator::instance().free(reinterpret_cast<void *>(p->kstack));
         p->kstack = 0;
     }

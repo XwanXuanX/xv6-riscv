@@ -1,4 +1,5 @@
 #include "kernel/lib/defs.h"
+#include "kernel/mm/kernel_pagetable.h"
 #include "kernel/proc/mlfq.h"
 #include "kernel/mm/page_allocator.h"
 #include "kernel/mm/slab_allocator.h"
@@ -45,7 +46,8 @@ void main() {
         auto &page_alloc = page_allocator::instance();
         page_alloc.init();
         // create kernel page table
-        pagetable kpt = kvminit();
+        auto &kpt = kernel_pagetable::instance();
+        kpt.init();
         // turn on paging
         inithart();
         // process table
@@ -73,7 +75,7 @@ void main() {
         slabs_init();
         // global process list
         auto &procs = proc_list::instance();
-        procs.init(kpt);
+        procs.init();
         // initialize with possible KVAs
         auto &kva_allocator = kstack_allocator::instance();
         kva_allocator.init();

@@ -58,4 +58,9 @@ void kernel_pagetable::map(const uint64 va, const uint64 pa, const uint64 sz,
     }
 }
 
+void kernel_pagetable::unmap(const uint64 va, const uint64 npages,
+                             const int do_free) const {
+    kpt_.unmap(va, npages, do_free);
+}
+
 } // namespace xv6
