@@ -74,7 +74,7 @@ uint64 pagetable::dealloc(const uint64 old_sz, const uint64 new_sz) {
 
     if (PGROUNDUP(new_sz) < PGROUNDUP(old_sz)) {
         const uint64 npages = (PGROUNDUP(old_sz) - PGROUNDUP(new_sz)) / PGSIZE;
-        unmap((new_sz), npages, 1);
+        unmap(PGROUNDUP(new_sz), npages, 1);
     }
 
     return new_sz;
