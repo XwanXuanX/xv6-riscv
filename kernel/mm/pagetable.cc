@@ -99,7 +99,7 @@ void pagetable::unmap(const uint64 va, const uint64 npages,
     pte_t *pte;
 
     if (va % PGSIZE != 0) {
-        panic("uvmunmap: not aligned");
+        panic("pagetable::unmap: not aligned");
     }
 
     for (uint64 a = va; a < va + npages * PGSIZE; a += PGSIZE) {
@@ -171,15 +171,15 @@ int pagetable::map(const uint64 va, const uint64 size, uint64 pa,
     pte_t *pte;
 
     if (va % PGSIZE != 0) {
-        panic("mappages: va not aligned");
+        panic("pagetable::map: va not aligned");
     }
 
     if (size % PGSIZE != 0) {
-        panic("mappages: size not aligned");
+        panic("pagetable::map: size not aligned");
     }
 
     if (size == 0) {
-        panic("mappages: size");
+        panic("pagetable::map: size");
     }
 
     uint64 a = va;
@@ -189,7 +189,7 @@ int pagetable::map(const uint64 va, const uint64 size, uint64 pa,
             return -1;
         }
         if (*pte & PTE_V) {
-            panic("mappages: remap");
+            panic("pagetable::map: remap");
         }
         *pte = PA2_PTE(pa) | perm | PTE_V;
         if (a == last) {
@@ -204,7 +204,7 @@ int pagetable::map(const uint64 va, const uint64 size, uint64 pa,
 pte_t *
 pagetable::walk(pagetable_t pagetable, const uint64 va, const int alloc) {
     if (va >= MAXVA) {
-        panic("walk");
+        panic("pagetable::walk");
     }
 
     for (int level = 2; level > 0; level--) {
@@ -238,7 +238,7 @@ void pagetable::free_walk(pagetable_t pagetable) {
             free_walk(reinterpret_cast<pagetable_t>(child));
             pagetable[i] = 0;
         } else if (pte & PTE_V) {
-            panic("free_walk: leaf");
+            panic("pagetable::free_walk: leaf");
         }
     }
     page_allocator::instance().free(pagetable);
