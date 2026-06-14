@@ -89,6 +89,8 @@ set(KERNEL_SOURCES
         kernel/lib/string.cc
         kernel/boot/main.cc
         kernel/mm/vm.cc
+        kernel/mm/pagetable.cc
+        kernel/mm/kernel_pagetable.cc
         kernel/proc/proc.cc
         kernel/proc/scheduler.cc
         kernel/mm/kstack_allocator.cc

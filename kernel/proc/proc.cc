@@ -55,42 +55,42 @@ proc *myproc() {
 
 // Create a user page table for a given process, with no user memory,
 // but with trampoline and trapframe pages.
-pagetable_t proc_pagetable(proc *p) {
+pagetable proc_pagetable(proc *p) {
     // An empty page table.
-    pagetable_t pagetable = uvmcreate();
-    if (pagetable == nullptr) {
-        return nullptr;
+    pagetable pt = pagetable::create();
+    if (pt.is_null()) {
+        return pagetable{};
     }
 
     // map the trampoline code (for system call return)
     // at the highest user virtual address.
     // only the supervisor uses it, on the way
     // to/from user space, so not PTE_U.
-    if (mappages(pagetable, TRAMPOLINE, PGSIZE,
-                 reinterpret_cast<uint64>(trampoline), PTE_R | PTE_X) < 0) {
-        uvmfree(pagetable, 0, 0, 0);
-        return nullptr;
+    if (pt.map(TRAMPOLINE, PGSIZE, reinterpret_cast<uint64>(trampoline),
+               PTE_R | PTE_X) < 0) {
+        pt.free(0, 0, 0);
+        return pagetable{};
     }
 
     // map the trapframe page just below the trampoline page, for
     // trampoline.S.
-    if (mappages(pagetable, TRAPFRAME, PGSIZE,
-                 reinterpret_cast<uint64>(p->trapf), PTE_R | PTE_W) < 0) {
-        uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-        uvmfree(pagetable, 0, 0, 0);
-        return nullptr;
+    if (pt.map(TRAPFRAME, PGSIZE, reinterpret_cast<uint64>(p->trapf),
+               PTE_R | PTE_W) < 0) {
+        pt.unmap(TRAMPOLINE, 1, 0);
+        pt.free(0, 0, 0);
+        return pagetable{};
     }
 
-    return pagetable;
+    return pt;
 }
 
 // Free a process's page table, and free the
 // physical memory it refers to.
-void proc_freepagetable(pagetable_t pagetable, const uint64 heap_top,
+void proc_freepagetable(pagetable pt, const uint64 heap_top,
                         const uint64 stack_bottom, const uint64 stack_top) {
-    uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-    uvmunmap(pagetable, TRAPFRAME, 1, 0);
-    uvmfree(pagetable, heap_top, stack_bottom, stack_top);
+    pt.unmap(TRAMPOLINE, 1, 0);
+    pt.unmap(TRAPFRAME, 1, 0);
+    pt.free(heap_top, stack_bottom, stack_top);
 }
 
 // Set up first user process.
@@ -119,11 +119,11 @@ int growproc(const int n) {
         if (try_make_heap_room(p, top + n) < 0) {
             return -1;
         }
-        if ((top = uvmalloc(p->pagetable, top, top + n, PTE_W)) == 0) {
+        if ((top = p->pt.malloc(top, top + n, PTE_W)) == 0) {
             return -1;
         }
     } else if (n < 0) {
-        top = uvmdealloc(p->pagetable, top, top + n);
+        top = p->pt.dealloc(top, top + n);
     }
     p->heap_top = top;
     return 0;
@@ -142,8 +142,7 @@ int kfork() {
     assert(np->lock.holding(), "process lock NOT held");
 
     // Copy user memory from parent to child.
-    if (uvmcopy(p->pagetable, np->pagetable, p->heap_top, p->stack_bottom,
-                p->stack_top) < 0) {
+    if (np->pt.copy(p->pt, p->heap_top, p->stack_bottom, p->stack_top) < 0) {
         np->lock.unlock(); // unlock and relock later to preserve lock ordering
         proc_list::instance().with_list_locked([&](auto &) {
             np->lock.lock();
@@ -305,7 +304,7 @@ int kwait(const uint64 addr) {
 
                     // copy out exit status while child is locked
                     if (addr != 0 &&
-                        copyout(p->pagetable, addr,
+                        copyout(p->pt, addr,
                                 reinterpret_cast<char *>(&pp->xstate),
                                 sizeof(pp->xstate)) < 0) {
                         // On error, just leave z null and unlock child.
@@ -431,7 +430,7 @@ void forkret() {
 
     // return to user space, mimicing usertrap()'s return.
     prepare_return();
-    const uint64 satp = MAKE_SATP(p->pagetable);
+    const uint64 satp = MAKE_SATP(p->pt.get_ptr());
     const uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
     reinterpret_cast<void (*)(uint64)>(trampoline_userret)(satp);
 }
@@ -545,7 +544,7 @@ int either_copyout(const int user_dst, const uint64 dst, void *src,
                    const uint64 len) {
     const proc *p = myproc();
     if (user_dst) {
-        return copyout(p->pagetable, dst, static_cast<char *>(src), len);
+        return copyout(p->pt, dst, static_cast<char *>(src), len);
     }
     memmove(reinterpret_cast<char *>(dst), src, len);
     return 0;
@@ -558,7 +557,7 @@ int either_copyin(void *dst, const int user_src, const uint64 src,
                   const uint64 len) {
     const proc *p = myproc();
     if (user_src) {
-        return copyin(p->pagetable, static_cast<char *>(dst), src, len);
+        return copyin(p->pt, static_cast<char *>(dst), src, len);
     }
     memmove(dst, reinterpret_cast<char *>(src), len);
     return 0;

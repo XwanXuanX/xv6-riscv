@@ -3,6 +3,7 @@
 #include "kernel/lib/param.h"
 #include "kernel/arch/riscv/riscv.h"
 #include "kernel/sync/spinlock.h"
+#include "kernel/mm/pagetable.h"
 
 #include <array>
 
@@ -193,7 +194,7 @@ struct proc {
     uint64 stack_top = 0;    // highest addr of stack
     uint64 stack_bottom = 0; // lowest addr of stack
 
-    pagetable_t pagetable = nullptr;           // User page table
+    pagetable pt;                              // User page table
     trapframe *trapf = nullptr;                // data page for trampoline.S
     context ctx{};                             // swtch() here to run process
     std::array<struct file *, NOFILE> ofile{}; // Open files

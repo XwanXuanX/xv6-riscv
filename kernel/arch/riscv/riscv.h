@@ -265,7 +265,6 @@ namespace xv6 {
 }
 
 using pte_t = uint64;
-using pagetable_t = uint64 *; // 512 PTEs
 
 } // namespace xv6
 

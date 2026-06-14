@@ -8,16 +8,17 @@
 #include "kernel/arch/riscv/memlayout.h"
 #include "kernel/util/lock_guard.h"
 #include "kernel/util/assert.h"
+#include "kernel/mm/kernel_pagetable.h"
 
 namespace xv6 {
 
 extern void forkret();
 
-void proc_list::init(pagetable_t kernel_ptable) {
+void proc_list::init() {
     pid_lock_.init_lock("proc_list::pid_lock");
     next_pid_ = 1;
-    assert(kernel_ptable != nullptr, "provided kernel page table is nullptr");
-    kernel_ptable_ = kernel_ptable;
+    const auto &kpt = kernel_pagetable::instance();
+    assert(!kpt.is_null(), "provided kernel page table is nullptr");
 }
 
 bool proc_list::pinit(proc *p) {
@@ -58,8 +59,9 @@ bool proc_list::pinit(proc *p) {
         p->kstack = reinterpret_cast<uint64>(kva);
 
         // map the kernel stack to kernel's address space
-        kvmmap(kernel_ptable_, reinterpret_cast<uint64>(kva),
-               reinterpret_cast<uint64>(pa), PGSIZE, PTE_R | PTE_W);
+        const auto &kpt = kernel_pagetable::instance();
+        kpt.map(reinterpret_cast<uint64>(kva), reinterpret_cast<uint64>(pa),
+                PGSIZE, PTE_R | PTE_W);
     }
 
     // initialize other fields
@@ -71,8 +73,8 @@ bool proc_list::pinit(proc *p) {
         }
 
         // allocate a user page table
-        p->pagetable = alloc_ptable(p);
-        if (p->pagetable == nullptr) {
+        p->pt = alloc_ptable(p);
+        if (p->pt.is_null()) {
             return false;
         }
     }
@@ -108,13 +110,14 @@ void proc_list::pfree(proc *p) const {
         page_allocator::instance().free(p->trapf);
         p->trapf = nullptr;
     }
-    if (p->pagetable) {
-        free_ptable(p->pagetable, p->heap_top, p->stack_bottom, p->stack_top);
-        p->pagetable = nullptr;
+    if (!p->pt.is_null()) {
+        free_ptable(p->pt, p->heap_top, p->stack_bottom, p->stack_top);
+        p->pt = pagetable{};
     }
     if (p->kstack) {
         // remember to unmap the mapped kernel stack from kernel's page table
-        uvmunmap(kernel_ptable_, p->kstack, 1, 0);
+        const auto &kpt = kernel_pagetable::instance();
+        kpt.unmap(p->kstack, 1, 0);
         kstack_allocator::instance().free(reinterpret_cast<void *>(p->kstack));
         p->kstack = 0;
     }
@@ -143,35 +146,34 @@ void proc_list::pfree(proc *p) const {
     p->need_yield = 0;
 }
 
-pagetable_t proc_list::alloc_ptable(proc *p) {
-    pagetable_t pagetable = uvmcreate();
-    if (pagetable == nullptr) {
-        return nullptr;
+pagetable proc_list::alloc_ptable(proc *p) {
+    pagetable pt = pagetable::create();
+    if (pt.is_null()) {
+        return pagetable{};
     }
     // map the trampoline code (for system call return)
     // at the highest user virtual address. only the supervisor uses it, on the
     // way to/from user space, so not PTE_U.
-    if (mappages(pagetable, TRAMPOLINE, PGSIZE,
-                 reinterpret_cast<uint64>(trampoline), PTE_R | PTE_X) < 0) {
-        uvmfree(pagetable, 0, 0, 0);
-        return nullptr;
+    if (pt.map(TRAMPOLINE, PGSIZE, reinterpret_cast<uint64>(trampoline),
+               PTE_R | PTE_X) < 0) {
+        pt.free(0, 0, 0);
+        return pagetable{};
     }
     // map the trapframe page just below the trampoline page, for trampoline.S.
-    if (mappages(pagetable, TRAPFRAME, PGSIZE,
-                 reinterpret_cast<uint64>(p->trapf), PTE_R | PTE_W) < 0) {
-        uvmunmap(pagetable, TRAMPOLINE, 1, 0);
-        uvmfree(pagetable, 0, 0, 0);
-        return nullptr;
+    if (pt.map(TRAPFRAME, PGSIZE, reinterpret_cast<uint64>(p->trapf),
+               PTE_R | PTE_W) < 0) {
+        pt.unmap(TRAMPOLINE, 1, 0);
+        pt.free(0, 0, 0);
+        return pagetable{};
     }
-    return pagetable;
+    return pt;
 }
 
-void proc_list::free_ptable(pagetable_t page, const uint64 heap_top,
-                               const uint64 stack_bottom,
-                               const uint64 stack_top) {
-    uvmunmap(page, TRAMPOLINE, 1, 0);
-    uvmunmap(page, TRAPFRAME, 1, 0);
-    uvmfree(page, heap_top, stack_bottom, stack_top);
+void proc_list::free_ptable(pagetable pt, const uint64 heap_top,
+                            const uint64 stack_bottom, const uint64 stack_top) {
+    pt.unmap(TRAMPOLINE, 1, 0);
+    pt.unmap(TRAPFRAME, 1, 0);
+    pt.free(heap_top, stack_bottom, stack_top);
 }
 
 proc *proc_list::alloc_proc() {

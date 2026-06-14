@@ -10,7 +10,7 @@
 
 namespace xv6 {
 
-static int loadseg(pde_t *, uint64, inode *, uint, uint);
+static int loadseg(pagetable, uint64, inode *, uint, uint);
 
 // map ELF permissions to PTE permission bits.
 int flags2_perm(const int flags) {
@@ -38,7 +38,7 @@ int kexec(const char *path, const char **argv) {
     elfhdr elf{};
     inode *ip;
     proghdr ph{};
-    pagetable_t pagetable = nullptr, oldpagetable;
+    pagetable pt{}, oldpt{};
     proc *p = myproc();
 
     begin_op();
@@ -61,7 +61,8 @@ int kexec(const char *path, const char **argv) {
         goto bad;
     }
 
-    if ((pagetable = proc_pagetable(p)) == nullptr) {
+    pt = proc_pagetable(p);
+    if (pt.is_null()) {
         goto bad;
     }
 
@@ -92,12 +93,12 @@ int kexec(const char *path, const char **argv) {
         if (ph.vaddr % PGSIZE != 0) {
             goto bad;
         }
-        if ((sz1 = uvmalloc(pagetable, sz, ph.vaddr + ph.memsz,
-                            flags2_perm(ph.flags))) == 0) {
+        if ((sz1 = pt.malloc(sz, ph.vaddr + ph.memsz, flags2_perm(ph.flags))) ==
+            0) {
             goto bad;
         }
         sz = sz1;
-        if (loadseg(pagetable, ph.vaddr, ip, ph.off, ph.filesz) < 0) {
+        if (loadseg(pt, ph.vaddr, ip, ph.off, ph.filesz) < 0) {
             goto bad;
         }
     }
@@ -119,7 +120,7 @@ int kexec(const char *path, const char **argv) {
     new_heap_top = sz;
     new_stack_top = USERSTACK_HIGH;
     new_stack_bottom = USERSTACK_HIGH - USERSTACK * PGSIZE;
-    if (uvmalloc(pagetable, new_stack_bottom, new_stack_top, PTE_W) == 0) {
+    if (pt.malloc(new_stack_bottom, new_stack_top, PTE_W) == 0) {
         goto bad;
     }
     stack_mapped = true;
@@ -137,7 +138,7 @@ int kexec(const char *path, const char **argv) {
         if (sp < stackbase) {
             goto bad;
         }
-        if (copyout(pagetable, sp, argv[argc], strlen(argv[argc]) + 1) < 0) {
+        if (copyout(pt, sp, argv[argc], strlen(argv[argc]) + 1) < 0) {
             goto bad;
         }
         ustack[argc] = sp;
@@ -150,7 +151,7 @@ int kexec(const char *path, const char **argv) {
     if (sp < stackbase) {
         goto bad;
     }
-    if (copyout(pagetable, sp, reinterpret_cast<char *>(ustack.data()),
+    if (copyout(pt, sp, reinterpret_cast<char *>(ustack.data()),
                 (argc + 1) * sizeof(uint64)) < 0) {
         goto bad;
     }
@@ -169,22 +170,21 @@ int kexec(const char *path, const char **argv) {
     safestrcpy(p->name.data(), last, sizeof(p->name));
 
     // Commit to the user image.
-    oldpagetable = p->pagetable;
-    p->pagetable = pagetable;
+    oldpt = p->pt;
+    p->pt = pt;
     p->heap_top = new_heap_top;
     p->heap_bottom = new_heap_top;
     p->stack_bottom = new_stack_bottom;
     p->stack_top = new_stack_top;
     p->trapf->epc = elf.entry; // initial program counter = ulib.c:start()
     p->trapf->sp = sp;         // initial stack pointer
-    proc_freepagetable(oldpagetable, old_heap_top, old_stack_bottom,
-                       old_stack_top);
+    proc_freepagetable(oldpt, old_heap_top, old_stack_bottom, old_stack_top);
 
     return argc; // this ends up in a0, the first argument to main(argc, argv)
 
 bad:
-    if (pagetable) {
-        proc_freepagetable(pagetable, PGROUNDUP(sz),
+    if (!pt.is_null()) {
+        proc_freepagetable(pt, PGROUNDUP(sz),
                            stack_mapped ? new_stack_bottom : 0,
                            stack_mapped ? new_stack_top : 0);
     }
@@ -199,12 +199,12 @@ bad:
 // va must be page-aligned
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
-static int loadseg(pagetable_t pagetable, const uint64 va, inode *ip,
-                   const uint offset, const uint sz) {
+static int loadseg(pagetable pt, const uint64 va, inode *ip, const uint offset,
+                   const uint sz) {
     uint n;
 
     for (uint i = 0; i < sz; i += PGSIZE) {
-        const uint64 pa = walkaddr(pagetable, va + i);
+        const uint64 pa = pt.walk_addr(va + i);
         if (pa == 0) {
             panic("loadseg: address should exist");
         }

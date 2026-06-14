@@ -90,7 +90,7 @@ int pipewrite(pipe *pi, const uint64 addr, const int n) {
             sleep(&pi->nwrite, &pi->lock);
         } else {
             char ch;
-            if (copyin(pr->pagetable, &ch, addr + i, 1) == -1) {
+            if (copyin(pr->pt, &ch, addr + i, 1) == -1) {
                 break;
             }
             pi->data[pi->nwrite++ % PIPESIZE] = ch;
@@ -121,7 +121,7 @@ int piperead(pipe *pi, const uint64 addr, const int n) {
             break;
         }
         ch = pi->data[pi->nread % PIPESIZE];
-        if (copyout(pr->pagetable, addr + i, &ch, 1) == -1) {
+        if (copyout(pr->pt, addr + i, &ch, 1) == -1) {
             if (i == 0) {
                 i = -1;
             }

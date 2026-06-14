@@ -2,6 +2,7 @@
 
 #include "kernel/lib/types.h"
 #include "kernel/arch/riscv/riscv.h"
+#include "kernel/mm/pagetable.h"
 
 namespace xv6 {
 
@@ -14,8 +15,8 @@ int cpuid();
 void kexit(int);
 int kfork();
 int growproc(int);
-pagetable_t proc_pagetable(proc *);
-void proc_freepagetable(pagetable_t, uint64, uint64, uint64);
+pagetable proc_pagetable(proc *);
+void proc_freepagetable(pagetable, uint64, uint64, uint64);
 int kkill(int);
 int killed(proc *);
 void setkilled(proc *);

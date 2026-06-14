@@ -497,9 +497,8 @@ uint64 sys_pipe() {
         fileclose(wf);
         return -1;
     }
-    if (copyout(p->pagetable, fdarray, (char *)&fd0, sizeof(fd0)) < 0 ||
-        copyout(p->pagetable, fdarray + sizeof(fd0), (char *)&fd1,
-                sizeof(fd1)) < 0) {
+    if (copyout(p->pt, fdarray, (char *)&fd0, sizeof(fd0)) < 0 ||
+        copyout(p->pt, fdarray + sizeof(fd0), (char *)&fd1, sizeof(fd1)) < 0) {
         p->ofile[fd0] = nullptr;
         p->ofile[fd1] = nullptr;
         fileclose(rf);
