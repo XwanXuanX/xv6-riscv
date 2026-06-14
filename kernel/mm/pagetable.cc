@@ -58,7 +58,7 @@ pagetable::malloc(uint64 start_va, const uint64 end_va, const int xperm) {
         }
         memset(mem, 0, PGSIZE);
         if (map(a, PGSIZE, reinterpret_cast<uint64>(mem),
-                      PTE_R | PTE_U | xperm) != 0) {
+                PTE_R | PTE_U | xperm) != 0) {
             page_allocator::instance().free(mem);
             dealloc(a, start_va);
             return 0;
@@ -142,7 +142,7 @@ int pagetable::copy(pagetable other, const uint64 heap_top,
             }
             memmove(mem, reinterpret_cast<char *>(pa), PGSIZE);
             if (map(i, PGSIZE, reinterpret_cast<uint64>(mem),
-                          static_cast<int>(flags)) != 0) {
+                    static_cast<int>(flags)) != 0) {
                 page_allocator::instance().free(mem);
                 return false;
             }
@@ -167,7 +167,7 @@ err:
 }
 
 int pagetable::map(const uint64 va, const uint64 size, uint64 pa,
-                         const int perm) const {
+                   const int perm) const {
     pte_t *pte;
 
     if (va % PGSIZE != 0) {

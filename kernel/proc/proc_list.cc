@@ -152,13 +152,13 @@ pagetable proc_list::alloc_ptable(proc *p) {
     // at the highest user virtual address. only the supervisor uses it, on the
     // way to/from user space, so not PTE_U.
     if (pt.map(TRAMPOLINE, PGSIZE, reinterpret_cast<uint64>(trampoline),
-                     PTE_R | PTE_X) < 0) {
+               PTE_R | PTE_X) < 0) {
         pt.free(0, 0, 0);
         return pagetable{};
     }
     // map the trapframe page just below the trampoline page, for trampoline.S.
     if (pt.map(TRAPFRAME, PGSIZE, reinterpret_cast<uint64>(p->trapf),
-                     PTE_R | PTE_W) < 0) {
+               PTE_R | PTE_W) < 0) {
         pt.unmap(TRAMPOLINE, 1, 0);
         pt.free(0, 0, 0);
         return pagetable{};
