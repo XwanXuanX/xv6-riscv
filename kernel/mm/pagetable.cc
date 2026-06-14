@@ -57,7 +57,7 @@ pagetable::malloc(uint64 start_va, const uint64 end_va, const int xperm) {
             return 0;
         }
         memset(mem, 0, PGSIZE);
-        if (map_pages(a, PGSIZE, reinterpret_cast<uint64>(mem),
+        if (map(a, PGSIZE, reinterpret_cast<uint64>(mem),
                       PTE_R | PTE_U | xperm) != 0) {
             page_allocator::instance().free(mem);
             dealloc(a, start_va);
@@ -141,7 +141,7 @@ int pagetable::copy(pagetable other, const uint64 heap_top,
                 return false;
             }
             memmove(mem, reinterpret_cast<char *>(pa), PGSIZE);
-            if (map_pages(i, PGSIZE, reinterpret_cast<uint64>(mem),
+            if (map(i, PGSIZE, reinterpret_cast<uint64>(mem),
                           static_cast<int>(flags)) != 0) {
                 page_allocator::instance().free(mem);
                 return false;
@@ -166,7 +166,7 @@ err:
     return -1;
 }
 
-int pagetable::map_pages(const uint64 va, const uint64 size, uint64 pa,
+int pagetable::map(const uint64 va, const uint64 size, uint64 pa,
                          const int perm) const {
     pte_t *pte;
 
@@ -238,7 +238,7 @@ void pagetable::free_walk(pagetable_t pagetable) {
             free_walk(reinterpret_cast<pagetable_t>(child));
             pagetable[i] = 0;
         } else if (pte & PTE_V) {
-            panic("freewalk: leaf");
+            panic("free_walk: leaf");
         }
     }
     page_allocator::instance().free(pagetable);

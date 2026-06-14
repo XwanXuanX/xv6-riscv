@@ -56,7 +56,7 @@ pagetable kvmmake() {
 // does not flush TLB or enable paging.
 void kvmmap(pagetable kpgtbl, const uint64 va, const uint64 pa, const uint64 sz,
             const int perm) {
-    if (kpgtbl.map_pages(va, sz, pa, perm) != 0) {
+    if (kpgtbl.map(va, sz, pa, perm) != 0) {
         panic("kvmmap");
     }
 }
@@ -197,7 +197,7 @@ uint64 vmfault(pagetable pt, uint64 va) {
             return 0;
         }
         memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
-        if (p->pt.map_pages(va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
+        if (p->pt.map(va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
             page_allocator::instance().free(reinterpret_cast<void *>(mem));
             return 0;
         }
@@ -232,7 +232,7 @@ uint64 vmfault(pagetable pt, uint64 va) {
         return 0;
     }
     memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
-    if (p->pt.map_pages(va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
+    if (p->pt.map(va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
         page_allocator::instance().free(reinterpret_cast<void *>(mem));
         return 0;
     }

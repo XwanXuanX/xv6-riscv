@@ -61,7 +61,7 @@ class pagetable {
     // Returns 0 on success, -1 if walk() couldn't
     // allocate a needed page-table page.
     [[nodiscard]] int
-    map_pages(uint64 va, uint64 size, uint64 pa, int perm) const;
+    map(uint64 va, uint64 size, uint64 pa, int perm) const;
 
     // Check if the page table is null
     [[nodiscard]] bool is_null() const { return pt_ == nullptr; }
