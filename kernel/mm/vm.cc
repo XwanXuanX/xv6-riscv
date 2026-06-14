@@ -20,9 +20,8 @@ pagetable kernel_pagetable;
 
 // Make a direct-map page table for the kernel.
 pagetable kvmmake() {
-    const auto kpgtbl =
-        pagetable{page_allocator::instance().alloc()};
-    memset(static_cast<uint64*>(kpgtbl), 0, PGSIZE);
+    const auto kpgtbl = pagetable{page_allocator::instance().alloc()};
+    memset(static_cast<uint64 *>(kpgtbl), 0, PGSIZE);
 
     // uart registers
     kvmmap(kpgtbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
@@ -55,8 +54,8 @@ pagetable kvmmake() {
 // add a mapping to the kernel page table.
 // only used when booting.
 // does not flush TLB or enable paging.
-void kvmmap(pagetable kpgtbl, const uint64 va, const uint64 pa,
-            const uint64 sz, const int perm) {
+void kvmmap(pagetable kpgtbl, const uint64 va, const uint64 pa, const uint64 sz,
+            const int perm) {
     if (kpgtbl.map_pages(va, sz, pa, perm) != 0) {
         panic("kvmmap");
     }
@@ -71,7 +70,7 @@ void kvminithart() {
     // wait for any previous writes to the page table memory to finish.
     sfence_vma();
 
-    w_satp(MAKE_SATP(static_cast<uint64*>(kernel_pagetable)));
+    w_satp(MAKE_SATP(static_cast<uint64 *>(kernel_pagetable)));
 
     // flush stale entries from the TLB.
     sfence_vma();
@@ -198,8 +197,7 @@ uint64 vmfault(pagetable pt, uint64 va) {
             return 0;
         }
         memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
-        if (p->pt.map_pages(va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) !=
-            0) {
+        if (p->pt.map_pages(va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
             page_allocator::instance().free(reinterpret_cast<void *>(mem));
             return 0;
         }
@@ -268,8 +266,8 @@ int try_make_heap_room(proc *p, const uint64 new_heap_top) {
     if (new_heap_top <= p->stack_bottom - PGSIZE) {
         return 0;
     }
-    if (uvmstackshrink(p->pt, &p->stack_bottom, p->trapf->sp,
-                       p->stack_top) <= 0) {
+    if (uvmstackshrink(p->pt, &p->stack_bottom, p->trapf->sp, p->stack_top) <=
+        0) {
         return -1;
     }
     if (new_heap_top <= p->stack_bottom - PGSIZE) {

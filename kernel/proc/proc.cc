@@ -66,16 +66,16 @@ pagetable proc_pagetable(proc *p) {
     // at the highest user virtual address.
     // only the supervisor uses it, on the way
     // to/from user space, so not PTE_U.
-    if (pt.map_pages(TRAMPOLINE, PGSIZE,
-                 reinterpret_cast<uint64>(trampoline), PTE_R | PTE_X) < 0) {
+    if (pt.map_pages(TRAMPOLINE, PGSIZE, reinterpret_cast<uint64>(trampoline),
+                     PTE_R | PTE_X) < 0) {
         pt.free(0, 0, 0);
         return pagetable{};
     }
 
     // map the trapframe page just below the trampoline page, for
     // trampoline.S.
-    if (pt.map_pages(TRAPFRAME, PGSIZE,
-                 reinterpret_cast<uint64>(p->trapf), PTE_R | PTE_W) < 0) {
+    if (pt.map_pages(TRAPFRAME, PGSIZE, reinterpret_cast<uint64>(p->trapf),
+                     PTE_R | PTE_W) < 0) {
         pt.unmap(TRAMPOLINE, 1, 0);
         pt.free(0, 0, 0);
         return pagetable{};
@@ -142,8 +142,7 @@ int kfork() {
     assert(np->lock.holding(), "process lock NOT held");
 
     // Copy user memory from parent to child.
-    if (p->pt.copy(np->pt, p->heap_top, p->stack_bottom,
-                p->stack_top) < 0) {
+    if (p->pt.copy(np->pt, p->heap_top, p->stack_bottom, p->stack_top) < 0) {
         np->lock.unlock(); // unlock and relock later to preserve lock ordering
         proc_list::instance().with_list_locked([&](auto &) {
             np->lock.lock();
@@ -431,7 +430,7 @@ void forkret() {
 
     // return to user space, mimicing usertrap()'s return.
     prepare_return();
-    const uint64 satp = MAKE_SATP(static_cast<uint64*>(p->pt));
+    const uint64 satp = MAKE_SATP(static_cast<uint64 *>(p->pt));
     const uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
     reinterpret_cast<void (*)(uint64)>(trampoline_userret)(satp);
 }

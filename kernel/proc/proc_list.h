@@ -42,8 +42,8 @@ class proc_list : public util::singleton<proc_list> {
     void pfree(proc *p) const;
 
     static pagetable alloc_ptable(proc *p);
-    static void free_ptable(pagetable pt, uint64 heap_top,
-                            uint64 stack_bottom, uint64 stack_top);
+    static void free_ptable(pagetable pt, uint64 heap_top, uint64 stack_bottom,
+                            uint64 stack_top);
 
     proc_list() = default;
 

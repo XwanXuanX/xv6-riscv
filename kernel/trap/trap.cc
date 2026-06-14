@@ -177,7 +177,7 @@ uint64 usertrap() {
     prepare_return();
 
     // the user page table to switch to, for trampoline.S
-    const uint64 satp = MAKE_SATP(static_cast<uint64*>(p->pt));
+    const uint64 satp = MAKE_SATP(static_cast<uint64 *>(p->pt));
 
     // return to trampoline.S; satp value in a0.
     return satp;

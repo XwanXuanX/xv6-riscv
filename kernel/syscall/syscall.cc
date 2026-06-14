@@ -23,8 +23,7 @@ int fetchaddr(const uint64 addr, uint64 *ip) {
     if (!in_heap && !in_stack) {
         return -1;
     }
-    if (copyin(p->pt, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) !=
-        0) {
+    if (copyin(p->pt, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) != 0) {
         return -1;
     }
     return 0;

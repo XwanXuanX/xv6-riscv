@@ -93,8 +93,8 @@ int kexec(const char *path, const char **argv) {
         if (ph.vaddr % PGSIZE != 0) {
             goto bad;
         }
-        if ((sz1 = pt.malloc(sz, ph.vaddr + ph.memsz,
-                            flags2_perm(ph.flags))) == 0) {
+        if ((sz1 = pt.malloc(sz, ph.vaddr + ph.memsz, flags2_perm(ph.flags))) ==
+            0) {
             goto bad;
         }
         sz = sz1;
@@ -178,8 +178,7 @@ int kexec(const char *path, const char **argv) {
     p->stack_top = new_stack_top;
     p->trapf->epc = elf.entry; // initial program counter = ulib.c:start()
     p->trapf->sp = sp;         // initial stack pointer
-    proc_freepagetable(oldpt, old_heap_top, old_stack_bottom,
-                       old_stack_top);
+    proc_freepagetable(oldpt, old_heap_top, old_stack_bottom, old_stack_top);
 
     return argc; // this ends up in a0, the first argument to main(argc, argv)
 
@@ -200,8 +199,8 @@ bad:
 // va must be page-aligned
 // and the pages from va to va+sz must already be mapped.
 // Returns 0 on success, -1 on failure.
-static int loadseg(pagetable pt, const uint64 va, inode *ip,
-                   const uint offset, const uint sz) {
+static int loadseg(pagetable pt, const uint64 va, inode *ip, const uint offset,
+                   const uint sz) {
     uint n;
 
     for (uint i = 0; i < sz; i += PGSIZE) {
