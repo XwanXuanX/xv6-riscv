@@ -12,24 +12,24 @@ pagetable kernel_pagetable::make() {
     memset(kpt.get_ptr(), 0, PGSIZE);
 
     // uart registers
-    if (kpt.map(UART0, UART0, PGSIZE, PTE_R | PTE_W) != 0) {
+    if (kpt.map(UART0, PGSIZE, UART0, PTE_R | PTE_W) != 0) {
         panic("kernel_pagetable::make(): uart registers");
     }
 
     // virtio mmio disk interface
-    if (kpt.map(VIRTIO0, VIRTIO0, PGSIZE, PTE_R | PTE_W) != 0) {
+    if (kpt.map(VIRTIO0, PGSIZE, VIRTIO0, PTE_R | PTE_W) != 0) {
         panic("kernel_pagetable::make(): virtio mmio disk interface");
     }
 
     // PLIC
-    if (kpt.map(PLIC, PLIC, 0x4000000, PTE_R | PTE_W) != 0) {
+    if (kpt.map(PLIC, 0x4000000, PLIC, PTE_R | PTE_W) != 0) {
         panic("kernel_pagetable::make(): PLIC");
     }
 
     const auto cetext = reinterpret_cast<uint64>(etext);
 
     // map kernel text executable and read-only.
-    if (kpt.map(KERNBASE, KERNBASE, cetext - KERNBASE, PTE_R | PTE_X) != 0) {
+    if (kpt.map(KERNBASE, cetext - KERNBASE, KERNBASE, PTE_R | PTE_X) != 0) {
         panic("kernel_pagetable::make(): kernel text executable");
     }
 
@@ -37,13 +37,13 @@ pagetable kernel_pagetable::make() {
     // maps all usable RAM into the kernel's virtual address space with an
     // identity mapping.
     // in other words, kernel's VA == RAM's PA
-    if (kpt.map(cetext, cetext, PHYSTOP - cetext, PTE_R | PTE_W) != 0) {
+    if (kpt.map(cetext, PHYSTOP - cetext, cetext, PTE_R | PTE_W) != 0) {
         panic("kernel_pagetable::make(): physical RAM");
     }
 
     // map the trampoline for trap entry/exit to
     // the highest virtual address in the kernel.
-    if (kpt.map(TRAMPOLINE, reinterpret_cast<uint64>(trampoline), PGSIZE,
+    if (kpt.map(TRAMPOLINE, PGSIZE, reinterpret_cast<uint64>(trampoline),
                 PTE_R | PTE_X) != 0) {
         panic("kernel_pagetable::make(): trampoline");
     }
