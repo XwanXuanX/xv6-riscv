@@ -23,7 +23,7 @@ int fetchaddr(const uint64 addr, uint64 *ip) {
     if (!in_heap && !in_stack) {
         return -1;
     }
-    if (copyin(p->pagetable, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) !=
+    if (copyin(p->pt, reinterpret_cast<char *>(ip), addr, sizeof(*ip)) !=
         0) {
         return -1;
     }
@@ -34,7 +34,7 @@ int fetchaddr(const uint64 addr, uint64 *ip) {
 // Returns length of string, not including nul, or -1 for error.
 int fetchstr(const uint64 addr, char *buf, const int max) {
     const proc *p = myproc();
-    if (copyinstr(p->pagetable, buf, addr, max) < 0) {
+    if (copyinstr(p->pt, buf, addr, max) < 0) {
         return -1;
     }
     return strlen(buf);

@@ -6,6 +6,7 @@
 #include "kernel/proc/proc.h"
 #include "kernel/util/singletony.h"
 #include "kernel/util/lock_guard.h"
+#include "kernel/mm/pagetable.h"
 
 namespace xv6 {
 
@@ -13,7 +14,7 @@ class proc_list : public util::singleton<proc_list> {
     friend class singleton;
 
   public:
-    void init(pagetable_t kernel_ptable);
+    void init(pagetable kernel_ptable);
 
     // allocate a new proc object and insert it into the global process list
     // returns nullptr on failure
@@ -40,15 +41,15 @@ class proc_list : public util::singleton<proc_list> {
     [[nodiscard]] bool pinit(proc *p);
     void pfree(proc *p) const;
 
-    static pagetable_t alloc_ptable(proc *p);
-    static void free_ptable(pagetable_t page, uint64 heap_top,
+    static pagetable alloc_ptable(proc *p);
+    static void free_ptable(pagetable pt, uint64 heap_top,
                             uint64 stack_bottom, uint64 stack_top);
 
     proc_list() = default;
 
     mutable spinlock pid_lock_{};
     int next_pid_ = 1;
-    pagetable_t kernel_ptable_ = nullptr;
+    pagetable kernel_ptable_{};
     stl::ts_list<proc *> procs_;
 };
 

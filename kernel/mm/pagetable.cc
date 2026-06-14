@@ -4,6 +4,16 @@
 
 namespace xv6 {
 
+pagetable pagetable::create() {
+    const auto pt =
+        static_cast<pagetable_t>(page_allocator::instance().alloc());
+    if (pt == nullptr) {
+        return pagetable{};
+    }
+    memset(pt, 0, PGSIZE);
+    return pagetable{pt};
+}
+
 int pagetable::is_mapped(const uint64 va) const {
     const pte_t *pte = walk(pt_, va, 0);
     if (pte == nullptr) {
@@ -47,7 +57,7 @@ pagetable::malloc(uint64 start_va, const uint64 end_va, const int xperm) {
             return 0;
         }
         memset(mem, 0, PGSIZE);
-        if (mappages(pt_, a, PGSIZE, reinterpret_cast<uint64>(mem),
+        if (map_pages(a, PGSIZE, reinterpret_cast<uint64>(mem),
                      PTE_R | PTE_U | xperm) != 0) {
             page_allocator::instance().free(mem);
             dealloc(a, start_va);
@@ -108,7 +118,7 @@ void pagetable::unmap(const uint64 va, const uint64 npages,
     }
 }
 
-int pagetable::copy(pagetable_t other, const uint64 heap_top,
+int pagetable::copy(pagetable other, const uint64 heap_top,
                     const uint64 stack_bottom, const uint64 stack_top) const {
     pte_t *pte;
     uint64 pa, i;
@@ -131,7 +141,7 @@ int pagetable::copy(pagetable_t other, const uint64 heap_top,
                 return false;
             }
             memmove(mem, reinterpret_cast<char *>(pa), PGSIZE);
-            if (mappages(pt_, i, PGSIZE, reinterpret_cast<uint64>(mem),
+            if (map_pages(i, PGSIZE, reinterpret_cast<uint64>(mem),
                          static_cast<int>(flags)) != 0) {
                 page_allocator::instance().free(mem);
                 return false;
@@ -212,6 +222,11 @@ pagetable::walk(pagetable_t pagetable, const uint64 va, const int alloc) {
         }
     }
     return &pagetable[PX(0, va)];
+}
+
+pte_t *
+pagetable::walk(pagetable pagetable, const uint64 va, const int alloc) {
+    return walk(pagetable.pt_, va,  alloc);
 }
 
 void pagetable::free_walk(pagetable_t pagetable) {

@@ -5,23 +5,24 @@
 #include "kernel/proc/proc.h"
 #include "kernel/mm/page_allocator.h"
 #include "kernel/util/assert.h"
+#include "kernel/mm/pagetable.h"
 
 namespace xv6 {
 
 /*
  * the kernel's page table.
  */
-pagetable_t kernel_pagetable;
+pagetable kernel_pagetable;
 
 // extern char etext[]; // kernel.ld sets this to end of kernel code.
 
 // extern char trampoline[]; // trampoline.S
 
 // Make a direct-map page table for the kernel.
-pagetable_t kvmmake() {
+pagetable kvmmake() {
     const auto kpgtbl =
-        static_cast<pagetable_t>(page_allocator::instance().alloc());
-    memset(kpgtbl, 0, PGSIZE);
+        pagetable{page_allocator::instance().alloc()};
+    memset(static_cast<uint64*>(kpgtbl), 0, PGSIZE);
 
     // uart registers
     kvmmap(kpgtbl, UART0, UART0, PGSIZE, PTE_R | PTE_W);
@@ -54,15 +55,15 @@ pagetable_t kvmmake() {
 // add a mapping to the kernel page table.
 // only used when booting.
 // does not flush TLB or enable paging.
-void kvmmap(pagetable_t kpgtbl, const uint64 va, const uint64 pa,
+void kvmmap(pagetable kpgtbl, const uint64 va, const uint64 pa,
             const uint64 sz, const int perm) {
-    if (mappages(kpgtbl, va, sz, pa, perm) != 0) {
+    if (kpgtbl.map_pages(va, sz, pa, perm) != 0) {
         panic("kvmmap");
     }
 }
 
 // Initialize the kernel_pagetable, shared by all CPUs.
-pagetable_t kvminit() { return kernel_pagetable = kvmmake(); }
+pagetable kvminit() { return kernel_pagetable = kvmmake(); }
 
 // Switch the current CPU's h/w page table register to
 // the kernel's page table, and enable paging.
@@ -70,42 +71,30 @@ void kvminithart() {
     // wait for any previous writes to the page table memory to finish.
     sfence_vma();
 
-    w_satp(MAKE_SATP(kernel_pagetable));
+    w_satp(MAKE_SATP(static_cast<uint64*>(kernel_pagetable)));
 
     // flush stale entries from the TLB.
     sfence_vma();
 }
 
-// create an empty user page table.
-// returns 0 if out of memory.
-pagetable_t uvmcreate() {
-    const auto pagetable =
-        static_cast<pagetable_t>(page_allocator::instance().alloc());
-    if (pagetable == nullptr) {
-        return nullptr;
-    }
-    memset(pagetable, 0, PGSIZE);
-    return pagetable;
-}
-
 // Copy from kernel to user.
 // Copy len bytes from src to virtual address dstva in a given page table.
 // Return 0 on success, -1 on error.
-int copyout(pagetable_t pagetable, uint64 dstva, const char *src, uint64 len) {
+int copyout(pagetable pt, uint64 dstva, const char *src, uint64 len) {
     while (len > 0) {
         const uint64 va0 = PGROUNDDOWN(dstva);
         if (va0 >= MAXVA) {
             return -1;
         }
 
-        uint64 pa0 = walkaddr(pagetable, va0);
+        uint64 pa0 = pt.walk_addr(va0);
         if (pa0 == 0) {
-            if ((pa0 = vmfault(pagetable, va0)) == 0) {
+            if ((pa0 = vmfault(pt, va0)) == 0) {
                 return -1;
             }
         }
 
-        const pte_t *pte = walk(pagetable, va0, 0);
+        const pte_t *pte = pagetable::walk(pt, va0, 0);
         // forbid copyout over read-only user text pages.
         if ((*pte & PTE_W) == 0) {
             return -1;
@@ -127,12 +116,12 @@ int copyout(pagetable_t pagetable, uint64 dstva, const char *src, uint64 len) {
 // Copy from user to kernel.
 // Copy len bytes to dst from virtual address srcva in a given page table.
 // Return 0 on success, -1 on error.
-int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
+int copyin(pagetable pt, char *dst, uint64 srcva, uint64 len) {
     while (len > 0) {
         const uint64 va0 = PGROUNDDOWN(srcva);
-        uint64 pa0 = walkaddr(pagetable, va0);
+        uint64 pa0 = pt.walk_addr(va0);
         if (pa0 == 0) {
-            if ((pa0 = vmfault(pagetable, va0)) == 0) {
+            if ((pa0 = vmfault(pt, va0)) == 0) {
                 return -1;
             }
         }
@@ -153,12 +142,12 @@ int copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len) {
 // Copy bytes to dst from virtual address srcva in a given page table,
 // until a '\0', or max.
 // Return 0 on success, -1 on error.
-int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {
+int copyinstr(pagetable pt, char *dst, uint64 srcva, uint64 max) {
     int got_null = 0;
 
     while (got_null == 0 && max > 0) {
         const uint64 va0 = PGROUNDDOWN(srcva);
-        const uint64 pa0 = walkaddr(pagetable, va0);
+        const uint64 pa0 = pt.walk_addr(va0);
         if (pa0 == 0) {
             return -1;
         }
@@ -194,13 +183,13 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max) {
 // 2. a new stack page that has not been allocated yet.
 // returns 0 if va is invalid or already mapped, or if
 // out of physical memory, and physical address if successful.
-uint64 vmfault(pagetable_t pagetable, uint64 va) {
+uint64 vmfault(pagetable pt, uint64 va) {
     proc *p = myproc();
     va = PGROUNDDOWN(va);
 
     // Lazily allocated heap page from sys_sbrk().
     if (va < p->heap_top) {
-        if (ismapped(pagetable, va)) {
+        if (pt.is_mapped(va)) {
             return 0;
         }
         const auto mem =
@@ -209,7 +198,7 @@ uint64 vmfault(pagetable_t pagetable, uint64 va) {
             return 0;
         }
         memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
-        if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) !=
+        if (p->pt.map_pages(va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) !=
             0) {
             page_allocator::instance().free(reinterpret_cast<void *>(mem));
             return 0;
@@ -235,7 +224,7 @@ uint64 vmfault(pagetable_t pagetable, uint64 va) {
         return 0;
     }
     // Rule #4: page must not be already mapped
-    if (ismapped(pagetable, va)) {
+    if (pt.is_mapped(va)) {
         return 0;
     }
 
@@ -245,7 +234,7 @@ uint64 vmfault(pagetable_t pagetable, uint64 va) {
         return 0;
     }
     memset(reinterpret_cast<void *>(mem), 0, PGSIZE);
-    if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
+    if (p->pt.map_pages(va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0) {
         page_allocator::instance().free(reinterpret_cast<void *>(mem));
         return 0;
     }
@@ -255,7 +244,7 @@ uint64 vmfault(pagetable_t pagetable, uint64 va) {
 
 // Unmap stack pages below the page containing sp and move stack_bottom up.
 // Returns bytes reclaimed, 0 if nothing to reclaim, -1 if sp is invalid.
-int uvmstackshrink(pagetable_t pagetable, uint64 *stack_bottom, const uint64 sp,
+int uvmstackshrink(pagetable pt, uint64 *stack_bottom, const uint64 sp,
                    const uint64 stack_top) {
     const uint64 old_bottom = *stack_bottom;
     if (sp < old_bottom || sp >= stack_top) {
@@ -268,7 +257,7 @@ int uvmstackshrink(pagetable_t pagetable, uint64 *stack_bottom, const uint64 sp,
     }
 
     const uint64 npages = (new_bottom - old_bottom) / PGSIZE;
-    uvmunmap(pagetable, old_bottom, npages, 1);
+    pt.unmap(old_bottom, npages, 1);
     *stack_bottom = new_bottom;
     return new_bottom - old_bottom;
 }
@@ -279,7 +268,7 @@ int try_make_heap_room(proc *p, const uint64 new_heap_top) {
     if (new_heap_top <= p->stack_bottom - PGSIZE) {
         return 0;
     }
-    if (uvmstackshrink(p->pagetable, &p->stack_bottom, p->trapf->sp,
+    if (uvmstackshrink(p->pt, &p->stack_bottom, p->trapf->sp,
                        p->stack_top) <= 0) {
         return -1;
     }

@@ -45,7 +45,7 @@ void main() {
         auto &page_alloc = page_allocator::instance();
         page_alloc.init();
         // create kernel page table
-        pagetable_t kpt = kvminit();
+        pagetable kpt = kvminit();
         // turn on paging
         kvminithart();
         // process table

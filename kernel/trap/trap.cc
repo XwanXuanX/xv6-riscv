@@ -139,7 +139,7 @@ uint64 usertrap() {
         // ok
         ;
     } else if ((r_scause() == 15 || r_scause() == 13) &&
-               vmfault(p->pagetable, r_stval()) != 0) {
+               vmfault(p->pt, r_stval()) != 0) {
         // page fault on lazily-allocated page
     } else {
         printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(),
@@ -177,7 +177,7 @@ uint64 usertrap() {
     prepare_return();
 
     // the user page table to switch to, for trampoline.S
-    const uint64 satp = MAKE_SATP(p->pagetable);
+    const uint64 satp = MAKE_SATP(static_cast<uint64*>(p->pt));
 
     // return to trampoline.S; satp value in a0.
     return satp;

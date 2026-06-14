@@ -85,7 +85,7 @@ int filestat(const file *f, const uint64 addr) {
         ilock(f->ip);
         stati(f->ip, &st);
         iunlock(f->ip);
-        if (copyout(p->pagetable, addr, reinterpret_cast<char *>(&st),
+        if (copyout(p->pt, addr, reinterpret_cast<char *>(&st),
                     sizeof(st)) < 0) {
             return -1;
         }
