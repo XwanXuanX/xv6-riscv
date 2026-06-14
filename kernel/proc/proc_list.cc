@@ -167,8 +167,7 @@ pagetable_t proc_list::alloc_ptable(proc *p) {
 }
 
 void proc_list::free_ptable(pagetable_t page, const uint64 heap_top,
-                               const uint64 stack_bottom,
-                               const uint64 stack_top) {
+                            const uint64 stack_bottom, const uint64 stack_top) {
     uvmunmap(page, TRAMPOLINE, 1, 0);
     uvmunmap(page, TRAPFRAME, 1, 0);
     uvmfree(page, heap_top, stack_bottom, stack_top);
