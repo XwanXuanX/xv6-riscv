@@ -430,7 +430,7 @@ void forkret() {
 
     // return to user space, mimicing usertrap()'s return.
     prepare_return();
-    const uint64 satp = MAKE_SATP(static_cast<uint64 *>(p->pt));
+    const uint64 satp = MAKE_SATP(p->pt.get_ptr());
     const uint64 trampoline_userret = TRAMPOLINE + (userret - trampoline);
     reinterpret_cast<void (*)(uint64)>(trampoline_userret)(satp);
 }

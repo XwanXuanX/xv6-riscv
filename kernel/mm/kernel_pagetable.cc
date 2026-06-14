@@ -9,7 +9,7 @@ void kernel_pagetable::init() { kpt_ = make(); }
 
 pagetable kernel_pagetable::make() {
     const auto kpt = pagetable{page_allocator::instance().alloc()};
-    memset(static_cast<uint64 *>(kpt), 0, PGSIZE);
+    memset(kpt.get_ptr(), 0, PGSIZE);
 
     // uart registers
     if (kpt.map(UART0, UART0, PGSIZE, PTE_R | PTE_W) != 0) {

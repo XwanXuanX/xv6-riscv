@@ -6,6 +6,7 @@
 #include "kernel/mm/page_allocator.h"
 #include "kernel/util/assert.h"
 #include "kernel/mm/pagetable.h"
+#include "kernel/mm/kernel_pagetable.h"
 
 namespace xv6 {
 
@@ -15,7 +16,7 @@ void inithart() {
     // wait for any previous writes to the page table memory to finish.
     sfence_vma();
 
-    w_satp(MAKE_SATP(static_cast<uint64 *>(kernel_pagetable)));
+    w_satp(MAKE_SATP(kernel_pagetable::instance().get_ptr()));
 
     // flush stale entries from the TLB.
     sfence_vma();

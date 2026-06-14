@@ -25,6 +25,9 @@ class kernel_pagetable : public util::singleton<kernel_pagetable> {
     // Check if kernel page table is null.
     [[nodiscard]] bool is_null() const { return kpt_.is_null(); }
 
+    // Get the underlying page table pointer.
+    [[nodiscard]] uint64 *get_ptr() const { return kpt_.get_ptr(); }
+
   private:
     // Make a direct-map page table for the kernel.
     static pagetable make();

@@ -13,7 +13,8 @@ class pagetable {
     explicit pagetable(pagetable_t pt) : pt_(pt) {}
     explicit pagetable(void *pt) : pt_(static_cast<pagetable_t>(pt)) {}
 
-    explicit operator uint64 *() const { return this->pt_; }
+    // Get the underlying page table pointer.
+    [[nodiscard]] uint64 *get_ptr() const { return this->pt_; }
 
     // create an empty user page table.
     // returns 0 if out of memory.
